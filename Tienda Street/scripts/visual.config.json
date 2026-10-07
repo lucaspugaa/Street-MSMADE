@@ -1,0 +1,80 @@
+{
+  "pages": [
+    {
+      "name": "home",
+      "path": "/"
+    },
+    {
+      "name": "categoria-anime",
+      "path": "/anime/"
+    },
+    {
+      "name": "categoria-artistas",
+      "path": "/artistas1/"
+    },
+    {
+      "name": "categoria-futbol",
+      "path": "/futbol-noventa/"
+    },
+    {
+      "name": "categoria-marvel",
+      "path": "/marvel/"
+    },
+    {
+      "name": "producto-anime",
+      "path": "/productos/remera-aot-titan-1kxo9/"
+    },
+    {
+      "name": "producto-artistas",
+      "path": "/productos/remera-x-bad-bunny-dtmf-casa/"
+    },
+    {
+      "name": "producto-futbol",
+      "path": "/productos/remera-3-estrellas-x-malvinas-1022v/"
+    },
+    {
+      "name": "producto-marvel",
+      "path": "/productos/hoodie-oversize-basico-crema-1d3fg/"
+    },
+    {
+      "name": "carrito",
+      "path": "/comprar/"
+    }
+  ],
+  "viewports": [
+    {
+      "name": "desktop",
+      "width": 1440,
+      "height": 900
+    },
+    {
+      "name": "mobile",
+      "width": 390,
+      "height": 844
+    }
+  ],
+  "stability": {
+    "fixedTime": "2026-10-07T12:00:00-03:00",
+    "waitUntilGone": [
+      "Cargando"
+    ],
+    "hideSelectors": [
+      "#draft-bar",
+      ".js-notification-cookie-private",
+      ".js-notification-cookie-banner",
+      "[data-store=\"related-products\"]",
+      "[data-store=\"alternative-products\"]",
+      "[data-store=\"complementary-products\"]"
+    ],
+    "maskSelectors": [],
+    "extraCss": "body { margin-top: 0 !important; } select.js-sort-by-private { height: 32px !important; }",
+    "_notas": [
+      "hideSelectors: barra de borrador de la preview, banner de cookies y productos relacionados (Tiendanube los ordena al azar).",
+      "extraCss: la preview agrega margin-top al body y 1px al select de orden; no es parte del tema.",
+      "blockUrlPatterns: el scroll infinito del listado carga más páginas según el timing; se corta para comparar siempre la primera página."
+    ],
+    "blockUrlPatterns": [
+      "/page/\\d+/\\?(?:[^#]*&)?results_only=true"
+    ]
+  }
+}

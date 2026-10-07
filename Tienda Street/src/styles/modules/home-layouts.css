@@ -1,0 +1,520 @@
+/* Copia fiel del CSS del bloque de código original (home · code_ob2b). */
+/* Up to eight best sellers, with four visible on desktop and two on mobile. */
+.portal-bestsellers { padding: 0 4%; }
+.home-bestseller-section { padding: 35px 0; border-top: 1px solid currentColor; }
+.home-bestseller-heading { display: flex; justify-content: space-between; align-items: end; gap: 20px; margin-bottom: 24px; }
+.home-bestseller-heading p { font: 9px/1.4 Arial, sans-serif; letter-spacing: .12em; margin: 0 0 9px; }
+.home-bestseller-heading h2 { font: 36px/1 Impact, 'Arial Black', sans-serif; margin: 0; }
+.home-bestseller-more { font: bold 11px Arial, sans-serif; border-bottom: 1px solid; padding: 8px 0; white-space: nowrap; }
+.home-bestseller-grid { display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - 48px) / 4); gap: 16px; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; overscroll-behavior-x: contain; }
+.home-bestseller-grid::-webkit-scrollbar { display: none; }
+.home-bestseller-grid > * { min-width: 0; scroll-snap-align: start; }
+.home-bestseller-controls { display: flex; justify-content: end; gap: 8px; margin-top: 20px; }
+.home-bestseller-controls[hidden] { display: none; }
+.home-bestseller-controls button { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid currentColor; background: transparent; color: inherit; padding: 0; cursor: pointer; }
+.home-bestseller-controls svg { width: 20px; height: 20px; pointer-events: none; }
+.home-bestseller-controls button:hover { background: var(--ink, #181818); color: var(--paper, #f3eee2); }
+.home-bestseller-grid:focus-visible, .home-bestseller-controls button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.home-bestseller-status { font: 12px/1.6 Arial, sans-serif; }
+.home-bestseller-status:empty { display: none; }
+.home-bestseller-retry { padding: 10px 14px; background: transparent; color: inherit; border: 1px solid; cursor: pointer; margin-bottom: 20px; }
+[data-home-layout='editorial'] .home-bestseller-heading h2,
+[data-home-layout='studio'] .home-bestseller-heading h2 { font-family: Georgia, serif; }
+@media (max-width: 600px) {
+.portal-bestsellers { padding: 0 16px; }
+.home-bestseller-grid { grid-auto-columns: calc((100% - 12px) / 2); gap: 12px; }
+.home-bestseller-heading h2 { font-size: 27px; }
+.home-bestseller-more { font-size: 10px; }
+.home-bestseller-grid .product-price { font-size: 13px; }
+.home-bestseller-grid h3 { font-size: 11px; }
+}
+/* ARTISTAS contains Rock, Urbano and a BTS launch, while BTS remains independent. */
+.artist-bts-launch { padding: 36px 5%; border-block: 1px solid var(--ink); }
+.artist-launch-heading { display: flex; justify-content: space-between; gap: 24px; align-items: center; margin-bottom: 25px; }
+.artist-launch-heading p { font-size: 11px; letter-spacing: .12em; }
+.artist-launch-heading h2 { font: 64px/1 Impact, sans-serif; margin: 12px 0; }
+.artist-launch-independent, .artist-launch-all { padding: 12px 20px; border: 1px solid currentColor; background: transparent; color: inherit; cursor: pointer; font-size: 11px; }
+.artist-launch-all { margin-top: 24px; }
+.artist-launch-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 20px; }
+[data-layout='artists-launch-red'] .universe-hero { background: #ba181e; }
+[data-layout='artists-launch-red'] .hero-copy h1 { font-size: clamp(65px, 8vw, 130px); }
+[data-layout='artists-launch-red'] .artist-bts-launch { background: #fff1df; color: #241915; }
+[data-layout='artists-launch-paper'] .universe-hero { border: 2px dashed #bd2326; margin: 25px 4%; }
+[data-layout='artists-launch-paper'] .hero-copy h1 { font-family: Georgia, serif; }
+[data-layout='artists-launch-paper'] .artist-launch-heading { border-bottom: 2px solid #bd2326; }
+[data-layout='artists-launch-night'] .universe-hero { background: radial-gradient(at 75% 15%, #463169, #10101d 70%); }
+[data-layout='artists-launch-night'] .hero-copy h1 { color: #c5a0ff; }
+[data-layout='artists-launch-night'] .artist-bts-launch { background: #20162f; }
+[data-layout='artists-launch-posters'] .universe-hero { grid-template-columns: 1fr; text-align: center; }
+[data-layout='artists-launch-posters'] .hero-art { grid-template-columns: repeat(3, 1fr); width: 75%; margin: auto; }
+[data-layout='artists-launch-posters'] .hero-art figure:first-child { grid-row: auto; }
+[data-layout='artists-launch-posters'] .hero-art img { height: 290px; }
+[data-layout='artists-launch-posters'] .hero-art figure { transform: rotate(-3deg); border: 8px solid #fff; box-shadow: 4px 4px #bd2326; }
+[data-layout='artists-launch-posters'] .hero-art figure:nth-child(2) { transform: rotate(3deg); }
+[data-layout='artists-launch-gallery'] .universe-hero { grid-template-columns: .8fr 1.2fr; background: #dedbd3; }
+[data-layout='artists-launch-gallery'] .hero-copy h1 { font: 900 clamp(60px, 7vw, 100px)/.95 Arial, sans-serif; letter-spacing: -.07em; }
+[data-layout='artists-launch-gallery'] .artist-bts-launch { background: #222; color: #eee7d9; }
+
+/* Palette measured from the KUMØ reference site. */
+[data-layout='kumo-reference'] { --paper: #0b1020; --ink: #c8a56a; --accent: #cbbc99; font-family: Inter, Arial, sans-serif; }
+[data-layout='kumo-reference'] .universe-announcement { background: #0b1020; color: #c8a56a; }
+[data-layout='kumo-reference'] .universe-masthead { justify-content: center; padding: 20px; }
+[data-layout='kumo-reference'] .universe-wordmark { font: 32px Georgia, serif; }
+[data-layout='kumo-reference'] .universe-tagline { display: none; }
+[data-layout='kumo-reference'] .universe-hero { display: block; padding: 0; }
+[data-layout='kumo-reference'] .hero-copy { display: none; }
+[data-layout='kumo-reference'] .hero-art { display: block; }
+[data-layout='kumo-reference'] .kumo-cinema-image { width: 100%; max-height: none; height: auto; display: block; }
+[data-layout='kumo-reference'] .universe-ribbon { justify-content: center; color: #c8a56a; }
+[data-layout='kumo-reference'] .universe-catalog { padding-top: 35px; }
+[data-layout='kumo-reference'] .catalog-title h2 { font: 26px Inter, Arial, sans-serif; }
+[data-layout='kumo-reference'] .universe-product h3 { font-size: 16px; }
+[data-layout='kumo-reference'] .product-price { color: #c8a56a; display: block; }
+[data-layout='kumo-reference'] .product-discover { display: inline-block; margin-top: 14px; padding: 6px 10px; background: #cbbc99; color: #333; opacity: 1; border-radius: 3px; }
+[data-layout='kumo-reference'] .product-visual { background: #0b1020; }
+.kumo-promotion { position: absolute; bottom: 8px; left: 8px; z-index: 2; max-width: 180px; background: #c96a2b; color: #f5f1e8; padding: 6px; border-radius: 6px; font: 12px/1.2 Inter, Arial, sans-serif; text-transform: uppercase; }
+.product-visual .product-alternate { position: absolute; inset: 0; opacity: 0; transition: opacity .2s; }
+@media (hover: hover) {
+.has-color-alternate:hover .product-alternate { opacity: 1; }
+.has-color-alternate:hover .product-visual img { transform: none; }
+}
+.has-color-alternate:focus-visible .product-alternate { opacity: 1; }
+body:has([data-layout='kumo-reference']) header { background: #0b1020; color: #c8a56a; }
+body:has([data-layout='kumo-reference']) header a { color: #c8a56a; }
+@media (max-width: 600px) {
+.artist-launch-heading { align-items: start; flex-direction: column; }
+.artist-launch-heading h2 { font-size: 44px; }
+.artist-launch-grid { grid-template-columns: 1fr 1fr; gap: 20px 12px; }
+[data-layout='artists-launch-posters'] .hero-art { width: 100%; }
+[data-layout='artists-launch-posters'] .hero-art img { height: 190px; }
+[data-layout='artists-launch-posters'] .hero-art figure { border-width: 3px; }
+[data-layout='artists-launch-gallery'] .universe-hero { grid-template-columns: 1fr; }
+}
+
+.reward-milestone-track { position: relative; }
+.reward-shipping-marker { position: absolute; top: 0; height: 100%; width: 2px; background: #fff; }
+.reward-goals { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 12px 0; }
+.reward-goals > div { display: flex; flex-direction: column; gap: 4px; padding: 8px; border: 1px solid #ddd8c8; font-size: 10px; }
+.reward-goals .reward-unlocked { background: #e0efe6; border-color: #25654d; color: #20573f; }
+.reward-transfer { font-size: 10px; line-height: 1.5; padding-top: 12px; border-top: 1px solid #ddd8c8; }
+/* The active page palette also follows the customer into the cart drawer. */
+.portal-home .portal-banners { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; }
+.portal-home .portal-artists { grid-column: auto !important; }
+.portal-home .portal-bts { grid-column: 1 / -1 !important; }
+.portal-f1 { background: #111315; color: #f4f1e8 !important; border-top: 10px solid #ef3025; }
+.portal-f1::after { content: ''; position: absolute; inset: auto 0 0; height: 28px; background: repeating-conic-gradient(#f4f1e8 0 25%, #111315 0 50%) 0 / 28px 28px; }
+.universe-preview[data-universe='f1'] .hero-art figure { border: 1px solid var(--ink); }
+[data-layout='f1-pit'] .universe-hero { background: linear-gradient(110deg, transparent 65%, #ef3025 65% 72%, transparent 72%); }
+[data-layout='f1-pit'] .hero-copy h1 { font-style: italic; font-size: clamp(100px, 16vw, 230px); }
+[data-layout='f1-paddock'] .universe-hero { margin: 28px 4%; padding: 28px; border: 2px solid var(--ink); }
+[data-layout='f1-paddock'] .hero-copy { border-left: 7px solid var(--accent); padding-left: 24px; }
+[data-layout='f1-telemetry'] { font-family: monospace; }
+[data-layout='f1-telemetry'] .universe-hero { background-image: linear-gradient(#d3f2da12 1px, transparent 1px), linear-gradient(90deg,#d3f2da12 1px,transparent 1px); background-size: 32px 32px; }
+[data-layout='f1-telemetry'] .hero-art figure { border-style: dashed !important; }
+[data-layout='f1-grid'] .hero-art figure { transform: rotate(-3deg); box-shadow: 7px 7px var(--accent); }
+[data-layout='f1-grid'] .hero-art figure:nth-child(2) { transform: rotate(3deg); }
+[data-layout='f1-mono'] .universe-hero { grid-template-columns: 1fr; border-bottom: 1px solid var(--ink); }
+[data-layout='f1-mono'] .hero-art { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+[data-layout='f1-mono'] .hero-art figure { grid-row: auto; }
+@media (max-width: 600px) {
+.portal-home .portal-banners { gap: 12px; }
+.portal-home .portal-banner:not(.portal-bts) { min-height: 250px; padding: 18px 12px; }
+.portal-home .portal-banner:not(.portal-bts) h2 { font-size: clamp(24px, 6vw, 36px) !important; overflow-wrap: anywhere; }
+.portal-home .portal-banner:not(.portal-bts) p { font-size: 9px; }
+.portal-home .portal-banner:not(.portal-bts) .portal-enter { font-size: 10px; }
+.portal-home .portal-football-art { opacity: .35; }
+[data-layout='f1-paddock'] .universe-hero { padding: 18px; margin: 20px 16px; }
+[data-layout='f1-mono'] .hero-art { grid-template-columns: 1fr 1fr; }
+}
+.universe-benefits {
+overflow: hidden;
+background: var(--ink, var(--home-ink, #181818));
+color: var(--paper, var(--home-bg, #f3eee2));
+padding: 12px 0;
+font: 600 16px/16.5px Arial, sans-serif;
+}
+.benefits-marquee { display: flex; width: max-content; gap: 0; animation: benefits-scroll 32s linear infinite; will-change: transform; }
+.benefits-group { display: flex; flex-shrink: 0; align-items: center; justify-content: flex-start; min-width: 100vw; }
+.benefits-group span { display: flex !important; flex: 1 0 auto !important; justify-content: center !important; align-items: center; text-align: center !important; white-space: nowrap; padding: 0 32px; border-right: 1px solid currentColor; box-sizing: border-box; }
+.universe-benefits:hover .benefits-marquee { animation-play-state: paused; }
+@keyframes benefits-scroll { to { transform: translateX(-50%); } }
+@media (prefers-reduced-motion: reduce) {
+.benefits-marquee { animation: none; width: auto; }
+.benefits-group { flex-wrap: wrap; gap: 8px; min-width: 0; }
+.benefits-group[aria-hidden] { display: none; }
+.benefits-group span { white-space: normal; padding: 0 12px; }
+}
+.reward-progress[data-reward-universe] {
+background: var(--reward-paper);
+color: var(--reward-ink);
+border: 1px solid var(--reward-ink);
+border-top: 4px solid var(--reward-accent);
+font-family: var(--reward-font);
+border-radius: 0;
+}
+.reward-progress[data-reward-universe] .reward-badge,
+.reward-progress[data-reward-universe] .reward-goals > div,
+.reward-progress[data-reward-universe] .reward-transfer {
+border-color: color-mix(in srgb, var(--reward-ink) 35%, transparent);
+}
+.reward-progress[data-reward-universe] .reward-top > strong {
+font-size: 14px;
+}
+.reward-progress[data-reward-universe] .reward-track {
+height: 10px;
+border-radius: 0;
+background: color-mix(in srgb, var(--reward-ink) 18%, var(--reward-paper));
+}
+.reward-progress[data-reward-universe] .reward-fill {
+background: var(--reward-accent);
+transition: width .3s ease, background-color .3s ease;
+}
+.reward-progress[data-reward-universe] .reward-shipping-marker {
+background: var(--reward-ink);
+}
+.reward-progress[data-reward-universe] .reward-goals .reward-unlocked {
+background: var(--reward-ink);
+border-color: var(--reward-ink);
+color: var(--reward-paper);
+}
+.reward-progress[data-reward-universe] .reward-note {
+color: inherit;
+opacity: .8;
+}
+.reward-progress[data-reward-universe] .reward-demo-fields input,
+.reward-progress[data-reward-universe] .reward-demo-fields button {
+font-family: inherit;
+background: var(--reward-paper);
+color: var(--reward-ink);
+border-color: var(--reward-ink);
+}
+.reward-progress[data-reward-universe='kumo'] {
+border-top-width: 1px;
+border-color: var(--reward-accent);
+}
+.reward-progress[data-reward-universe='football'] {
+border-width: 2px;
+border-top: 7px solid var(--reward-accent);
+box-shadow: 4px 4px 0 var(--reward-ink);
+}
+.reward-progress[data-reward-universe='football'] .reward-top > strong,
+.reward-progress[data-reward-universe='bts'] .reward-top > strong,
+.reward-progress[data-reward-universe='artistas'] .reward-top > strong {
+font-family: Impact, 'Arial Black', sans-serif;
+font-size: 20px;
+font-weight: 400;
+text-transform: uppercase;
+letter-spacing: .03em;
+}
+@media (max-width: 600px) {
+.reward-progress[data-reward-universe] .reward-top {
+flex-wrap: wrap;
+gap: 8px;
+}
+.reward-progress[data-reward-universe] .reward-top > strong {
+max-width: none;
+}
+.reward-progress[data-reward-universe] .reward-goals {
+gap: 8px;
+}
+}
+@media (prefers-reduced-motion: reduce) {
+.reward-progress[data-reward-universe] .reward-fill { transition: none; }
+}
+/* ARTISTAS 06–10: preserve its masthead; launch title matches the landing. */
+.universe-preview[data-layout^='artists-launch-'] .hero-copy h1 { font: italic clamp(70px, 10vw, 145px)/.94 Impact, 'Arial Black', sans-serif; letter-spacing: -.025em; }
+.football-clubs { grid-template-columns: minmax(0, 1fr); }
+.football-clubs .club-argentina { grid-column: 1 / -1; }
+@media (max-width: 600px) {
+.universe-preview[data-layout^='artists-launch-'] .hero-copy h1 { font-size: 60px !important; }
+}
+@media (max-width: 600px) {
+}
+
+/* Portadas 01 comparte el banner ARIRANG de Corrección 06. */
+.portal-home[data-home-layout='covers'] .portal-bts { background: #b51e27; color: #fff2d9 !important; border: 1px solid currentColor; min-height: 460px; padding: 34px 4% 100px; }
+[data-home-layout='covers'] .portal-bts h2 { font: italic clamp(70px, 10vw, 145px)/.94 Impact, 'Arial Black', sans-serif; }
+[data-home-layout='covers'] .portal-bts h2::after,
+[data-home-layout='covers'] .portal-bts-art::before { display: none; }
+[data-home-layout='covers'] .portal-bts .portal-eyebrow,
+[data-home-layout='covers'] .portal-bts .portal-enter,
+[data-home-layout='covers'] .portal-bts .portal-banner-copy > p,
+[data-home-layout='covers'] .portal-countdown p { font-family: Arial, sans-serif; }
+[data-home-layout='covers'] .portal-bts-art { width: 36%; right: 6%; left: auto; top: 34px; bottom: 90px; padding: 0; border: 0; }
+[data-home-layout='covers'] .portal-bts-art img { max-height: 280px; border: 0; filter: none; background: #f3eee2; box-shadow: 8px 8px 0 #1c1c1c; transform: rotate(-5deg); }
+[data-home-layout='covers'] .portal-bts-art img:last-child { transform: rotate(5deg) translateY(20px); }
+[data-home-layout='covers'] .portal-countdown { border-color: #fff7e455; left: 4%; right: 4%; }
+[data-home-layout='covers'] .portal-countdown .countdown-clock strong { font-family: Impact, 'Arial Black', sans-serif; font-weight: 400; }
+
+@media(max-width:600px) {
+.portal-home[data-home-layout='covers'] .portal-bts { min-height: 550px; padding: 26px 22px 235px; align-items: start; }
+[data-home-layout='covers'] .portal-bts-art { width: 70%; top: 215px; bottom: 130px; right: 15%; left: auto; }
+[data-home-layout='covers'] .portal-bts-art img { max-height: 175px; }
+[data-home-layout='covers'] .portal-countdown { left: 22px; right: 22px; bottom: 20px; }
+[data-home-layout='covers'] .portal-countdown .countdown-clock { gap: 22px; }
+
+}
+
+[data-layout='f1-pit'] .hero-art { display:grid; }
+[data-layout='f1-pit'] .universe-hero { grid-template-columns: .8fr 1.2fr; min-height:360px; }
+[data-layout='f1-pit'] .hero-copy { width:100%; }
+.universe-preview .universe-ribbon { display:flex; flex-wrap:wrap; justify-content:center; gap:10px; padding:20px 4%; }
+.universe-category-button { background:transparent; border:1px solid currentColor; color:inherit; font:700 12px/1.4 Arial,sans-serif; cursor:pointer; padding:10px 16px; }
+.universe-category-button[aria-pressed='true'] { background:var(--ink); color:var(--paper); }
+.universe-category-button:focus-visible { outline:2px solid var(--accent); outline-offset:3px; }
+@media(max-width:600px) { [data-layout='f1-pit'] .universe-hero { min-height:250px; } .universe-category-button { padding:9px 12px; } }
+
+.universe-preview .hero-art.editorial-supplied-art { display:grid!important; grid-template-columns:repeat(3,minmax(0,1fr))!important; gap:12px; align-items:center; }
+.universe-preview .editorial-supplied-art figure { margin:0!important; grid-column:auto!important; grid-row:auto!important; transform:none!important; opacity:1!important; background:transparent!important; padding:0!important; }
+.universe-preview .editorial-supplied-art img { display:block; width:100%; height:auto!important; max-height:none!important; aspect-ratio:4/5; object-fit:contain; }
+@media(max-width:700px) { [data-layout='f1-pit'] .universe-hero { grid-template-columns:1fr!important; } .universe-preview .hero-art.editorial-supplied-art { gap:7px; } }
+
+/* ARTISTAS 06 adopts BTS Tour Rojo; BTS remains a catalog filter. */
+[data-layout='artists-launch-red'] .universe-hero { grid-template-columns: 1.1fr 1fr; background-image: radial-gradient(#ffffff22 .7px, transparent .7px); background-size: 5px 5px; }
+[data-layout='artists-launch-red'] .hero-copy h1 { font-style: italic; font-size: clamp(75px, 10vw, 145px); }
+[data-layout='artists-launch-red'] .hero-art { transform: rotate(-5deg); }
+[data-layout='artists-launch-red'] .hero-art figure { border: 5px solid #fff5e8; }
+[data-layout='artists-launch-red'] .bts-countdown { background: #191919; }
+[data-layout='artists-launch-red'] .hero-art figure:first-child { grid-row: span 2; }
+[data-layout='artists-launch-red'] .hero-art figure img { height: 100%; max-height: 490px; }
+[data-layout='artists-launch-red'] .hero-art figure:not(:first-child) img { max-height: 238px; }
+[data-layout="artists-launch-red"] .hero-art figcaption { font: 9px Arial, sans-serif; }
+[data-layout="artists-launch-red"] .bts-countdown { background: #191919; color: #fff5e8; }
+@media (max-width: 700px) {
+[data-layout='artists-launch-red'] .universe-hero { grid-template-columns: 1fr; }
+[data-layout='artists-launch-red'] .hero-art { transform: none; }
+[data-layout='artists-launch-red'] .hero-art figure img { height: 100%; max-height: 320px; }
+[data-layout='artists-launch-red'] .hero-art figure:not(:first-child) img { max-height: 150px; }
+}
+
+/* Selected storefront designs for TEST pre-publish. */
+.home-proposal-panel, .proposal-panel { display: none !important; }
+[data-layout='artists-launch-red'] .artist-bts-launch,
+[data-layout='artists-launch-red'] .universe-ribbon,
+[data-layout='artists-launch-red'] .universe-catalog,
+[data-layout='artists-launch-red'] .purchase-confidence,
+[data-layout='artists-launch-red'] .universe-end {
+--paper: #fff1df;
+--ink: #ba181e;
+--accent: #ba181e;
+background: var(--paper);
+color: var(--ink);
+}
+[data-layout='artists-launch-red'] .artist-launch-all,
+[data-layout='artists-launch-red'] .universe-category-button {
+color: #ba181e;
+border-color: #ba181e;
+}
+body[data-test-product-universe='artistas'] #modal-cart,
+body[data-test-product-universe='artistas'] #modal-cart .modal-body,
+body[data-test-product-universe='artistas'] #modal-cart .modal-header {
+background: #fff1df;
+color: #ba181e;
+}
+body[data-test-product-universe='artistas'] #modal-cart a,
+body[data-test-product-universe='artistas'] #modal-cart input {
+color: #ba181e;
+}
+body[data-test-product-universe='artistas'] #modal-cart .btn-primary {
+background: #ba181e;
+color: #fff1df;
+}
+/* Taste: preserve navy/gold for Updated; black/cyan for Cyberpunk.
+Native CSS, sharp geometry, existing brand typography; no new framework. */
+[data-layout='kumo-updated'], [data-layout='kumo-cyberpunk'] { font-family: Inter, Arial, sans-serif; --line: color-mix(in srgb, var(--ink) 22%, transparent); }
+[data-layout='kumo-updated'] .proposal-panel, [data-layout='kumo-cyberpunk'] .proposal-panel { background: var(--paper); color: var(--ink); border-color: var(--line); }
+[data-layout='kumo-updated'] .proposal-panel .proposal-back, [data-layout='kumo-cyberpunk'] .proposal-panel .proposal-back { color: inherit; }
+[data-layout='kumo-updated'] .proposal-options button, [data-layout='kumo-cyberpunk'] .proposal-options button { background: transparent; color: var(--ink); border-color: var(--line); border-radius: 0; }
+[data-layout='kumo-updated'] .proposal-options button[aria-pressed='true'], [data-layout='kumo-cyberpunk'] .proposal-options button[aria-pressed='true'] { background: var(--accent); color: var(--paper); border-color: var(--accent); }
+[data-layout='kumo-updated'] .universe-benefits, [data-layout='kumo-cyberpunk'] .universe-benefits { background: var(--paper); color: var(--ink); border-bottom: 1px solid var(--line); }
+[data-layout='kumo-updated'] .universe-masthead, [data-layout='kumo-cyberpunk'] .universe-masthead { justify-content: center; padding: 20px; }
+[data-layout='kumo-updated'] .universe-wordmark, [data-layout='kumo-cyberpunk'] .universe-wordmark { font: 32px Georgia, serif; }
+[data-layout='kumo-updated'] .universe-tagline, [data-layout='kumo-cyberpunk'] .universe-tagline { display: none; }
+[data-layout='kumo-updated'] .universe-announcement, [data-layout='kumo-cyberpunk'] .universe-announcement { background: var(--paper); color: var(--ink); }
+[data-layout='kumo-updated'] .universe-hero, [data-layout='kumo-cyberpunk'] .universe-hero { position: relative; display: grid; grid-template-columns: 1fr; padding: 0; min-height: 440px; height: clamp(440px, 39vw, 620px); isolation: isolate; overflow: hidden; }
+[data-layout='kumo-updated'] .hero-art, [data-layout='kumo-cyberpunk'] .hero-art { position: absolute; inset: 0; display: block; z-index: -2; }
+[data-layout='kumo-updated'] .kumo-cinema-image, [data-layout='kumo-cyberpunk'] .kumo-cinema-image { display: block; width: 100%; height: 100%; max-height: none; object-fit: cover; }
+[data-layout='kumo-updated'] .hero-copy { width: 49%; margin-left: auto; padding: 44px 8% 44px 0; align-self: center; }
+[data-layout='kumo-updated'] .universe-hero::after, [data-layout='kumo-cyberpunk'] .universe-hero::after { content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none; }
+[data-layout='kumo-updated'] .universe-hero::after { background: linear-gradient(90deg, transparent 20%, #0b102033 45%, #0b1020a6 100%); }
+[data-layout='kumo-updated'] .hero-copy h1 { font: 700 clamp(65px, 7vw, 112px)/1.12 Georgia, serif; letter-spacing: -.04em; margin: 15px 0 22px; color: #c8a56a; }
+[data-layout='kumo-updated'] .hero-copy > p:last-of-type { color: #eee7d8; }
+[data-layout='kumo-updated'] .hero-cta { background: #cbbc99; color: #0b1020 !important; }
+[data-layout='kumo-cyberpunk'] .hero-copy { width: 56%; padding: 44px 0 44px 6%; align-self: center; }
+[data-layout='kumo-cyberpunk'] .universe-hero::after { background: linear-gradient(90deg, #050607bd 0%, #05060755 43%, transparent 72%); }
+[data-layout='kumo-cyberpunk'] .hero-copy h1 { font: 900 clamp(80px, 10vw, 150px)/1.05 Impact, 'Arial Black', sans-serif; letter-spacing: -.035em; color: #64f5e7; text-shadow: 0 0 25px #64f5e733; margin: 16px 0 22px; }
+[data-layout='kumo-cyberpunk'] .hero-kicker { color: #64f5e7; font-family: monospace; }
+[data-layout='kumo-cyberpunk'] .hero-description { color: #e5eeed; }
+[data-layout='kumo-cyberpunk'] .hero-cta { background: #64f5e7; color: #050607 !important; border-radius: 0; }
+[data-layout='kumo-updated'] .hero-cta, [data-layout='kumo-cyberpunk'] .hero-cta { white-space: nowrap; font: 700 12px/1.2 Inter, Arial, sans-serif; padding: 16px 24px; transition: transform .18s, box-shadow .18s; }
+[data-layout='kumo-updated'] .hero-cta:hover, [data-layout='kumo-cyberpunk'] .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 6px 24px color-mix(in srgb, var(--accent) 20%, transparent); }
+[data-layout='kumo-updated'] .hero-cta:active, [data-layout='kumo-cyberpunk'] .hero-cta:active { transform: scale(.98); }
+[data-layout='kumo-updated'] .universe-ribbon, [data-layout='kumo-cyberpunk'] .universe-ribbon { background: var(--paper); color: var(--ink); justify-content: center; border-block: 1px solid var(--line); }
+[data-layout='kumo-updated'] .universe-catalog, [data-layout='kumo-cyberpunk'] .universe-catalog { padding-top: 36px; }
+[data-layout='kumo-updated'] .catalog-title h2, [data-layout='kumo-cyberpunk'] .catalog-title h2 { font: 28px/1.2 Inter, Arial, sans-serif; }
+[data-layout='kumo-updated'] .universe-product h3, [data-layout='kumo-cyberpunk'] .universe-product h3 { font-size: 16px; line-height: 1.4; }
+[data-layout='kumo-updated'] .product-visual, [data-layout='kumo-cyberpunk'] .product-visual { background: var(--paper); }
+[data-layout='kumo-updated'] .product-price, [data-layout='kumo-cyberpunk'] .product-price { display: block; color: var(--ink); }
+[data-layout='kumo-updated'] .product-discover, [data-layout='kumo-cyberpunk'] .product-discover { display: inline-block; margin-top: 14px; padding: 9px 13px; background: var(--accent); color: var(--paper); opacity: 1; border-radius: 0; }
+[data-layout='kumo-cyberpunk'] .universe-product { border-bottom: 1px solid #64f5e733; padding-bottom: 20px; }
+[data-layout='kumo-cyberpunk'] .kumo-promotion { background: #64f5e7; color: #050607; border-radius: 0; }
+[data-layout='kumo-updated'] .catalog-tools input, [data-layout='kumo-updated'] .catalog-tools select, [data-layout='kumo-cyberpunk'] .catalog-tools input, [data-layout='kumo-cyberpunk'] .catalog-tools select { background: var(--paper); color: var(--ink); border-color: var(--line); border-radius: 0; }
+[data-layout='kumo-updated'] .catalog-search::placeholder, [data-layout='kumo-cyberpunk'] .catalog-search::placeholder { color: var(--ink); opacity: .85; }
+body:has([data-layout='kumo-updated']) header { background: #0b1020; color: #c8a56a; }
+body:has([data-layout='kumo-cyberpunk']) header { background: #050607; color: #e5eeed; }
+body:has([data-layout='kumo-updated']) header a { color: #c8a56a; }
+body:has([data-layout='kumo-cyberpunk']) header a { color: #e5eeed; }
+@media (max-width: 600px) {
+[data-layout='kumo-updated'] .universe-hero, [data-layout='kumo-cyberpunk'] .universe-hero { height: auto; min-height: 480px; align-items: end; }
+[data-layout='kumo-updated'] .hero-copy, [data-layout='kumo-cyberpunk'] .hero-copy { width: 100%; margin: 0; padding: 190px 24px 32px; align-self: end; }
+[data-layout='kumo-updated'] .kumo-cinema-image { object-position: 28% center; }
+[data-layout='kumo-cyberpunk'] .kumo-cinema-image { object-position: 76% center; }
+[data-layout='kumo-updated'] .universe-hero::after { background: linear-gradient(0deg, #0b1020 0%, #0b1020c9 32%, #0b102008 80%); }
+[data-layout='kumo-cyberpunk'] .universe-hero::after { background: linear-gradient(0deg, #050607 0%, #050607c9 32%, #05060708 80%); }
+[data-layout='kumo-updated'] .hero-copy h1 { font-size: 66px !important; }
+[data-layout='kumo-cyberpunk'] .hero-copy h1 { font-size: 82px !important; }
+[data-layout='kumo-updated'] .hero-description, [data-layout='kumo-cyberpunk'] .hero-description { max-width: 290px; line-height: 1.5; }
+}
+@media (prefers-reduced-motion: reduce) {
+[data-layout='kumo-updated'] .hero-cta, [data-layout='kumo-cyberpunk'] .hero-cta { transition: none; transform: none; }
+}
+/* KUMØ (06/10): sin la barra "KUMØ / 雲" ni el logotipo superior; arriba quedan solo los beneficios y el banner. */
+.universe-preview[data-universe='kumo'] .universe-announcement, .universe-preview[data-universe='kumo'] .universe-masthead { display: none; }
+/* Taste proposal. Existing brand tokens and sharp corners; no new libraries.
+Scoped to the explicit mock URL. Layer 1: photography; layer 2: existing copy. */
+.portal-home[data-banner-mock] .portal-banner.portal-football,
+.portal-home[data-banner-mock] .portal-banner.portal-artists {
+min-height: 440px;
+padding: 30px;
+transform: none;
+box-shadow: none;
+border: 0;
+align-items: start;
+}
+.portal-home[data-banner-mock] .portal-football-art,
+.portal-home[data-banner-mock] .portal-record-art,
+.portal-home[data-banner-mock] .portal-banner.portal-football .portal-index,
+.portal-home[data-banner-mock] .portal-banner.portal-artists .portal-index { display: none; }
+.portal-home[data-banner-mock] .portal-banner.portal-football {
+background: #087480;
+color: #fff5cb !important;
+}
+.portal-home[data-banner-mock] .portal-banner.portal-football h2 {
+font: 400 clamp(110px, 13vw, 190px)/.95 Impact, 'Arial Black', sans-serif;
+letter-spacing: -.055em;
+color: inherit;
+text-shadow: none;
+margin: 0 0 24px;
+}
+.portal-home[data-banner-mock] .portal-banner-copy > p {
+font: 14px/1.5 Arial, sans-serif;
+letter-spacing: 0;
+max-width: 170px;
+margin: 0;
+}
+.portal-home[data-banner-mock] .portal-enter {
+margin-top: 24px;
+padding-bottom: 8px;
+font-size: 11px;
+}
+.portal-home[data-banner-mock] .banner-mock-images {
+position: absolute;
+z-index: 1;
+right: 24px;
+top: 36px;
+bottom: 32px;
+width: 51%;
+display: grid;
+grid-template-columns: repeat(2, minmax(0, 1fr));
+gap: 12px;
+align-items: center;
+pointer-events: none;
+}
+.portal-home[data-banner-mock] .banner-mock-images figure { margin: 0; min-width: 0; }
+.portal-home[data-banner-mock] .banner-mock-images img {
+display: block;
+width: 100%;
+height: auto;
+aspect-ratio: 4 / 5;
+object-fit: cover;
+background: #f3eee2;
+transition: transform .25s ease;
+}
+.portal-home[data-banner-mock] .banner-mock-images figcaption {
+margin-top: 10px;
+font: 10px/1.4 Arial, sans-serif;
+}
+.portal-home[data-banner-mock] .portal-banner.portal-football figure:first-child { align-self: start; margin-top: 20px; }
+.portal-home[data-banner-mock] .portal-banner.portal-football figure:last-child { align-self: end; margin-bottom: 18px; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists {
+background: #fff1df;
+color: #ba181e !important;
+border: 1px solid #ba181e;
+}
+.portal-home[data-banner-mock] .portal-banner.portal-artists .portal-banner-copy { width: 100%; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists h2 {
+font: 400 clamp(38px, 5vw, 76px)/1 Impact, 'Arial Black', sans-serif;
+letter-spacing: -.02em;
+margin: 0 0 18px;
+}
+.portal-home[data-banner-mock] .portal-banner.portal-artists .banner-mock-images {
+width: 59%;
+top: 134px;
+bottom: 24px;
+align-items: end;
+}
+.portal-home[data-banner-mock] .portal-banner.portal-artists figure:first-child { align-self: start; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists .portal-enter { position: absolute; top: 292px; left: 0; }
+@media (hover: hover) and (prefers-reduced-motion: no-preference) {
+.portal-home[data-banner-mock] .portal-banner:hover .banner-mock-images img { transform: translateY(-5px); }
+}
+@media (max-width: 767px) {
+.portal-home[data-banner-mock] .portal-banners { grid-template-columns: 1fr !important; }
+.portal-home[data-banner-mock] .portal-banner.portal-football,
+.portal-home[data-banner-mock] .portal-banner.portal-artists { min-height: 400px; padding: 24px !important; }
+.portal-home[data-banner-mock] .portal-banner.portal-football h2 { font-size: 126px !important; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists h2 { font-size: 52px !important; }
+.portal-home[data-banner-mock] .portal-banner-copy > p { font-size: 13px; max-width: 125px; }
+.portal-home[data-banner-mock] .banner-mock-images { width: 48%; right: 20px; gap: 8px; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists .banner-mock-images { width: 58%; top: 146px; }
+.portal-home[data-banner-mock] .portal-banner.portal-artists .portal-enter { top: 267px; }
+}
+/* Paletas del mock, con la composición original de la landing actual. */
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-banner.portal-football {
+background: #087480;
+color: #fff5cb !important;
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-football h2 {
+color: #fff5cb;
+text-shadow: 3px 3px #054b53;
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-football-art {
+background-image: radial-gradient(#fff5cb33 .8px, transparent .8px);
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-football-art i {
+background: #fff5cb;
+color: #087480;
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-banner.portal-artists {
+background: #fff1df;
+color: #85131b !important;
+opacity: 1 !important;
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-artists .portal-banner-copy,
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-artists .portal-banner-copy > * {
+color: #85131b !important;
+opacity: 1;
+}
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-record-art span {
+background: repeating-radial-gradient(#ba181e 0 5px, #fff1df 5px 6px);
+border-color: #ba181e;
+color: #fff1df;
+}
+/* En dos columnas móviles los discos atraviesan el texto: mantenerlos como marca de agua. */
+@media (max-width: 600px) {
+.portal-home[data-home-layout='covers']:not([data-banner-mock]) .portal-artists .portal-record-art {
+opacity: .08;
+}
+}
+/* Mock 90 Crema (06/10): debajo del banner se usa la misma paleta que Don Futbol (fondo #087480, texto crema).
+Las reglas crema anteriores quedaron en mock-coleccion-backup-2026-10-06/universe-mock-crema.css. */
