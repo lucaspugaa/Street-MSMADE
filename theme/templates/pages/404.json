@@ -1,0 +1,44 @@
+{
+  "sections": {
+    "main_404": {
+      "type": "main-404",
+      "settings": {}
+    },
+    "featured_products": {
+      "type": "product-list",
+      "settings": {
+        "alignment": "center",
+        "section_width": "full",
+        "gap": 32,
+        "horizontal_padding": 16,
+        "background_color": "transparent"
+      },
+      "blocks": {
+        "heading": {
+          "type": "heading",
+          "settings": {
+            "title": "t:defaults.heading",
+            "size": "h3"
+          }
+        },
+        "products": {
+          "type": "products",
+          "settings": {
+            "products_source": null,
+            "format": "grid",
+            "columns": "4",
+            "columns_mobile": "2"
+          }
+        }
+      },
+      "block_order": [
+        "heading",
+        "products"
+      ]
+    }
+  },
+  "order": [
+    "main_404",
+    "featured_products"
+  ]
+}

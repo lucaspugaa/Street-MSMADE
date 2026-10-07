@@ -1,0 +1,101 @@
+{
+  "type": "header",
+  "name": "t:names.header",
+  "sections": {
+    "navigation_bar": {
+      "type": "navigation-bar",
+      "settings": {
+        "section_width": "full",
+        "horizontal_padding": 32,
+        "background_color": "#000000"
+      },
+      "blocks": {
+        "nav_icon_text": {
+          "type": "nav-icon-text-group",
+          "settings": {
+            "alignment": "center",
+            "gap": 24
+          },
+          "blocks": {
+            "item_1": {
+              "type": "nav-icon-text-item",
+              "settings": {
+                "icon_source": "design",
+                "icon": "shipping",
+                "description": "t:defaults.text"
+              }
+            },
+            "item_2": {
+              "type": "nav-icon-text-item",
+              "settings": {
+                "icon_source": "design",
+                "icon": "card",
+                "description": "t:defaults.text"
+              }
+            }
+          },
+          "block_order": [
+            "item_1",
+            "item_2"
+          ]
+        }
+      },
+      "block_order": [
+        "nav_icon_text"
+      ]
+    },
+    "header": {
+      "type": "header",
+      "settings": {
+        "logo_position_desktop": "center",
+        "section_width": "full",
+        "vertical_padding": 12,
+        "horizontal_padding": 40,
+        "use_different_mobile_padding": true,
+        "vertical_padding_mobile": 16,
+        "horizontal_padding_mobile": 28,
+        "background_color": "#FFFFFF",
+        "text_color": "#000000"
+      },
+      "blocks": {
+        "logo": {
+          "type": "header-logo",
+          "settings": {
+            "height": 42,
+            "use_different_mobile_height": false
+          }
+        },
+        "utilities": {
+          "type": "header-utilities",
+          "settings": {
+            "format": "icons",
+            "search_type": "icon",
+            "cart_icon": "bag",
+            "show_languages_header": false
+          }
+        },
+        "navigation": {
+          "type": "header-navigation",
+          "settings": {
+            "nav_uppercase": true,
+            "show_categories_link": false,
+            "show_mobile_categories": false,
+            "nav_alignment_desktop": "center",
+            "vertical_padding": 14,
+            "nav_divider_color": "transparent",
+            "show_secondary_menu": false
+          }
+        }
+      },
+      "block_order": [
+        "logo",
+        "utilities",
+        "navigation"
+      ]
+    }
+  },
+  "order": [
+    "navigation_bar",
+    "header"
+  ]
+}

@@ -130,12 +130,12 @@ Leyenda: **[HUMANO]** lo hace la persona · **[CLAUDE]** Claude Code · **[CODEX
 - [x] [HUMANO] Confirmar que el plan incluye diseño 100% flexible.
 - [x] [HUMANO] Indicar si TEST es **clásico** (FTP) o **por secciones** (fork). Anotarlo en `AGENTS.md` > "Datos del proyecto".
 - [x] [HUMANO] Duplicar el tema como respaldo antes de tocar nada (`nuvemshop theme clone` o copia desde el panel).
-- [ ] [HUMANO] Clásico: abrir el FTP en el panel y pasar las credenciales **por terminal**, nunca al repo.
+- [x] ~~[HUMANO] Clásico: abrir el FTP~~ (no aplica: TEST es por secciones; se hizo `authorize`) en el panel y pasar las credenciales **por terminal**, nunca al repo.
 - [x] [CLAUDE] `git init`, `.gitignore`, primer commit con `ROADMAP.md`, `AGENTS.md`, `CLAUDE.md`.
-- [ ] [CLAUDE] Bajar TEST a `theme/`:
+- [x] [CLAUDE] Bajar TEST a `theme/`: (pull de "TEST (Copia)" id 14597412, todavía sin fork)
   - Clásico: `nuvemshop theme ftp setup --ftp-server <host> --ftp-username <user> --ftp-password <pass> --store-url <url>` (lo corre el humano) y luego `nuvemshop theme ftp pull`.
   - Por secciones: `nuvemshop theme authorize` → `nuvemshop theme list` → `nuvemshop theme fork` → `nuvemshop theme pull --theme-id <ID_TEST>`.
-- [ ] [CLAUDE] Commit "TEST original" + tag `v0-original`.
+- [x] [CLAUDE] Commit "TEST original" + tag `v0-original`.
 - [ ] [CLAUDE] Capturar `reference/` con Playwright: home, categoría, producto, carrito × 1440 px y 390 px.
 - **Cierre:** el repo tiene TEST completo, el tag `v0-original` y las capturas de referencia.
 

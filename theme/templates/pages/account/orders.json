@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "account_orders": {
+      "type": "main-account-orders",
+      "settings": {}
+    }
+  },
+  "order": [
+    "heading",
+    "account_orders"
+  ]
+}

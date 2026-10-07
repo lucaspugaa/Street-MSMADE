@@ -1,0 +1,19 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "product_list": {
+      "type": "main-products-grid",
+      "settings": {
+        "columns_mobile": "2",
+        "columns": "4",
+        "pagination": "infinite"
+      }
+    }
+  },
+  "order": [
+    "heading",
+    "product_list"
+  ]
+}

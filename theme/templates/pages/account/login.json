@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "login_form": {
+      "type": "main-login",
+      "settings": {}
+    }
+  },
+  "order": [
+    "heading",
+    "login_form"
+  ]
+}
