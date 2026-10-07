@@ -1,0 +1,2 @@
+# Guardar los archivos tal cual (sin conversión CRLF) para no generar diffs falsos contra el FTP
+* -text
