@@ -11,8 +11,7 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var connection = configuration.GetConnectionString("Default")
-            ?? throw new InvalidOperationException("Falta ConnectionStrings:Default.");
+        var connection = PostgresConnectionString.Normalize(configuration.GetConnectionString("Default"));
 
         services.AddSingleton(_ => NpgsqlDataSource.Create(connection));
         services.AddDbContextFactory<MismadeDbContext>(options => options.UseNpgsql(connection));

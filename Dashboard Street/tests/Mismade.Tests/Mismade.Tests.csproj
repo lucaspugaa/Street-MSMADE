@@ -6,5 +6,6 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.4" PrivateAssets="all" />
     <ProjectReference Include="../../src/Mismade.Domain/Mismade.Domain.csproj" />
     <ProjectReference Include="../../src/Mismade.Application/Mismade.Application.csproj" />
+    <ProjectReference Include="../../src/Mismade.Infrastructure/Mismade.Infrastructure.csproj" />
   </ItemGroup>
 </Project>

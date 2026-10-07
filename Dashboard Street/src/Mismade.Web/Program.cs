@@ -29,7 +29,8 @@ var mode = builder.Configuration["Jobs:Mode"] ?? "Endpoint";
 if (mode.Equals("Hangfire", StringComparison.OrdinalIgnoreCase))
 {
     builder.Services.AddHangfire(configuration => configuration.UsePostgreSqlStorage(
-        options => options.UseNpgsqlConnection(builder.Configuration.GetConnectionString("Default"))));
+        options => options.UseNpgsqlConnection(
+            PostgresConnectionString.Normalize(builder.Configuration.GetConnectionString("Default")))));
     builder.Services.AddHangfireServer();
     builder.Services.AddScoped<ISyncQueue, HangfireSyncQueue>();
 }
