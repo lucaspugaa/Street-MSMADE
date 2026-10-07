@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.*
+!.env.example
+# credenciales / config local de la CLI de Tiendanube
+.nuvemshop/
+.tiendanube/
+# capturas temporales de comparación visual
+reference/_diff/
+reference/_current/
+.DS_Store
+Thumbs.db
+# copias sueltas de la config (la vigente es .claude/settings.json)
+claude-settings.json
+Claude outputs/

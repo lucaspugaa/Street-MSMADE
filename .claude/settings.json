@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run watch)",
+      "Bash(npm run lint)",
+      "Bash(npm run visual)",
+      "Bash(nuvemshop theme diff:*)",
+      "Bash(nuvemshop theme ftp diff:*)",
+      "Bash(nuvemshop theme preview)",
+      "Bash(nuvemshop theme list)",
+      "Bash(nuvemshop theme current)",
+      "Bash(git status)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)"
+    ],
+    "ask": [
+      "Bash(nuvemshop theme push:*)",
+      "Bash(nuvemshop theme ftp push:*)",
+      "Bash(nuvemshop theme pull:*)",
+      "Bash(nuvemshop theme ftp pull:*)",
+      "Bash(nuvemshop theme fork)",
+      "Bash(git push:*)",
+      "PowerShell(nuvemshop theme push:*)",
+      "PowerShell(nuvemshop theme ftp push:*)",
+      "PowerShell(nuvemshop theme pull:*)",
+      "PowerShell(nuvemshop theme ftp pull:*)",
+      "PowerShell(git push:*)"
+    ],
+    "deny": [
+      "Bash(nuvemshop theme publish:*)",
+      "Bash(nuvemshop theme delete:*)",
+      "Bash(nuvemshop theme update:*)",
+      "Bash(tiendanube theme publish:*)",
+      "Bash(tiendanube theme delete:*)",
+      "Bash(tiendanube theme update:*)",
+      "Bash(git push --force:*)",
+      "PowerShell(nuvemshop theme publish:*)",
+      "PowerShell(nuvemshop theme delete:*)",
+      "PowerShell(nuvemshop theme update:*)",
+      "PowerShell(tiendanube theme publish:*)",
+      "PowerShell(tiendanube theme delete:*)",
+      "PowerShell(tiendanube theme update:*)",
+      "PowerShell(git push --force:*)",
+      "Read(./.env)"
+    ]
+  }
+}
