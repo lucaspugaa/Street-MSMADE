@@ -14,8 +14,10 @@ function init() {
   });
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', init, { once: true });
-} else {
+// app.js se carga al final del <body> (theme/layouts/layout.tpl): el contenido ya está en el DOM,
+// así que se inicializa enseguida, como los scripts inline originales (sin esperar DOMContentLoaded).
+if (document.body) {
   init();
+} else {
+  document.addEventListener('DOMContentLoaded', init, { once: true });
 }

@@ -1,0 +1,11 @@
+/* Universo ARTISTAS / MÚSICA · categoría */
+#MainContent:has(.universe-artistas){background:#eee6db;color:#2a173c;--universe-accent:#bc8cf5}
+#MainContent:has(.universe-artistas) .section-category-list{color:#2a173c}
+
+.universe-artistas h1{font-family:Georgia,serif;font-weight:400;font-style:italic;letter-spacing:-.055em}
+.universe-artistas .universe-picture{transform:rotate(-3deg);border-radius:180px 180px 12px 12px;background:#bc8cf5}
+.universe-artistas .universe-picture img{border-radius:170px 170px 8px 8px}
+.universe-artistas .universe-nav a{font-family:Georgia,serif;font-size:26px}
+.universe-artistas .universe-eyebrow{color:#674b80}
+.universe-artistas .universe-cta{border-radius:999px;background:#2a173c;color:#fff}
+@media(max-width:700px){.universe-artistas .universe-picture{transform:none}}

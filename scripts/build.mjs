@@ -2,7 +2,14 @@ import { build, context } from 'esbuild';
 import { fileURLToPath } from 'node:url';
 
 const JS_OUTPUT = 'theme/static/js/app.js';
-const CSS_OUTPUT = 'theme/static/css/app.css';
+const CSS_OUTPUT_DIR = 'theme/static/css';
+// app.css (global) + page-<template>.css (solo en esa plantilla; ver theme/layouts/layout.tpl).
+const CSS_ENTRIES = {
+  'app': 'src/styles/app.css',
+  'page-home': 'src/styles/pages/home.css',
+  'page-category': 'src/styles/pages/category.css',
+  'page-product': 'src/styles/pages/product.css',
+};
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 
 const builds = [
@@ -18,8 +25,8 @@ const builds = [
   },
   {
     absWorkingDir: ROOT,
-    entryPoints: ['src/styles/main.css'],
-    outfile: CSS_OUTPUT,
+    entryPoints: CSS_ENTRIES,
+    outdir: CSS_OUTPUT_DIR,
     bundle: true,
     minify: true,
     sourcemap: false,

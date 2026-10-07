@@ -44,8 +44,16 @@
     {% include 'snippets/structured-data/structured-data-organization.tpl' %}
     {% include 'snippets/structured-data/structured-data.tpl' %}
 
-    {# MSMADE: estilos de los módulos (generado por npm run build desde src/styles).
-       Va al final del head: el CSS original estaba inline en el body, después de todo lo demás. #}
+    {# MSMADE: estilos de los módulos (generados por npm run build desde src/styles).
+       Van al final del head: el CSS original estaba inline en el body, después de todo lo demás.
+       Primero el de la plantilla (antes: bloques de código de cada página) y después el global (antes: footer). #}
+    {% if template == 'home' %}
+      <link rel="stylesheet" href="{{ 'css/page-home.css' | static_url }}">
+    {% elseif template == 'category' %}
+      <link rel="stylesheet" href="{{ 'css/page-category.css' | static_url }}">
+    {% elseif template == 'product' %}
+      <link rel="stylesheet" href="{{ 'css/page-product.css' | static_url }}">
+    {% endif %}
     <link rel="stylesheet" href="{{ 'css/app.css' | static_url }}">
 
   </head>

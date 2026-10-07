@@ -66,7 +66,6 @@ async function settle(page, stability) {
   await page.waitForTimeout(1000);
 }
 
-/* global document, window -- corre dentro del navegador */
 async function waitForImages(page) {
   await page.evaluate(async () => {
     // El tema usa lazysizes (.lazyload) y el lazy de Swiper (.swiper-lazy): se fuerzan para que todo esté en la captura.

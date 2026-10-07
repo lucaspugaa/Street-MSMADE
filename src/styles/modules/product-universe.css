@@ -1,0 +1,21 @@
+/* Universo · ficha de producto (bloque theme/blocks/product-universe.tpl).
+   Base común; cada universo define su paleta y tipografías como variables sobre #MainContent. */
+#MainContent:has(.product-artistas){background:#eee6db;color:#222;--product-universe-bg:#eee6db;--product-universe-fg:#2a173c;--product-universe-accent:#bc8cf5;--product-universe-guide-radius:48px 0 48px 0;--product-universe-title-font:Georgia,serif;--product-universe-name-font:Georgia,serif}
+#MainContent:has(.product-futbol){background:#eef1e3;color:#222;--product-universe-bg:#12392f;--product-universe-fg:#f7f4e9;--product-universe-accent:#d3eb66;--product-universe-guide-radius:8px;--product-universe-title-font:Arial,sans-serif;--product-universe-name-font:Impact,Arial,sans-serif}
+#MainContent:has(.product-kumo){background:#f3eee8;color:#222;--product-universe-bg:#111116;--product-universe-fg:#faf7ef;--product-universe-accent:#ed6547;--product-universe-guide-radius:8px;--product-universe-title-font:Arial,sans-serif;--product-universe-name-font:Arial,sans-serif}
+
+.product-universe{display:flex;justify-content:space-between;flex-wrap:wrap;gap:16px;padding:20px 24px;background:var(--product-universe-bg);color:var(--product-universe-fg);border-bottom:5px solid var(--product-universe-accent);font-size:12px;letter-spacing:.08em}
+.product-universe a{color:inherit}
+.product-universe-guide{padding:32px 24px;background:var(--product-universe-accent);color:#171717;border-radius:var(--product-universe-guide-radius)}
+.product-universe-guide h2{font-family:var(--product-universe-title-font);font-size:clamp(24px,3vw,40px);line-height:1.2;margin:0 0 24px}
+.product-universe-guide>div{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.product-universe-guide p{font-size:14px;line-height:1.6}
+.product-universe-guide a{color:inherit;text-decoration:underline}
+#MainContent:has(.product-universe) .product-name{font-family:var(--product-universe-name-font);letter-spacing:-.02em}
+#MainContent:has(.product-universe) #product_form{border-top:3px solid var(--product-universe-accent);padding-top:20px}
+
+@media(max-width:700px){
+  .product-universe-guide>div{grid-template-columns:1fr;gap:4px}
+  .product-universe{padding:16px}
+  .product-universe-guide{padding:24px}
+}
