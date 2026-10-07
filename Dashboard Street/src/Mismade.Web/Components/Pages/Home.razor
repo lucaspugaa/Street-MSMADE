@@ -6,7 +6,8 @@
 @inject IDashboardNotifier Notifier
 @inject ISyncQueue Queue
 @inject AuthenticationStateProvider Authentication
-@inject IOptions<TiendanubeOptions> Tiendanube
+@inject ITiendanubeCredenciales Credenciales
+@inject ITiendanubeClient Tiendanube
 @inject IOptions<MetaOptions> Meta
 @inject IDbContextFactory<MismadeDbContext> Db
 
@@ -17,6 +18,11 @@
     <h1>Hola@(string.IsNullOrEmpty(usuario) ? "" : $", {usuario}")</h1>
     <p>Desde acá ves si los datos están al día y qué falta conectar para que el panel se complete.</p>
 </header>
+
+@if (notaTiendanube is not null)
+{
+    <div class="note" role="status">@notaTiendanube</div>
+}
 
 <div class="grid">
     <section class="card" aria-labelledby="sync-title">
@@ -82,6 +88,12 @@
                 </li>
             }
         </ul>
+        @if (!tiendanubeConectada)
+        {
+            <AuthorizeView Roles="Owner">
+                <a href="/tiendanube/conectar" class="btn ghost" data-enhance-nav="false">Conectar Tiendanube</a>
+            </AuthorizeView>
+        }
     </section>
 </div>
 
@@ -96,6 +108,16 @@
     private string? usuario;
     private bool disposed;
     private bool integracionesListas;
+    private bool tiendanubeConectada;
+    [SupplyParameterFromQuery(Name = "tiendanube")]
+    public string? TiendanubeResultado { get; set; }
+    private string? notaTiendanube => TiendanubeResultado switch
+    {
+        "ok" => "Tiendanube quedó conectada.",
+        "error" => "No se pudo conectar Tiendanube. Probá de nuevo.",
+        "config" => "Faltan Tiendanube__AppId y Tiendanube__ClientSecret en Render.",
+        _ => null
+    };
     private List<Check> checks = [];
 
     private bool corriendo => ultima?.Status == EstadoJob.Running;
@@ -111,9 +133,21 @@
 
     private async Task CargarChecksAsync()
     {
-        var tn = Tiendanube.Value;
         var meta = Meta.Value;
-        var tiendanubeOk = !string.IsNullOrWhiteSpace(tn.StoreId) && !string.IsNullOrWhiteSpace(tn.AccessToken);
+        var tiendanubeOk = await Credenciales.GetAsync(CancellationToken.None) is not null;
+        tiendanubeConectada = tiendanubeOk;
+        var tienda = "Conectada";
+        if (tiendanubeOk)
+        {
+            try
+            {
+                tienda = $"Conectada a {await Tiendanube.GetStoreNameAsync(CancellationToken.None)}";
+            }
+            catch (Exception)
+            {
+                tienda = "Conectada";
+            }
+        }
         var metaOk = !string.IsNullOrWhiteSpace(meta.SystemUserToken)
             && !string.IsNullOrWhiteSpace(meta.StreetAccountId) && !string.IsNullOrWhiteSpace(meta.KumoAccountId);
 
@@ -125,8 +159,8 @@
         [
             new("Base de datos", true, "Conectada y al día.", ""),
             new("Tiendanube", tiendanubeOk,
-                "Credenciales cargadas.",
-                "Falta crear la app privada en Tiendanube y cargar sus credenciales en Render."),
+                tienda,
+                "Falta conectar Tiendanube."),
             new("Meta Ads (Street y Kumo)", metaOk,
                 "Token y cuentas cargados.",
                 "Falta generar el token de Meta y cargar las cuentas de Street y Kumo en Render."),

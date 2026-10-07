@@ -26,6 +26,12 @@ services:
         sync: false
       - key: Tiendanube__StoreId
         sync: false
+      - key: Tiendanube__AppId
+        sync: false
+      - key: Tiendanube__ClientSecret
+        sync: false
+      - key: Tiendanube__UserAgent
+        value: MISMADE Dashboard
       - key: Tiendanube__AccessToken
         sync: false
       - key: Meta__SystemUserToken

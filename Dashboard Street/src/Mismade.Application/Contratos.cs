@@ -2,18 +2,27 @@ using Mismade.Domain;
 
 namespace Mismade.Application;
 
-// TODO: ampliar los DTO cuando se implementen las integraciones.
-public record PedidoTiendanube(long OrderNumber, decimal Total);
-public record VarianteTiendanube(long ProductId, long VariantId, int Stock);
+public record PedidoTiendanube(long Id, long Number, DateTimeOffset CreatedAt, decimal Total,
+    string PaymentStatus, string? Gateway, string? ShippingOption, string? TrackingNumber,
+    IReadOnlyList<LineaPedido> Productos);
+public record LineaPedido(long ProductId, long VariantId, int Quantity);
+public record VarianteTiendanube(long ProductId, long VariantId, int? Stock);
 public record MetaInsight(DateOnly Fecha, decimal Gasto);
 public enum CuentaMeta { Street, Kumo }
 
 public interface ITiendanubeClient
 {
+    Task<string> GetStoreNameAsync(CancellationToken ct);
     Task<IReadOnlyList<PedidoTiendanube>> GetOrdersAsync(long desdeOrderNumber, CancellationToken ct);
     Task<IReadOnlyList<VarianteTiendanube>> GetProductVariantsAsync(long productId, CancellationToken ct);
     /// <summary>Envía el stock en tandas de hasta 50 variantes.</summary>
     Task UpdateStockAsync(IReadOnlyList<VarianteTiendanube> variantes, CancellationToken ct);
+}
+
+public interface ITiendanubeCredenciales
+{
+    Task<(long StoreId, string Token)?> GetAsync(CancellationToken ct);
+    Task SaveAsync(long storeId, string token, string scope, string connectedBy, CancellationToken ct);
 }
 
 public interface IMetaAdsClient

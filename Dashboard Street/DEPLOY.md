@@ -23,9 +23,23 @@ Todo lo que se puede automatizar ya está en el repo. Lo que queda son las altas
 3. Completá lo que pide:
    - `ConnectionStrings__Default`: la cadena de Neon.
    - `Seed__OwnerUser` y `Seed__OwnerPassword`: el usuario de Lucas. La clave necesita mayúscula, minúscula, número y símbolo.
-   - Tiendanube y Meta: podés dejarlos vacíos hasta implementar esas integraciones.
+   - `Tiendanube__AppId` y `Tiendanube__ClientSecret`: de la app creada en Partners (ver abajo).
+   - `Tiendanube__UserAgent`: nombre de la app y email o URL de contacto; default `MISMADE Dashboard`.
+   - `Tiendanube__StoreId` y `Tiendanube__AccessToken`: opcionales; juntos reemplazan las credenciales guardadas por OAuth.
+   - Meta: podés dejar sus variables vacías hasta implementar esa integración.
 4. Esperá el primer deploy y entrá a `https://<servicio>.onrender.com`. Iniciá sesión con el Owner.
 5. En **Environment**, borrá `Seed__OwnerPassword` (ya no se usa).
+
+### Conexión de Tiendanube
+1. En [partners.tiendanube.com](https://partners.tiendanube.com), creá la app.
+2. Configurá el redirect de instalación como `https://<servicio>.onrender.com/tiendanube/callback`.
+3. Habilitá los scopes `read_orders`, `read_products`, `write_products`.
+4. Copiá el AppId y ClientSecret a `Tiendanube__AppId` y `Tiendanube__ClientSecret` en Render > Environment.
+5. Entrá al dashboard como Owner y pulsá **Conectar Tiendanube**. Autorizá la tienda; Inicio confirma la conexión.
+
+El token se guarda cifrado en PostgreSQL junto con las claves de Data Protection. No copies tokens ni secretos al repo.
+La cookie OAuth es HttpOnly, Secure, SameSite=Lax y vence a los diez minutos; usá HTTPS.
+La actualización batch de stock está prevista para un único depósito; múltiples depósitos necesitan IDs de ubicación.
 
 ### 3. Disparador del job (elegí uno)
 **cron-job.org** (más puntual):

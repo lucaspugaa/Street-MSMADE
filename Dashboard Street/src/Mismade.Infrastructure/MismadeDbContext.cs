@@ -11,6 +11,7 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
     public DbSet<JobRun> JobRuns => Set<JobRun>();
+    public DbSet<TiendanubeConexion> TiendanubeConexiones => Set<TiendanubeConexion>();
     public DbSet<StockRemera> StockRemeras => Set<StockRemera>();
     public DbSet<StockManualPool> StockManualPools => Set<StockManualPool>();
     public DbSet<StockVariantMap> StockVariantMaps => Set<StockVariantMap>();
@@ -37,6 +38,10 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<TiendanubeConexion>().ToTable("TiendanubeConexiones",
+            table => table.HasCheckConstraint("CK_TiendanubeConexion_Unica", "\"Id\" = 1"));
+        modelBuilder.Entity<TiendanubeConexion>().Property(x => x.Id).ValueGeneratedNever();
 
         foreach (var type in typeof(Entidad).Assembly.GetTypes()
             .Where(t => t.IsClass && !t.IsAbstract && typeof(Entidad).IsAssignableFrom(t)))

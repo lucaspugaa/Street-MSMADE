@@ -931,6 +931,37 @@ namespace Mismade.Infrastructure.Migrations
                     b.ToTable("SyncWatermarks");
                 });
 
+            modelBuilder.Entity("Mismade.Domain.TiendanubeConexion", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("AccessTokenProtegido")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ConnectedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ConnectedBy")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Scope")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("StoreId")
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("TiendanubeConexiones", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_TiendanubeConexion_Unica", "\"Id\" = 1");
+                        });
+                });
+
             modelBuilder.Entity("Mismade.Domain.VentaNegro", b =>
                 {
                     b.Property<Guid>("Id")

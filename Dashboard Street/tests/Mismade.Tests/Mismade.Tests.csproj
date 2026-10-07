@@ -7,5 +7,6 @@
     <ProjectReference Include="../../src/Mismade.Domain/Mismade.Domain.csproj" />
     <ProjectReference Include="../../src/Mismade.Application/Mismade.Application.csproj" />
     <ProjectReference Include="../../src/Mismade.Infrastructure/Mismade.Infrastructure.csproj" />
+    <ProjectReference Include="../../src/Mismade.Web/Mismade.Web.csproj" />
   </ItemGroup>
 </Project>

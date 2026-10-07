@@ -14,6 +14,7 @@ var port = Environment.GetEnvironmentVariable("PORT") ?? "8080";
 builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
 
 builder.Services.AddInfrastructure(builder.Configuration);
+builder.Services.AddScoped<TiendanubeOAuthState>();
 builder.Services.AddIdentity<IdentityUser, IdentityRole>()
     .AddEntityFrameworkStores<MismadeDbContext>().AddDefaultTokenProviders();
 builder.Services.ConfigureApplicationCookie(options => options.LoginPath = "/Account/Login");
@@ -63,6 +64,7 @@ app.UseAntiforgery();
 app.MapStaticAssets();
 app.MapRazorPages();
 app.MapHealthChecks("/health").AllowAnonymous();
+app.MapTiendanubeOAuth();
 
 if (mode.Equals("Endpoint", StringComparison.OrdinalIgnoreCase))
 {

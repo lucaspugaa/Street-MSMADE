@@ -18,7 +18,16 @@ public static class DependencyInjection
         services.AddDataProtection().PersistKeysToDbContext<MismadeDbContext>();
         services.Configure<TiendanubeOptions>(configuration.GetSection("Tiendanube"));
         services.Configure<MetaOptions>(configuration.GetSection("Meta"));
-        services.AddHttpClient<ITiendanubeClient, TiendanubeClient>().AddStandardResilienceHandler();
+        services.AddScoped<ITiendanubeCredenciales, TiendanubeCredenciales>();
+        services.AddHttpClient<TiendanubeTokenClient>().RemoveAllLoggers();
+        services.AddHttpClient<ITiendanubeClient, TiendanubeClient>()
+            .RedactLoggedHeaders(["Authentication"])
+            .AddStandardResilienceHandler(options =>
+            {
+                options.Retry.ShouldRetryAfterHeader = false;
+                options.Retry.DelayGenerator = args =>
+                    new ValueTask<TimeSpan?>(TiendanubeRateLimit.GetDelay(args.Outcome.Result));
+            });
         services.AddHttpClient<IMetaAdsClient, MetaAdsClient>().AddStandardResilienceHandler();
         services.AddScoped<IJobLock, PostgresJobLock>();
         services.AddScoped<IJobRunStore, JobRunStore>();
