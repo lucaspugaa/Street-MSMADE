@@ -12,6 +12,8 @@ Reglas compartidas para todos los agentes (Claude Code, Codex). El plan y el est
 - La CLI opera sobre el **directorio actual**: correrla siempre desde `theme/` y siempre con `--theme-id 14597412`.
 - Preview del tema de trabajo: `<STORE_URL>/?theme_installation_id=14597412`.
 - URL de la tienda / preview: en `.env` (`STORE_URL`), no acá
+- Repo: monorepo `Street-MSMADE` (GitHub `ezequielcorrea-ux/Street-MSMADE`). La tienda vive en `Tienda Street/` y el dashboard .NET en `Dashboard Street/`. **Todos los comandos de este archivo se corren desde `Tienda Street/`** (y la CLI desde `Tienda Street/theme/`).
+- Tag del tema original: `tienda-v0-original`.
 
 ## Objetivo
 

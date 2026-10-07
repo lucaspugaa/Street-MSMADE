@@ -4,9 +4,9 @@
 // Sirve para verificar CSS y JS extraídos mientras no se pueda hacer push a la copia.
 // Límite: el HTML de los bloques sale del original (sin sus <style>/<script>), no de renderizar los .tpl nuevos;
 // la equivalencia de los Twig se controla aparte con `npm run check:blocks` (scripts/check-blocks.mjs).
-import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { originalJson, originalRef as findOriginalRef, originalTemplates } from './original.mjs';
 
 const MODULE_BY_TYPE = {
   'universe-hero': 'UniverseHero',
@@ -14,21 +14,13 @@ const MODULE_BY_TYPE = {
   'product-universe': 'ProductUniverse',
 };
 
-function gitJson(root, ref, path) {
-  return JSON.parse(execFileSync('git', ['show', `${ref}:${path}`], { cwd: root, maxBuffer: 1e8 }).toString());
-}
-
-function listTemplates(root, ref) {
-  return execFileSync('git', ['ls-tree', '-r', '-z', '--name-only', ref, 'theme/templates'], { cwd: root })
-    .toString().split('\0').filter(path => path.endsWith('.json'));
-}
 
 // Compara las plantillas del tag original con las actuales: bloque code viejo → bloque nuevo en la misma posición.
 async function migratedBlocks(root, originalRef) {
   const replacements = new Map();
 
-  for (const path of listTemplates(root, originalRef)) {
-    const before = gitJson(root, originalRef, path);
+  for (const path of originalTemplates(root, originalRef)) {
+    const before = originalJson(root, originalRef, path);
     const after = JSON.parse(await readFile(join(root, path), 'utf8'));
 
     for (const [sectionId, section] of Object.entries(before.sections ?? {})) {
@@ -110,7 +102,7 @@ function transformBlocks(html, replacements, applied) {
   return html;
 }
 
-export async function createSimulation(root, originalRef = 'v0-original') {
+export async function createSimulation(root, originalRef = findOriginalRef(root)) {
   const replacements = await migratedBlocks(root, originalRef);
   // Si falta un bundle, la simulación no sirve: se corta en vez de seguir sin ese CSS/JS.
   const asset = path => readFile(join(root, 'theme/static', path), 'utf8').catch(error => {

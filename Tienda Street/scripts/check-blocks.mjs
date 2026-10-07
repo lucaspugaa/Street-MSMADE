@@ -1,21 +1,20 @@
 // Verifica que los bloques Twig nuevos (theme/blocks) rendericen el mismo HTML que el bloque de código original
-// al que reemplazan (tag v0-original), sin sus <style>/<script>/<link>. Complementa a `visual --simulate`,
+// al que reemplazan (tag tienda-v0-original / v0-original), sin sus <style>/<script>/<link>. Complementa a `visual --simulate`,
 // que usa el HTML original y por eso no ejercita los .tpl. Se renderiza con Twig.js (no es el motor de
 // Tiendanube): valida sintaxis y contenido, no los filtros propios de la plataforma (se simulan).
-import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { join } from 'node:path';
 import Twig from 'twig';
+import { originalJson, originalRef, originalTemplates } from './lib/original.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
-const ORIGINAL = 'v0-original';
+const ORIGINAL = originalRef(ROOT);
 
 Twig.extendFilter('block_attributes', () => '');
 Twig.cache(false);
 
-const git = args => execFileSync('git', args, { cwd: ROOT, maxBuffer: 1e8 }).toString();
-const original = path => JSON.parse(git(['show', `${ORIGINAL}:${path}`]));
+const original = path => originalJson(ROOT, ORIGINAL, path);
 
 // Etiquetas de bloque: el espacio en blanco junto a ellas no se renderiza. Junto a elementos inline
 // (a, span, strong, img…) sí puede verse, así que ahí NO se normaliza y cualquier diferencia cuenta.
@@ -39,8 +38,7 @@ async function render(type, block) {
   return html.replace(/^[\s\S]*?<div class="code-block[^>]*>/, '').replace(/<\/div>\s*$/, '');
 }
 
-const templates = git(['ls-tree', '-r', '-z', '--name-only', ORIGINAL, 'theme/templates'])
-  .split('\0').filter(path => path.endsWith('.json'));
+const templates = originalTemplates(ROOT, ORIGINAL);
 let failures = 0;
 let checked = 0;
 
