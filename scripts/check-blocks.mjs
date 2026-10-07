@@ -17,12 +17,17 @@ Twig.cache(false);
 const git = args => execFileSync('git', args, { cwd: ROOT, maxBuffer: 1e8 }).toString();
 const original = path => JSON.parse(git(['show', `${ORIGINAL}:${path}`]));
 
+// Etiquetas de bloque: el espacio en blanco junto a ellas no se renderiza. Junto a elementos inline
+// (a, span, strong, img…) sí puede verse, así que ahí NO se normaliza y cualquier diferencia cuenta.
+const BLOCK = 'address|article|aside|blockquote|div|footer|form|h[1-6]|header|li|main|nav|ol|p|section|ul';
+const BLOCK_EDGE = new RegExp(`(<\\/?(?:${BLOCK})\\b[^>]*>)\\s+|\\s+(?=<\\/?(?:${BLOCK})\\b)`, 'gi');
+
 function normalize(html) {
   return html
     .replace(/<style\b[\s\S]*?<\/style>|<script\b[\s\S]*?<\/script>|<link\b[^>]*>/gi, '')
     .replace(/ data-module="[^"]*"/g, '')
     .replace(/&amp;/g, '&')
-    .replace(/>\s+</g, '><')
+    .replace(BLOCK_EDGE, (match, tag) => tag ?? '')
     .replace(/\s+/g, ' ')
     .trim();
 }

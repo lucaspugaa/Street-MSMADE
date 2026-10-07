@@ -116,9 +116,10 @@ async function capture(browser, { url, viewport, stability, path, transform }) {
 
     // Requests que se cortan para que la captura sea determinista (p. ej. el scroll infinito del listado).
     for (const pattern of stability.blockUrlPatterns ?? []) {
+      // Respuesta vacía válida en vez de abortar: un fetch rechazado dispararía errores que no son del tema.
       await page.route(new RegExp(pattern), route => {
         blocked.add(route.request().url());
-        return route.abort();
+        return route.fulfill({ status: 200, contentType: 'text/html; charset=utf-8', body: '' });
       });
     }
 

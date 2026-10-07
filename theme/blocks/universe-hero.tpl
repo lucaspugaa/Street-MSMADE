@@ -42,9 +42,8 @@
 			<div class="universe-picture"><img src="{{ universe.image }}" alt="Prenda de la colección {{ universe.name }}" width="480" height="600"><span>DISEÑOS QUE TE REPRESENTAN</span></div>
 		</div>
 		<nav class="universe-nav" aria-label="Colecciones de {{ universe.name }}">
-			{% for link in universe.links %}
-				<a href="{{ link.url }}">{{ link.label }} ↗</a>
-			{% endfor %}
+			{#- Los links van pegados (sin espacios entre sí), como en el original. -#}
+			{% for link in universe.links %}<a href="{{ link.url }}">{{ link.label }} ↗</a>{% endfor %}
 		</nav>
 	</div>
 </div>
