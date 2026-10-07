@@ -2,6 +2,8 @@
 // Toma el HTML de la tienda publicada (TEST original) y, en el navegador de Playwright, reemplaza cada bloque de
 // código que ya se migró por lo que renderiza su bloque nuevo; además inyecta los CSS/JS generados en theme/static.
 // Sirve para verificar CSS y JS extraídos mientras no se pueda hacer push a la copia.
+// Límite: el HTML de los bloques sale del original (sin sus <style>/<script>), no de renderizar los .tpl nuevos;
+// la equivalencia de los Twig se controla aparte con `npm run check:blocks` (scripts/check-blocks.mjs).
 import { execFileSync } from 'node:child_process';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -110,7 +112,10 @@ function transformBlocks(html, replacements, applied) {
 
 export async function createSimulation(root, originalRef = 'v0-original') {
   const replacements = await migratedBlocks(root, originalRef);
-  const asset = path => readFile(join(root, 'theme/static', path), 'utf8').catch(() => '');
+  // Si falta un bundle, la simulación no sirve: se corta en vez de seguir sin ese CSS/JS.
+  const asset = path => readFile(join(root, 'theme/static', path), 'utf8').catch(error => {
+    throw new Error(`Simulación: no se pudo leer theme/static/${path} (¿corriste npm run build?): ${error.message}`);
+  });
   const appCss = await asset('css/app.css');
   const appJs = await asset('js/app.js');
 

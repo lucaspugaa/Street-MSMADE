@@ -106,10 +106,20 @@ async function capture(browser, { url, viewport, stability, path, transform }) {
     }
 
     const page = await context.newPage();
+    const errors = [];
+    page.on('pageerror', error => errors.push(`pageerror: ${error.message}`));
+    const blocked = new Set();
+    page.on('console', message => {
+      // Los requests que corta la propia captura (blockUrlPatterns) no cuentan como error del tema.
+      if (message.type() === 'error' && !blocked.has(message.location()?.url)) errors.push(`console: ${message.text()}`);
+    });
 
     // Requests que se cortan para que la captura sea determinista (p. ej. el scroll infinito del listado).
     for (const pattern of stability.blockUrlPatterns ?? []) {
-      await page.route(new RegExp(pattern), route => route.abort());
+      await page.route(new RegExp(pattern), route => {
+        blocked.add(route.request().url());
+        return route.abort();
+      });
     }
 
     // Solo en --simulate: se reescribe el HTML del documento en este navegador; a la tienda no se le envía nada.
@@ -140,13 +150,15 @@ ${stability.extraCss ?? ''}` });
     await autoScroll(page);
     await settle(page, stability);
 
-    return await page.screenshot({
+    const screenshot = await page.screenshot({
       path,
       fullPage: true,
       animations: 'disabled',
       caret: 'hide',
       mask: (stability.maskSelectors ?? []).map(selector => page.locator(selector)),
     });
+
+    return { screenshot, errors };
   } finally {
     await context.close();
   }
@@ -251,12 +263,12 @@ async function main() {
           let referenceBuffer;
 
           if (update || live) {
-            referenceBuffer = await capture(browser, {
+            ({ screenshot: referenceBuffer } = await capture(browser, {
               url: pageUrl(storeUrl, pageConfig.path, null),
               viewport,
               stability,
               path: join(referenceDirectory, filename),
-            });
+            }));
           }
 
           if (update) {
@@ -272,7 +284,7 @@ async function main() {
               });
             }
 
-            const currentBuffer = await capture(browser, {
+            const { screenshot: currentBuffer, errors } = await capture(browser, {
               url: simulate
                 ? pageUrl(storeUrl, pageConfig.path, null)
                 : pageUrl(previewUrl, pageConfig.path, process.env.PREVIEW_URL ? null : themeId),
@@ -281,6 +293,11 @@ async function main() {
               stability,
               path: join(currentDirectory, filename),
             });
+            // Un módulo roto puede no cambiar la imagen: los errores de consola también hacen fallar la página.
+            if (errors.length) {
+              throw new Error(`Errores en consola (${errors.length}): ${errors.slice(0, 2).join(' | ')}`);
+            }
+
             const comparison = compare(referenceBuffer, currentBuffer);
 
             if (comparison.error) {
