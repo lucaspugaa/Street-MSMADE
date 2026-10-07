@@ -8,15 +8,150 @@ import { PNG } from 'pngjs';
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const REFERENCE = join(ROOT, 'reference');
 
-async function main() {
-  const args = process.argv.slice(2);
-  const update = args.includes('--update');
-  const onlyIndex = args.indexOf('--only');
-  const only = onlyIndex === -1 ? null : args[onlyIndex + 1];
+// Uso:
+//   npm run visual              preview del tema de trabajo vs reference/ (capturas fijas)
+//   npm run visual -- --live    preview vs TEST publicado capturado en el momento (sin deriva de stock/precios)
+//   npm run visual:update       regenera reference/ desde TEST publicado
+//   --only <página>             filtra por nombre de página de visual.config.json
+
+function pageUrl(baseUrl, path, themeId) {
+  const url = new URL(path.replace(/^\/+/, ''), `${baseUrl}/`);
+
+  if (themeId) {
+    url.searchParams.set('theme_installation_id', themeId);
+  }
+
+  return url.href;
+}
+
+function parseArgs(argv) {
+  const onlyIndex = argv.indexOf('--only');
+  const only = onlyIndex === -1 ? null : argv[onlyIndex + 1];
 
   if (onlyIndex !== -1 && (!only || only.startsWith('--'))) {
     throw new Error('--only requiere el nombre de una página.');
   }
+
+  return { update: argv.includes('--update'), live: argv.includes('--live'), only };
+}
+
+// Recorre la página para disparar lazy-load e IntersectionObserver, y vuelve arriba.
+/* global window, document -- este bloque corre dentro del navegador vía page.evaluate */
+async function autoScroll(page) {
+  await page.evaluate(async () => {
+    const step = Math.max(200, Math.floor(window.innerHeight * 0.8));
+
+    for (let y = 0; y < document.documentElement.scrollHeight; y += step) {
+      window.scrollTo(0, y);
+      await new Promise(resolve => setTimeout(resolve, 150));
+    }
+
+    window.scrollTo(0, 0);
+  });
+}
+
+async function settle(page, stability) {
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+
+  for (const text of stability.waitUntilGone ?? []) {
+    await page.getByText(text).first()
+      .waitFor({ state: 'hidden', timeout: 20000 })
+      .catch(() => console.warn(`  aviso: sigue visible "${text}"`));
+  }
+
+  // Segunda pasada: el contenido que se armó recién (cards, carruseles) también tiene imágenes lazy.
+  await autoScroll(page);
+  await page.waitForLoadState('networkidle', { timeout: 15000 }).catch(() => {});
+  await waitForImages(page);
+  await page.waitForTimeout(1000);
+}
+
+/* global document, window -- corre dentro del navegador */
+async function waitForImages(page) {
+  await page.evaluate(async () => {
+    // El tema usa lazysizes (.lazyload) y el lazy de Swiper (.swiper-lazy): se fuerzan para que todo esté en la captura.
+    document.querySelectorAll('img[loading="lazy"]').forEach(image => { image.loading = 'eager'; });
+
+    if (window.lazySizes) {
+      document.querySelectorAll('.lazyload').forEach(element => window.lazySizes.loader.unveil(element));
+    }
+
+    document.querySelectorAll('.swiper-lazy').forEach(image => {
+      if (image.dataset.srcset) image.srcset = image.dataset.srcset;
+      if (image.dataset.src) image.src = image.dataset.src;
+      image.classList.add('swiper-lazy-loaded');
+      image.parentElement?.querySelector('.swiper-lazy-preloader')?.remove();
+    });
+
+    const pending = [...document.images]
+      .filter(image => !image.complete)
+      .map(image => new Promise(resolve => {
+        image.addEventListener('load', resolve, { once: true });
+        image.addEventListener('error', resolve, { once: true });
+      }));
+    await Promise.race([Promise.all(pending), new Promise(resolve => setTimeout(resolve, 15000))]);
+  });
+}
+
+async function capture(browser, { url, viewport, stability, path }) {
+  const context = await browser.newContext({
+    viewport: { width: viewport.width, height: viewport.height },
+  });
+
+  try {
+    // Reloj fijo: contadores y fechas salen iguales en cada corrida.
+    if (stability.fixedTime) {
+      await context.clock.setFixedTime(new Date(stability.fixedTime));
+    }
+
+    const page = await context.newPage();
+
+    await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
+
+    const hidden = stability.hideSelectors?.length
+      ? `${stability.hideSelectors.join(',')} { display: none !important; }`
+      : '';
+
+    if (hidden || stability.extraCss) {
+      await page.addStyleTag({ content: `${hidden}
+${stability.extraCss ?? ''}` });
+    }
+
+    await autoScroll(page);
+    await settle(page, stability);
+
+    return await page.screenshot({
+      path,
+      fullPage: true,
+      animations: 'disabled',
+      caret: 'hide',
+      mask: (stability.maskSelectors ?? []).map(selector => page.locator(selector)),
+    });
+  } finally {
+    await context.close();
+  }
+}
+
+function compare(referenceBuffer, currentBuffer) {
+  const reference = PNG.sync.read(referenceBuffer);
+  const current = PNG.sync.read(currentBuffer);
+
+  if (reference.width !== current.width || reference.height !== current.height) {
+    return {
+      error: `Tamaños diferentes (${reference.width}x${reference.height} vs ${current.width}x${current.height})`,
+    };
+  }
+
+  const diff = new PNG({ width: current.width, height: current.height });
+  const differentPixels = pixelmatch(
+    reference.data, current.data, diff.data, current.width, current.height,
+  );
+
+  return { ratio: differentPixels / (current.width * current.height), diff: PNG.sync.write(diff) };
+}
+
+async function main() {
+  const { update, live, only } = parseArgs(process.argv.slice(2));
 
   try {
     process.loadEnvFile(join(ROOT, '.env'));
@@ -29,6 +164,7 @@ async function main() {
   const config = JSON.parse(
     await readFile(new URL('./visual.config.json', import.meta.url), 'utf8'),
   );
+  const stability = config.stability ?? {};
   const selected = config.pages.filter(page => !only || page.name === only);
 
   if (selected.length === 0) {
@@ -48,24 +184,28 @@ async function main() {
     return;
   }
 
-  const baseUrl = (process.env.PREVIEW_URL || process.env.STORE_URL || '')
-    .replace(/\/+$/, '');
-  const threshold = Number(process.env.VISUAL_THRESHOLD ?? 0.01);
+  // Las referencias salen de la tienda publicada (TEST); la comparación, de la preview del tema de trabajo.
+  const storeUrl = process.env.STORE_URL?.replace(/\/+$/, '');
+  const previewUrl = (process.env.PREVIEW_URL || storeUrl)?.replace(/\/+$/, '');
+  const themeId = process.env.PREVIEW_THEME_ID;
+  const threshold = Number(process.env.VISUAL_THRESHOLD ?? 0.001);
 
-  if (!baseUrl) {
-    throw new Error('Configurá PREVIEW_URL o STORE_URL para ejecutar visual.');
+  if (!storeUrl || (!update && !process.env.PREVIEW_URL && !themeId)) {
+    throw new Error('Configurá STORE_URL (y PREVIEW_URL o PREVIEW_THEME_ID para comparar) en .env.');
   }
 
   if (!Number.isFinite(threshold) || threshold < 0 || threshold > 1) {
     throw new Error('VISUAL_THRESHOLD debe ser una proporción entre 0 y 1.');
   }
 
-  const output = update ? REFERENCE : join(REFERENCE, '_current');
+  const referenceDirectory = live ? join(REFERENCE, '_live') : REFERENCE;
+  const currentDirectory = join(REFERENCE, '_current');
   const diffDirectory = join(REFERENCE, '_diff');
 
-  await mkdir(output, { recursive: true });
+  await mkdir(referenceDirectory, { recursive: true });
 
   if (!update) {
+    await mkdir(currentDirectory, { recursive: true });
     await mkdir(diffDirectory, { recursive: true });
   }
 
@@ -83,68 +223,56 @@ async function main() {
           diferencia: '-',
           estado: '',
         };
-        let context;
 
         try {
-          context = await browser.newContext({
-            viewport: { width: viewport.width, height: viewport.height },
-          });
-          const page = await context.newPage();
+          let referenceBuffer;
 
-          await page.goto(`${baseUrl}/${pageConfig.path.replace(/^\/+/, '')}`, {
-            waitUntil: 'networkidle',
-          });
-          await page.waitForTimeout(1000);
-
-          const screenshot = await page.screenshot({
-            path: join(output, filename),
-            fullPage: true,
-            animations: 'disabled',
-            caret: 'hide',
-          });
+          if (update || live) {
+            referenceBuffer = await capture(browser, {
+              url: pageUrl(storeUrl, pageConfig.path, null),
+              viewport,
+              stability,
+              path: join(referenceDirectory, filename),
+            });
+          }
 
           if (update) {
             result.estado = 'Referencia actualizada';
           } else {
-            let reference;
+            if (!referenceBuffer) {
+              referenceBuffer = await readFile(join(REFERENCE, filename)).catch(error => {
+                if (error.code === 'ENOENT') {
+                  throw new Error('Falta referencia');
+                }
 
-            try {
-              reference = PNG.sync.read(await readFile(join(REFERENCE, filename)));
-            } catch (error) {
-              if (error.code === 'ENOENT') {
-                throw new Error('Falta referencia');
-              }
-
-              throw error;
+                throw error;
+              });
             }
 
-            const current = PNG.sync.read(screenshot);
+            const currentBuffer = await capture(browser, {
+              url: pageUrl(previewUrl, pageConfig.path, process.env.PREVIEW_URL ? null : themeId),
+              viewport,
+              stability,
+              path: join(currentDirectory, filename),
+            });
+            const comparison = compare(referenceBuffer, currentBuffer);
 
-            if (reference.width !== current.width || reference.height !== current.height) {
-              throw new Error('Tamaños diferentes');
+            if (comparison.error) {
+              throw new Error(comparison.error);
             }
 
-            const diff = new PNG({ width: current.width, height: current.height });
-            const differentPixels = pixelmatch(
-              reference.data, current.data, diff.data, current.width, current.height,
-            );
-            const ratio = differentPixels / (current.width * current.height);
-
-            await writeFile(join(diffDirectory, filename), PNG.sync.write(diff));
-            result.diferencia = `${(ratio * 100).toFixed(4)}%`;
-            result.estado = ratio > threshold ? 'Falla' : 'OK';
-            failed ||= ratio > threshold;
+            await writeFile(join(diffDirectory, filename), comparison.diff);
+            result.diferencia = `${(comparison.ratio * 100).toFixed(4)}%`;
+            result.estado = comparison.ratio > threshold ? 'Falla' : 'OK';
+            failed ||= comparison.ratio > threshold;
           }
         } catch (error) {
           result.estado = error.message;
           failed = true;
-        } finally {
-          if (context) {
-            await context.close();
-          }
         }
 
         results.push(result);
+        console.log(`${result.página} · ${result.viewport}: ${result.estado} ${result.diferencia}`);
       }
     }
   } finally {

@@ -9,6 +9,7 @@ node_modules/
 # capturas temporales de comparación visual
 reference/_diff/
 reference/_current/
+reference/_live/
 .DS_Store
 Thumbs.db
 # copias sueltas de la config (la vigente es .claude/settings.json)
