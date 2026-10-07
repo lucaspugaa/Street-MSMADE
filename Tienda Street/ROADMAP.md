@@ -163,7 +163,8 @@ Una rama por módulo (`feat/<modulo>`). Claude lidera; Codex toma el módulo par
   - Verificado con `visual --simulate` y en la preview real de TEST (Copia): 20/20 OK, consola limpia.
   - Ojo: las plantillas personalizadas `category.KUMO/ARTISTAS/NOVENTA` y `product.*` **no están asignadas** a ninguna categoría/producto publicado; lo que se ve en esas páginas lo arma `StoreTheme` por URL.
 - [ ] [CLAUDE] Refactorizar `src/modules/legacy/*` a clases (con preview para verificar). El id del tema TEST está fijo en esos scripts (`isTest`): pasarlo a configuración antes de publicar la copia.
-- [ ] [CLAUDE] Estudio 3D de la home (`code_mcom`): está deshabilitado en el editor; decidir con el humano si se migra o se borra.
+- [ ] [CLAUDE] Estudio 3D de la home (`code_mcom`): **NO borrar**. Decisión del humano (2026-10-07): se quiere implementar, pero la versión pegada en el editor hacía lenta la página; queda en standby para rehacerlo como módulo propio con carga diferida (solo al pedirlo).
+- [ ] [CLAUDE] **Editor nuevo de la home** (pedido del humano, 2026-10-07): rearmar la home en secciones propias y editables desde el panel (Portada STREET 1640, Banner BTS/lanzamiento con fecha de cuenta regresiva, Universos, Más vendidos, Beneficios), sin bloques "Código"/"Módulo JS" visibles (módulos JS cargados desde el layout). Renombrar la sección "Armá tu diseño · Estudio 3D". Cada paso: push a TEST (Copia) + `npm run visual` contra TEST. **No publicar** hasta que el humano lo pida.
 - **Cierre por módulo:** `npm run visual` sin diferencias en esa página + review de Codex aprobado + merge a `main`.
 
 ### Fase 3 · Contenido editable (semana 3)
