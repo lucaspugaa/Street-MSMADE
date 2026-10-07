@@ -22,7 +22,9 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 - Lógica modular en `src/`: cada módulo es una clase que extiende `Universe` (`src/core/Universe.js`) y se registra en `src/core/registry.js`.
 - Módulos: `LandingPage`, `Benefits`, `BenefitsLayout`, `Catalogs`. Uno nuevo = clase + CSS en `src/styles/modules/` + sección/snippet Twig.
 - HTML de productos, precios, categorías y textos SEO **siempre en Twig** con variables nativas de Tiendanube. JS solo para comportamiento.
-- `theme/static/js/app.js` y `theme/static/css/app.css` son generados por `npm run build`: **no editarlos a mano**.
+- `theme/static/js/app.js`, `theme/static/css/app.css` y `theme/static/css/page-*.css` son generados por `npm run build`: **no editarlos a mano**.
+- CSS: `src/styles/app.css` (global) y `src/styles/pages/<template>.css` (solo en esa plantilla, ver `layout.tpl`).
+- `src/modules/legacy/` son copias fieles de los scripts del editor: se refactorizan solo con verificación visual.
 - Respetar la estructura de carpetas que bajó la CLI dentro de `theme/`.
 - Sin dependencias de runtime en el navegador salvo que el humano lo apruebe.
 
@@ -31,7 +33,13 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 - `npm run build` – compila `src/` a `theme/static/`
 - `npm run watch` – build en modo watch
 - `npm run lint`
-- `npm run visual` – compara capturas de la preview contra `reference/`
+- `npm run visual` – compara capturas de la preview (TEST (Copia)) contra `reference/`
+  - `-- --live`: contra TEST publicado capturado en el momento (evita deriva de stock/precios)
+  - `-- --simulate`: sin push; aplica la migración sobre TEST publicado solo en el navegador local
+  - `-- --only <página>`; páginas y reglas de estabilidad en `scripts/visual.config.json`
+- `npm run visual:update` – regenera `reference/` desde TEST publicado (solo lectura, como visitante)
+- `npm run check:blocks` – los bloques Twig nuevos renderizan el mismo HTML que el código original (`v0-original`)
+- Plantillas JSON: editarlas con `scripts/lib/theme-json.mjs` (respeta el formato original y deja diffs limpios)
 - Preview: `nuvemshop theme watch --theme-id 14597412 --no-browser` (desde `theme/`)
 - Diff: `nuvemshop theme diff --theme-id 14597412 --detailed` (desde `theme/`)
 
