@@ -6,7 +6,8 @@ Reglas compartidas para todos los agentes (Claude Code, Codex). El plan y el est
 
 - Plantilla de referencia: **TEST**. Se trabaja sobre la copia **"TEST (copia)"**; el original queda de respaldo.
 - Tipo de diseño: **por secciones** (base Ipanema, variante Clothing-2). Verificado con `nuvemshop theme list` el 2026-10-07. No hay FTP.
-- ID del tema de trabajo: **14597412** ("TEST (Copia)"). TEST original = 14559883, **es el publicado**: nunca se toca.
+- ID del tema de trabajo: **14597412** ("TEST (Copia)"). Es el **único** tema donde se puede escribir (push/watch/fork), y solo con OK del humano.
+- **TEST original = 14559883 es el tema PUBLICADO (decisión del humano). No se modifica ni se guarda nada en él**: ningún comando de la CLI lo nombra ni usa `--published`. Solo se lo *mira* como visitante (capturas de `reference/`).
 - Límite de temas de la tienda: 6 de 6 en uso (no se pueden crear más sin borrar uno; eso lo decide el humano).
 - La CLI opera sobre el **directorio actual**: correrla siempre desde `theme/` y siempre con `--theme-id 14597412`.
 - Preview del tema de trabajo: `<STORE_URL>/?theme_installation_id=14597412`.
@@ -38,7 +39,8 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 
 - `nuvemshop theme publish` (lo corre **solo** el humano)
 - `push --force`, `theme delete`, `theme update`
-- Cerrar el FTP, cambiar de tema activo
+- Cambiar de tema activo / publicado, o cualquier escritura sobre TEST publicado (14559883)
+- Correr la CLI sin `--theme-id 14597412` explícito (el default es "el último tema bajado" y no hay que depender de eso)
 - Escribir credenciales en cualquier archivo del repo
 
 ## Flujo de cada cambio

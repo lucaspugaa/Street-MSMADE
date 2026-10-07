@@ -25,7 +25,31 @@
       "PowerShell(nuvemshop theme ftp push:*)",
       "PowerShell(nuvemshop theme pull:*)",
       "PowerShell(nuvemshop theme ftp pull:*)",
-      "PowerShell(git push:*)"
+      "PowerShell(git push:*)",
+      "Bash(nuvemshop theme watch:*)",
+      "PowerShell(nuvemshop theme watch:*)",
+      "Bash(tiendanube theme watch:*)",
+      "PowerShell(tiendanube theme watch:*)",
+      "Bash(tiendanube theme push:*)",
+      "PowerShell(tiendanube theme push:*)",
+      "Bash(tiendanube theme pull:*)",
+      "PowerShell(tiendanube theme pull:*)",
+      "Bash(nuvemshop theme fork:*)",
+      "PowerShell(nuvemshop theme fork:*)",
+      "Bash(tiendanube theme fork:*)",
+      "PowerShell(tiendanube theme fork:*)",
+      "Bash(nuvemshop theme unfork:*)",
+      "PowerShell(nuvemshop theme unfork:*)",
+      "Bash(tiendanube theme unfork:*)",
+      "PowerShell(tiendanube theme unfork:*)",
+      "Bash(nuvemshop theme clone:*)",
+      "PowerShell(nuvemshop theme clone:*)",
+      "Bash(tiendanube theme clone:*)",
+      "PowerShell(tiendanube theme clone:*)",
+      "Bash(nuvemshop theme create:*)",
+      "PowerShell(nuvemshop theme create:*)",
+      "Bash(tiendanube theme create:*)",
+      "PowerShell(tiendanube theme create:*)"
     ],
     "deny": [
       "Bash(nuvemshop theme publish:*)",
@@ -42,7 +66,15 @@
       "PowerShell(tiendanube theme delete:*)",
       "PowerShell(tiendanube theme update:*)",
       "PowerShell(git push --force:*)",
-      "Read(./.env)"
+      "Read(./.env)",
+      "Bash(*14559883*)",
+      "PowerShell(*14559883*)",
+      "Bash(*--published*)",
+      "PowerShell(*--published*)",
+      "Bash(nuvemshop theme ftp:*)",
+      "PowerShell(nuvemshop theme ftp:*)",
+      "Bash(tiendanube theme ftp:*)",
+      "PowerShell(tiendanube theme ftp:*)"
     ]
   }
 }
