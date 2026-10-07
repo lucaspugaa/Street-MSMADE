@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "cart_form": {
+      "type": "main-cart",
+      "settings": {}
+    }
+  },
+  "order": [
+    "heading",
+    "cart_form"
+  ]
+}
