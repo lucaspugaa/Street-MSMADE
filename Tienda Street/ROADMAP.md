@@ -147,7 +147,7 @@ Leyenda: **[HUMANO]** lo hace la persona · **[CLAUDE]** Claude Code · **[CODEX
   - `app.css` en `<head>` tras el CSS de settings; `app.js` al final del `<body>` (`static_url`). Para verlo en la preview hace falta el fork de TEST (Copia).
 - [x] [CLAUDE] Verificar MCP: pedirle a Codex (`codex_start`) un review de prueba del commit de andamiaje.
 - **Cierre:** `npm run build` OK, la preview (`nuvemshop theme watch` o `ftp watch`) se ve idéntica a TEST y `npm run visual` = 0 diferencias.
-  - Pendiente: **fork de TEST (Copia)** (el humano lo autoriza) para hacer push y verificar en la preview real. Mientras tanto: `npm run visual -- --simulate` (migración aplicada sobre TEST publicado solo en el navegador local).
+  - 2026-10-07: fork de TEST (Copia) hecho por el humano; push de la migración (10 nuevos, 9 modificados). `npm run visual` sobre la preview real: 20/20 idéntico a TEST publicado (Marvel difería por cambios de catálogo; con `--live` 0%), consola limpia.
 
 ### Fase 2 · Modularizar TEST (semanas 1–2)
 
@@ -160,7 +160,7 @@ Una rama por módulo (`feat/<modulo>`). Claude lidera; Codex toma el módulo par
 - [x] [CLAUDE/CODEX] Pasar CSS y JS inline de TEST a `src/`, módulo por módulo. (rama `feat/universos`)
   - Home: `home-portal` (Twig) + `LandingPage`; footer/global: `StoreTheme`, `MiniCart`, `DesignMocks`; categorías y productos: `universe-hero`, `kumo-store`, `product-universe` + `UniverseHero`, `KumoStore`, `ProductUniverse`.
   - CSS por página (`page-home/category/product.css`) + global (`app.css`). JS original en `src/modules/legacy/` (copia fiel).
-  - Verificado con `visual --simulate`: 20/20 OK, consola limpia. Falta verificar en la preview real (fork).
+  - Verificado con `visual --simulate` y en la preview real de TEST (Copia): 20/20 OK, consola limpia.
   - Ojo: las plantillas personalizadas `category.KUMO/ARTISTAS/NOVENTA` y `product.*` **no están asignadas** a ninguna categoría/producto publicado; lo que se ve en esas páginas lo arma `StoreTheme` por URL.
 - [ ] [CLAUDE] Refactorizar `src/modules/legacy/*` a clases (con preview para verificar). El id del tema TEST está fijo en esos scripts (`isTest`): pasarlo a configuración antes de publicar la copia.
 - [ ] [CLAUDE] Estudio 3D de la home (`code_mcom`): está deshabilitado en el editor; decidir con el humano si se migra o se borra.
