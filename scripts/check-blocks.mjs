@@ -28,7 +28,6 @@ function normalize(html) {
     .replace(/ data-module="[^"]*"/g, '')
     .replace(/&amp;/g, '&')
     .replace(BLOCK_EDGE, (match, tag) => tag ?? '')
-    .replace(/\s+/g, ' ')
     .trim();
 }
 
