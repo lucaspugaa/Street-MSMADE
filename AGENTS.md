@@ -5,9 +5,11 @@ Reglas compartidas para todos los agentes (Claude Code, Codex). El plan y el est
 ## Datos del proyecto (completar en Fase 0)
 
 - Plantilla de referencia: **TEST**. Se trabaja sobre la copia **"TEST (copia)"**; el original queda de respaldo.
-- Tipo de diseño: **clásico (FTP)** (indicado por el humano el 2026-10-07)
-- ID del tema (fork): no aplica (clásico)
-- La CLI (`ftp setup`, `ftp pull`, `ftp watch`) opera sobre el **directorio actual**: correrla siempre desde `theme/`.
+- Tipo de diseño: **por secciones** (base Ipanema, variante Clothing-2). Verificado con `nuvemshop theme list` el 2026-10-07. No hay FTP.
+- ID del tema de trabajo: **14597412** ("TEST (Copia)"). TEST original = 14559883, **es el publicado**: nunca se toca.
+- Límite de temas de la tienda: 6 de 6 en uso (no se pueden crear más sin borrar uno; eso lo decide el humano).
+- La CLI opera sobre el **directorio actual**: correrla siempre desde `theme/` y siempre con `--theme-id 14597412`.
+- Preview del tema de trabajo: `<STORE_URL>/?theme_installation_id=14597412`.
 - URL de la tienda / preview: en `.env` (`STORE_URL`), no acá
 
 ## Objetivo
@@ -29,8 +31,8 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 - `npm run watch` – build en modo watch
 - `npm run lint`
 - `npm run visual` – compara capturas de la preview contra `reference/`
-- Preview: `nuvemshop theme watch --no-browser` (fork) o `nuvemshop theme ftp watch --no-browser` (clásico)
-- Diff: `nuvemshop theme diff --detailed`
+- Preview: `nuvemshop theme watch --theme-id 14597412 --no-browser` (desde `theme/`)
+- Diff: `nuvemshop theme diff --theme-id 14597412 --detailed` (desde `theme/`)
 
 ## Prohibido sin pedido explícito del humano
 
