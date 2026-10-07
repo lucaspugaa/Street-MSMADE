@@ -35,9 +35,6 @@
       </style>
     {% endif %}
 
-    {# MSMADE: estilos de los módulos (generado por npm run build desde src/styles) #}
-    <link rel="stylesheet" href="{{ 'css/app.css' | static_url }}">
-
     {% set async_js = true %}
 
     {# Platform head content #}
@@ -46,6 +43,10 @@
     {# Structured data #}
     {% include 'snippets/structured-data/structured-data-organization.tpl' %}
     {% include 'snippets/structured-data/structured-data.tpl' %}
+
+    {# MSMADE: estilos de los módulos (generado por npm run build desde src/styles).
+       Va al final del head: el CSS original estaba inline en el body, después de todo lo demás. #}
+    <link rel="stylesheet" href="{{ 'css/app.css' | static_url }}">
 
   </head>
 
