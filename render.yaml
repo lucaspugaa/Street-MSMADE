@@ -5,7 +5,7 @@ services:
     name: mismade-dashboard
     runtime: docker
     plan: free
-    region: virginia
+    region: ohio            # misma región que Neon (aws us-east-2)
     dockerfilePath: ./Dashboard Street/Dockerfile
     dockerContext: ./Dashboard Street
     healthCheckPath: /health

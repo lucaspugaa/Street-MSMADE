@@ -12,7 +12,7 @@ Todo lo que se puede automatizar ya está en el repo. Lo que queda son las altas
 ## Plan free (Render + Neon)
 
 ### 1. Base de datos en Neon
-1. Creá la cuenta en https://neon.tech y un proyecto `mismade`, región **AWS US East (N. Virginia)** (la misma que el servicio de Render).
+1. Creá la cuenta en https://neon.tech y un proyecto `mismade`, región **AWS US East (Ohio)**, la misma que el servicio de Render en `render.yaml`.
 2. En **Connect**, desactivá **Connection pooling** (el job usa advisory locks de sesión y el pooler no los respeta).
 3. Armá la cadena con esos datos:
    `Host=<host>;Database=<db>;Username=<user>;Password=<pass>;SSL Mode=Require`
