@@ -1,0 +1,16 @@
+@inherits LayoutComponentBase
+
+<header><strong>MISMADE / Street</strong></header>
+<nav aria-label="Navegación principal">
+    <NavLink href="/" Match="NavLinkMatch.All">Inicio</NavLink>
+    <NavLink href="/campanas">Campañas</NavLink>
+    <NavLink href="/stock">Stock</NavLink>
+    <NavLink href="/finanzas">Finanzas</NavLink>
+    <NavLink href="/clientes">Clientes</NavLink>
+    <form method="post" action="/Account/Logout"><AntiforgeryToken /><button type="submit">Salir</button></form>
+</nav>
+<main>@Body</main>
+<div id="blazor-error-ui" data-nosnippet>
+    Ocurrió un error. <a href="." class="reload">Recargar</a>
+    <span class="dismiss">×</span>
+</div>

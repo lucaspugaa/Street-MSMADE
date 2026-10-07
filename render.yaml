@@ -1,0 +1,36 @@
+# Blueprint de Render: en el panel, New > Blueprint > elegir este repo.
+# Render pide los valores marcados con sync: false la primera vez.
+services:
+  - type: web
+    name: mismade-dashboard
+    runtime: docker
+    plan: free
+    region: virginia
+    dockerfilePath: ./Dashboard Street/Dockerfile
+    dockerContext: ./Dashboard Street
+    healthCheckPath: /health
+    autoDeploy: true
+    buildFilter:
+      paths:
+        - Dashboard Street/**
+    envVars:
+      - key: ConnectionStrings__Default   # cadena de Neon (host directo, SSL Mode=Require)
+        sync: false
+      - key: Jobs__Mode
+        value: Endpoint
+      - key: Jobs__Key                    # se genera sola; copiala para cron-job.org
+        generateValue: true
+      - key: Seed__OwnerUser
+        sync: false
+      - key: Seed__OwnerPassword          # borrala después del primer login
+        sync: false
+      - key: Tiendanube__StoreId
+        sync: false
+      - key: Tiendanube__AccessToken
+        sync: false
+      - key: Meta__SystemUserToken
+        sync: false
+      - key: Meta__StreetAccountId
+        sync: false
+      - key: Meta__KumoAccountId
+        sync: false
