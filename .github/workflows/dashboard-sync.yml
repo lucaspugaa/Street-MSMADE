@@ -1,0 +1,25 @@
+# Alternativa a cron-job.org: dispara POST /jobs/sync desde GitHub.
+# Se activa solo si en Settings > Secrets and variables > Actions definís
+#   variable SYNC_TRIGGER = github
+#   variable DASHBOARD_URL = https://<tu-servicio>.onrender.com
+#   secret   JOBS_KEY      = el valor de Jobs__Key del host
+# GitHub puede atrasar los cron programados unos minutos. Usá esto o cron-job.org, no los dos.
+name: Dashboard sync trigger
+
+on:
+  schedule:
+    - cron: "1 3,21 * * *"   # 00:01 y 18:01 en Argentina (UTC-3)
+  workflow_dispatch:
+
+jobs:
+  trigger:
+    if: vars.SYNC_TRIGGER == 'github'
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /jobs/sync (con margen para que Render despierte)
+        env:
+          JOBS_KEY: ${{ secrets.JOBS_KEY }}
+          DASHBOARD_URL: ${{ vars.DASHBOARD_URL }}
+        run: |
+          curl --fail --silent --show-error --retry 6 --retry-delay 20 --retry-all-errors --max-time 90 \
+            -X POST -H "X-Job-Key: $JOBS_KEY" "$DASHBOARD_URL/jobs/sync"

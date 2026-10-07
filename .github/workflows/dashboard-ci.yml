@@ -1,0 +1,70 @@
+name: Dashboard CI
+
+on:
+  push:
+    paths: ["Dashboard Street/**", ".github/workflows/dashboard-ci.yml"]
+  pull_request:
+    paths: ["Dashboard Street/**", ".github/workflows/dashboard-ci.yml"]
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: Dashboard Street
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: Dashboard Street/global.json
+      - run: dotnet restore Mismade.sln
+      - run: dotnet build Mismade.sln -c Release --no-restore -warnaserror
+      - run: dotnet test Mismade.sln -c Release --no-build
+
+  # Construye la imagen y la levanta contra un Postgres real: valida Dockerfile,
+  # migración, alta del Owner inicial y el endpoint del job.
+  docker-smoke:
+    runs-on: ubuntu-latest
+    needs: build-test
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: mismade
+          POSTGRES_PASSWORD: ci
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U postgres" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t mismade-dashboard .
+      - name: Levantar la app
+        run: |
+          docker run -d --name app --network host \
+            -e PORT=8080 \
+            -e "ConnectionStrings__Default=Host=localhost;Port=5432;Database=mismade;Username=postgres;Password=ci" \
+            -e Jobs__Mode=Endpoint -e Jobs__Key=ci-key \
+            -e Seed__OwnerUser=owner -e 'Seed__OwnerPassword=Ci-Owner-2026!' \
+            mismade-dashboard
+          for i in $(seq 1 30); do
+            curl -fs http://localhost:8080/health && exit 0
+            sleep 2
+          done
+          docker logs app; exit 1
+      - name: Verificar
+        run: |
+          set -e
+          docker logs app 2>&1 | grep -q "Owner inicial owner creado"
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/Account/Login)" = 200
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/jobs/sync)" = 401
+          test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'X-Job-Key: ci-key' http://localhost:8080/jobs/sync)" = 202
+          sleep 5
+          docker logs app 2>&1 | tail -20
+          # reinicio: no debe volver a crear el Owner ni fallar
+          docker restart app
+          for i in $(seq 1 30); do curl -fs http://localhost:8080/health && break; sleep 2; done
+          test "$(docker logs app 2>&1 | grep -c 'Owner inicial owner creado')" = 1
+      - if: failure()
+        run: docker logs app

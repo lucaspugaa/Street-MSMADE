@@ -1,0 +1,74 @@
+@page "/"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@implements IDisposable
+@inject IJobRunStore Runs
+@inject IDashboardNotifier Notifier
+@inject ISyncQueue Queue
+@inject AuthenticationStateProvider Authentication
+
+<PageTitle>MISMADE / Street</PageTitle>
+<h1>Dashboard MISMADE / Street</h1>
+@if (ultima is null)
+{
+    <p>Todavía no hay sincronizaciones.</p>
+}
+else
+{
+    <p>Última sincronización: <strong>@ultima.Status</strong> · @HoraArt(ultima.FinishedAt ?? ultima.StartedAt) ART</p>
+}
+<AuthorizeView Roles="Owner">
+    <button @onclick="SincronizarAsync" disabled="@encolando">Sincronizar ahora</button>
+</AuthorizeView>
+<p role="status">@mensaje</p>
+
+@code {
+    private JobRun? ultima;
+    private bool encolando;
+    private string? mensaje;
+    private bool disposed;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Notifier.Refrescar += Refrescar;
+        ultima = await Runs.GetLatestAsync(CancellationToken.None);
+    }
+
+    private void Refrescar() => _ = InvokeAsync(async () =>
+    {
+        if (!disposed)
+        {
+            ultima = await Runs.GetLatestAsync(CancellationToken.None);
+            StateHasChanged();
+        }
+    });
+
+    private async Task SincronizarAsync()
+    {
+        var state = await Authentication.GetAuthenticationStateAsync();
+        if (!state.User.IsInRole("Owner"))
+        {
+            return;
+        }
+
+        encolando = true;
+        try
+        {
+            await Queue.EnqueueAsync("UI");
+            mensaje = "Sincronización encolada.";
+        }
+        finally
+        {
+            encolando = false;
+        }
+    }
+
+    private static string HoraArt(DateTimeOffset fecha) => TimeZoneInfo.ConvertTime(fecha,
+        TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires")).ToString("dd/MM/yyyy HH:mm");
+
+    public void Dispose()
+    {
+        disposed = true;
+        Notifier.Refrescar -= Refrescar;
+    }
+}
