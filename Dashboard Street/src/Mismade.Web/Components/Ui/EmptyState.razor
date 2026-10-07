@@ -1,0 +1,24 @@
+@* Estado vacío de una sección: qué va a mostrar y qué falta para que aparezca. *@
+<section class="empty">
+    <span class="eyebrow">Todavía sin datos</span>
+    <h2>@Titulo</h2>
+    <p>@Texto</p>
+    @if (Falta is { Count: > 0 })
+    {
+        <div>
+            <h3>Qué falta</h3>
+            <ul>
+                @foreach (var item in Falta)
+                {
+                    <li>@item</li>
+                }
+            </ul>
+        </div>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public string Titulo { get; set; } = "";
+    [Parameter, EditorRequired] public string Texto { get; set; } = "";
+    [Parameter] public IReadOnlyList<string>? Falta { get; set; }
+}

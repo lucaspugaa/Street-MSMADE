@@ -1,5 +1,14 @@
 @page "/campanas"
 @attribute [Authorize]
-<PageTitle>Campañas</PageTitle>
-<h1>Campañas</h1>
-<p>TODO: métricas de campañas de Street y Kumo por separado.</p>
+
+<PageTitle>Campañas · MISMADE</PageTitle>
+
+<header class="page-head">
+    <span class="eyebrow">Meta Ads</span>
+    <h1>Campañas</h1>
+    <p>Gasto, ROAS y compras de las campañas Madre, Testeo y Retargeting. Street y Kumo siempre por separado.</p>
+</header>
+
+<EmptyState Titulo="Las campañas aparecen al conectar Meta"
+            Texto="Vas a ver cada campaña con su estado, gasto y ROAS del período, y botones para pausarla o ajustar el presupuesto."
+            Falta="@(["Generar el token de System User en Business Manager.", "Cargar los IDs de las cuentas publicitarias de Street y de Kumo en Render."])" />

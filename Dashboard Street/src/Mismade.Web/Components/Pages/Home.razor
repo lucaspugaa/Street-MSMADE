@@ -6,32 +6,134 @@
 @inject IDashboardNotifier Notifier
 @inject ISyncQueue Queue
 @inject AuthenticationStateProvider Authentication
+@inject IOptions<TiendanubeOptions> Tiendanube
+@inject IOptions<MetaOptions> Meta
+@inject IDbContextFactory<MismadeDbContext> Db
 
-<PageTitle>MISMADE / Street</PageTitle>
-<h1>Dashboard MISMADE / Street</h1>
-@if (ultima is null)
-{
-    <p>Todavía no hay sincronizaciones.</p>
-}
-else
-{
-    <p>Última sincronización: <strong>@ultima.Status</strong> · @HoraArt(ultima.FinishedAt ?? ultima.StartedAt) ART</p>
-}
-<AuthorizeView Roles="Owner">
-    <button @onclick="SincronizarAsync" disabled="@encolando">Sincronizar ahora</button>
-</AuthorizeView>
-<p role="status">@mensaje</p>
+<PageTitle>Inicio · MISMADE</PageTitle>
+
+<header class="page-head">
+    <span class="eyebrow">@HoyArt()</span>
+    <h1>Hola@(string.IsNullOrEmpty(usuario) ? "" : $", {usuario}")</h1>
+    <p>Desde acá ves si los datos están al día y qué falta conectar para que el panel se complete.</p>
+</header>
+
+<div class="grid">
+    <section class="card" aria-labelledby="sync-title">
+        <div class="card-head">
+            <h2 id="sync-title">Sincronización con Tiendanube y Meta</h2>
+            <span class="pill @EstadoClase">@EstadoTexto</span>
+        </div>
+
+        <dl class="facts">
+            <div>
+                <dt>Última corrida</dt>
+                <dd class="num">@(ultima is null ? "—" : HoraArt(ultima.FinishedAt ?? ultima.StartedAt))</dd>
+            </div>
+            <div>
+                <dt>Quién la disparó</dt>
+                <dd>@(ultima is null ? "—" : OrigenTexto(ultima.Trigger))</dd>
+            </div>
+            <div>
+                <dt>Próxima automática</dt>
+                <dd class="num">@ProximaCorrida()</dd>
+            </div>
+        </dl>
+
+        @if (ultima?.Status == EstadoJob.Failed && !string.IsNullOrEmpty(ultima.Error))
+        {
+            <div class="note bad">La última sincronización falló. Los datos pueden estar desactualizados.</div>
+            <details>
+                <summary>Ver el error técnico</summary>
+                <pre>@ultima.Error</pre>
+            </details>
+        }
+        else if (!integracionesListas)
+        {
+            <div class="note warn">
+                La sincronización corre, pero todavía no trae datos: faltan conectar Tiendanube y Meta. Mirá «Qué está conectado».
+            </div>
+        }
+
+        <AuthorizeView Roles="Owner">
+            <div class="actions">
+                <button class="btn" @onclick="SincronizarAsync" disabled="@(encolando || corriendo)">
+                    @(corriendo ? "Sincronizando…" : "Sincronizar ahora")
+                </button>
+                <span class="muted" role="status">@mensaje</span>
+            </div>
+        </AuthorizeView>
+    </section>
+
+    <section class="card" aria-labelledby="setup-title">
+        <div class="card-head">
+            <h2 id="setup-title">Qué está conectado</h2>
+            <span class="pill @(listos == checks.Count ? "ok" : "warn")">@listos de @checks.Count listos</span>
+        </div>
+        <ul class="checks">
+            @foreach (var check in checks)
+            {
+                <li>
+                    <span class="mark @(check.Ok ? "ok" : "no")" aria-hidden="true">@(check.Ok ? "✓" : "!")</span>
+                    <div>
+                        <b>@check.Nombre</b>
+                        <span>@(check.Ok ? check.SiOk : check.SiFalta)</span>
+                    </div>
+                </li>
+            }
+        </ul>
+    </section>
+</div>
 
 @code {
+    private static readonly TimeZoneInfo Ar = TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
+
+    private record Check(string Nombre, bool Ok, string SiOk, string SiFalta);
+
     private JobRun? ultima;
     private bool encolando;
     private string? mensaje;
+    private string? usuario;
     private bool disposed;
+    private bool integracionesListas;
+    private List<Check> checks = [];
+
+    private bool corriendo => ultima?.Status == EstadoJob.Running;
+    private int listos => checks.Count(c => c.Ok);
 
     protected override async Task OnInitializedAsync()
     {
         Notifier.Refrescar += Refrescar;
+        usuario = (await Authentication.GetAuthenticationStateAsync()).User.Identity?.Name;
         ultima = await Runs.GetLatestAsync(CancellationToken.None);
+        await CargarChecksAsync();
+    }
+
+    private async Task CargarChecksAsync()
+    {
+        var tn = Tiendanube.Value;
+        var meta = Meta.Value;
+        var tiendanubeOk = !string.IsNullOrWhiteSpace(tn.StoreId) && !string.IsNullOrWhiteSpace(tn.AccessToken);
+        var metaOk = !string.IsNullOrWhiteSpace(meta.SystemUserToken)
+            && !string.IsNullOrWhiteSpace(meta.StreetAccountId) && !string.IsNullOrWhiteSpace(meta.KumoAccountId);
+
+        await using var db = await Db.CreateDbContextAsync();
+        var stockCargado = await db.StockRemeras.AnyAsync();
+
+        integracionesListas = tiendanubeOk && metaOk;
+        checks =
+        [
+            new("Base de datos", true, "Conectada y al día.", ""),
+            new("Tiendanube", tiendanubeOk,
+                "Credenciales cargadas.",
+                "Falta crear la app privada en Tiendanube y cargar sus credenciales en Render."),
+            new("Meta Ads (Street y Kumo)", metaOk,
+                "Token y cuentas cargados.",
+                "Falta generar el token de Meta y cargar las cuentas de Street y Kumo en Render."),
+            new("Datos del dashboard anterior", stockCargado,
+                "Stock importado.",
+                "Falta importar el stock, las ventas en negro y el resto de la información del dashboard actual."),
+        ];
     }
 
     private void Refrescar() => _ = InvokeAsync(async () =>
@@ -39,6 +141,10 @@ else
         if (!disposed)
         {
             ultima = await Runs.GetLatestAsync(CancellationToken.None);
+            if (ultima?.Status != EstadoJob.Running)
+            {
+                mensaje = ultima?.Status == EstadoJob.Failed ? "Terminó con error." : "Listo.";
+            }
             StateHasChanged();
         }
     });
@@ -52,10 +158,10 @@ else
         }
 
         encolando = true;
+        mensaje = "Pedido enviado. Esta pantalla se actualiza sola cuando termine.";
         try
         {
             await Queue.EnqueueAsync("UI");
-            mensaje = "Sincronización encolada.";
         }
         finally
         {
@@ -63,8 +169,51 @@ else
         }
     }
 
-    private static string HoraArt(DateTimeOffset fecha) => TimeZoneInfo.ConvertTime(fecha,
-        TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires")).ToString("dd/MM/yyyy HH:mm");
+    private string EstadoTexto => ultima?.Status switch
+    {
+        null => "Nunca corrió",
+        EstadoJob.Running => "En curso",
+        EstadoJob.Succeeded => "Completada",
+        EstadoJob.Failed => "Falló",
+        EstadoJob.Skipped => "Omitida (ya había otra en curso)",
+        _ => ultima.Status.ToString()
+    };
+
+    private string EstadoClase => ultima?.Status switch
+    {
+        EstadoJob.Running => "run",
+        EstadoJob.Succeeded => "ok",
+        EstadoJob.Failed => "bad",
+        _ => ""
+    };
+
+    private static string OrigenTexto(string trigger) => trigger switch
+    {
+        "UI" => "Manual, desde el panel",
+        "Endpoint" or "Hangfire" => "Automática",
+        _ => trigger
+    };
+
+    private static DateTime AhoraArt() => TimeZoneInfo.ConvertTime(DateTimeOffset.UtcNow, Ar).DateTime;
+
+    private static string HoyArt() =>
+        AhoraArt().ToString("dddd d 'de' MMMM", new System.Globalization.CultureInfo("es-AR"));
+
+    private static string HoraArt(DateTimeOffset fecha)
+    {
+        var local = TimeZoneInfo.ConvertTime(fecha, Ar).DateTime;
+        var dia = local.Date == AhoraArt().Date ? "Hoy" : local.Date == AhoraArt().Date.AddDays(-1) ? "Ayer" : local.ToString("dd/MM");
+        return $"{dia} {local:HH:mm}";
+    }
+
+    // Las corridas automáticas son a las 00:01 y 18:01, hora argentina.
+    private static string ProximaCorrida()
+    {
+        var ahora = AhoraArt();
+        var candidatas = new[] { ahora.Date.AddMinutes(1), ahora.Date.AddHours(18).AddMinutes(1), ahora.Date.AddDays(1).AddMinutes(1) };
+        var proxima = candidatas.First(c => c > ahora);
+        return $"{(proxima.Date == ahora.Date ? "Hoy" : "Mañana")} {proxima:HH:mm}";
+    }
 
     public void Dispose()
     {

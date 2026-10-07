@@ -3,15 +3,35 @@
 @addTagHelper *, Microsoft.AspNetCore.Mvc.TagHelpers
 <!DOCTYPE html>
 <html lang="es">
-<head><meta charset="utf-8" /><meta name="viewport" content="width=device-width" /><title>Ingresar · MISMADE</title><link rel="stylesheet" href="/app.css" /></head>
-<body><main>
-    <h1>Ingresar a MISMADE / Street</h1>
-    <form method="post">
-        <div asp-validation-summary="All" role="alert"></div>
-        <label asp-for="Usuario">Usuario</label>
-        <input asp-for="Usuario" autocomplete="username" required />
-        <label asp-for="Clave">Contraseña</label>
-        <input asp-for="Clave" type="password" autocomplete="current-password" required />
-        <button type="submit">Ingresar</button>
-    </form>
-</main></body></html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Ingresar · MISMADE</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,500..800&family=Public+Sans:wght@400;500;600&display=swap" />
+    <link rel="stylesheet" href="/app.css" />
+</head>
+<body>
+    <main class="login-page">
+        <div class="login-card">
+            <div class="brand">
+                <strong>MISMADE</strong>
+                <span>Street · panel interno</span>
+            </div>
+            <form method="post">
+                <div asp-validation-summary="All" role="alert"></div>
+                <div class="field">
+                    <label asp-for="Usuario">Usuario</label>
+                    <input asp-for="Usuario" autocomplete="username" required autofocus />
+                </div>
+                <div class="field">
+                    <label asp-for="Clave">Contraseña</label>
+                    <input asp-for="Clave" type="password" autocomplete="current-password" required />
+                </div>
+                <button type="submit" class="btn">Ingresar</button>
+            </form>
+        </div>
+    </main>
+</body>
+</html>

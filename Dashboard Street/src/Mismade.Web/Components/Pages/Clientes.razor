@@ -1,5 +1,14 @@
 @page "/clientes"
 @attribute [Authorize]
-<PageTitle>Clientes</PageTitle>
-<h1>Clientes</h1>
-<p>TODO: información de clientes y pedidos.</p>
+
+<PageTitle>Clientes · MISMADE</PageTitle>
+
+<header class="page-head">
+    <span class="eyebrow">Ranking</span>
+    <h1>Clientes</h1>
+    <p>Ranking de franquicias y de clientes por compras.</p>
+</header>
+
+<EmptyState Titulo="El ranking todavía no está armado"
+            Texto="Igual que en el dashboard actual, se va a actualizar con un botón y no en cada sincronización."
+            Falta="@(["Conectar Tiendanube, de donde salen los pedidos de cada cliente."])" />
