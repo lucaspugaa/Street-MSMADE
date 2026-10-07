@@ -17,7 +17,7 @@ export function stringifyThemeJson(value, format = { indent: 0, escapeSlashes: t
 
   if (format.escapeSlashes) out = out.replace(/\//g, '\\/');
   if (format.escapeUnicode) {
-    out = out.replace(/[^\x00-\x7e]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
+    out = out.replace(/[\u007f-￿]/g, char => '\\u' + char.charCodeAt(0).toString(16).padStart(4, '0'));
   }
 
   return format.trailingNewline ? `${out}\n` : out;

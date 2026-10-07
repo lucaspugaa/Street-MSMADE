@@ -1,1 +1,3 @@
-/* Home (template == 'home'). Antes: bloques de código de la sección custom de la home. */
+/* Home (template == 'home'). Antes: bloques de código de la sección custom de la home, en este orden. */
+@import '../modules/home-portal.css';
+@import '../modules/home-layouts.css';

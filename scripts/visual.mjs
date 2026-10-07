@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { chromium } from 'playwright';
 import pixelmatch from 'pixelmatch';
 import { PNG } from 'pngjs';
+import { createSimulation } from './lib/simulate.mjs';
 
 const ROOT = fileURLToPath(new URL('../', import.meta.url));
 const REFERENCE = join(ROOT, 'reference');
@@ -12,6 +13,7 @@ const REFERENCE = join(ROOT, 'reference');
 //   npm run visual              preview del tema de trabajo vs reference/ (capturas fijas)
 //   npm run visual -- --live    preview vs TEST publicado capturado en el momento (sin deriva de stock/precios)
 //   npm run visual:update       regenera reference/ desde TEST publicado
+//   npm run visual -- --simulate  sin push: TEST publicado + migración aplicada en el navegador local (scripts/lib/simulate.mjs)
 //   --only <página>             filtra por nombre de página de visual.config.json
 
 function pageUrl(baseUrl, path, themeId) {
@@ -32,7 +34,7 @@ function parseArgs(argv) {
     throw new Error('--only requiere el nombre de una página.');
   }
 
-  return { update: argv.includes('--update'), live: argv.includes('--live'), only };
+  return { update: argv.includes('--update'), live: argv.includes('--live'), simulate: argv.includes('--simulate'), only };
 }
 
 // Recorre la página para disparar lazy-load e IntersectionObserver, y vuelve arriba.
@@ -92,7 +94,7 @@ async function waitForImages(page) {
   });
 }
 
-async function capture(browser, { url, viewport, stability, path }) {
+async function capture(browser, { url, viewport, stability, path, transform }) {
   const context = await browser.newContext({
     viewport: { width: viewport.width, height: viewport.height },
   });
@@ -104,6 +106,25 @@ async function capture(browser, { url, viewport, stability, path }) {
     }
 
     const page = await context.newPage();
+
+    // Requests que se cortan para que la captura sea determinista (p. ej. el scroll infinito del listado).
+    for (const pattern of stability.blockUrlPatterns ?? []) {
+      await page.route(new RegExp(pattern), route => route.abort());
+    }
+
+    // Solo en --simulate: se reescribe el HTML del documento en este navegador; a la tienda no se le envía nada.
+    if (transform) {
+      await page.route(url, async route => {
+        if (!route.request().isNavigationRequest()) return route.continue();
+        const response = await route.fetch();
+        const headers = { ...response.headers() };
+        delete headers['content-length'];
+        delete headers['content-encoding'];
+        const body = await transform(await response.text());
+        if (process.env.SIMULATE_DUMP) await writeFile(path.replace(/\.png$/, '.html'), body);
+        return route.fulfill({ response, headers, body });
+      });
+    }
 
     await page.goto(url, { waitUntil: 'networkidle', timeout: 60000 });
 
@@ -150,7 +171,7 @@ function compare(referenceBuffer, currentBuffer) {
 }
 
 async function main() {
-  const { update, live, only } = parseArgs(process.argv.slice(2));
+  const { update, live, simulate, only } = parseArgs(process.argv.slice(2));
 
   try {
     process.loadEnvFile(join(ROOT, '.env'));
@@ -189,7 +210,7 @@ async function main() {
   const themeId = process.env.PREVIEW_THEME_ID;
   const threshold = Number(process.env.VISUAL_THRESHOLD ?? 0.001);
 
-  if (!storeUrl || (!update && !process.env.PREVIEW_URL && !themeId)) {
+  if (!storeUrl || (!update && !simulate && !process.env.PREVIEW_URL && !themeId)) {
     throw new Error('Configurá STORE_URL (y PREVIEW_URL o PREVIEW_THEME_ID para comparar) en .env.');
   }
 
@@ -207,6 +228,9 @@ async function main() {
     await mkdir(currentDirectory, { recursive: true });
     await mkdir(diffDirectory, { recursive: true });
   }
+
+  const simulation = simulate ? await createSimulation(ROOT) : null;
+  if (simulation) console.log(`Simulación: ${[...simulation.replacements.values()].flat().length} bloques migrados`);
 
   const browser = await chromium.launch();
   const results = [];
@@ -249,7 +273,10 @@ async function main() {
             }
 
             const currentBuffer = await capture(browser, {
-              url: pageUrl(previewUrl, pageConfig.path, process.env.PREVIEW_URL ? null : themeId),
+              url: simulate
+                ? pageUrl(storeUrl, pageConfig.path, null)
+                : pageUrl(previewUrl, pageConfig.path, process.env.PREVIEW_URL ? null : themeId),
+              transform: simulation?.transform,
               viewport,
               stability,
               path: join(currentDirectory, filename),

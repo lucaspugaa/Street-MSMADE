@@ -1,3 +1,6 @@
 /* Global: se carga en todas las páginas, al final del <head> (theme/layouts/layout.tpl).
    Va después de los CSS por página, como el código original del footer iba después del de cada plantilla. */
 @import './base.css';
+@import './modules/store-theme.css';
+@import './modules/mini-cart.css';
+@import './modules/design-mocks.css';

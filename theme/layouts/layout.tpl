@@ -48,6 +48,7 @@
        Van al final del head: el CSS original estaba inline en el body, después de todo lo demás.
        Primero el de la plantilla (antes: bloques de código de cada página) y después el global (antes: footer). #}
     {% if template == 'home' %}
+      <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:400,700&display=swap">
       <link rel="stylesheet" href="{{ 'css/page-home.css' | static_url }}">
     {% elseif template == 'category' %}
       <link rel="stylesheet" href="{{ 'css/page-category.css' | static_url }}">

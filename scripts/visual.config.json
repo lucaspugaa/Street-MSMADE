@@ -70,7 +70,11 @@
     "extraCss": "body { margin-top: 0 !important; } select.js-sort-by-private { height: 32px !important; }",
     "_notas": [
       "hideSelectors: barra de borrador de la preview, banner de cookies y productos relacionados (Tiendanube los ordena al azar).",
-      "extraCss: la preview agrega margin-top al body y 1px al select de orden; no es parte del tema."
+      "extraCss: la preview agrega margin-top al body y 1px al select de orden; no es parte del tema.",
+      "blockUrlPatterns: el scroll infinito del listado carga más páginas según el timing; se corta para comparar siempre la primera página."
+    ],
+    "blockUrlPatterns": [
+      "/page/\\d+/\\?results_only=true"
     ]
   }
 }
