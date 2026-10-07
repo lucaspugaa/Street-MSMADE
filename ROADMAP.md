@@ -147,15 +147,23 @@ Leyenda: **[HUMANO]** lo hace la persona · **[CLAUDE]** Claude Code · **[CODEX
   - `app.css` en `<head>` tras el CSS de settings; `app.js` al final del `<body>` (`static_url`). Para verlo en la preview hace falta el fork de TEST (Copia).
 - [x] [CLAUDE] Verificar MCP: pedirle a Codex (`codex_start`) un review de prueba del commit de andamiaje.
 - **Cierre:** `npm run build` OK, la preview (`nuvemshop theme watch` o `ftp watch`) se ve idéntica a TEST y `npm run visual` = 0 diferencias.
+  - Pendiente: **fork de TEST (Copia)** (el humano lo autoriza) para hacer push y verificar en la preview real. Mientras tanto: `npm run visual -- --simulate` (migración aplicada sobre TEST publicado solo en el navegador local).
 
 ### Fase 2 · Modularizar TEST (semanas 1–2)
 
 Una rama por módulo (`feat/<modulo>`). Claude lidera; Codex toma el módulo paralelo en otra rama/worktree.
 
 - [ ] [CLAUDE] `LandingPage`: orden de secciones de la home + su clase.
+  - Hecho en parte: la clase `LandingPage` existe y ejecuta el script original (`src/modules/legacy/landing-page.js`). Falta partirlo en clases (más vendidos → `Catalogs`, beneficios/confianza → `Benefits`) y reemplazar el scraping de categorías por Twig.
 - [ ] [CODEX] `Benefits` + `BenefitsLayout`: sección Twig, snippet de card, CSS del módulo, imágenes en `theme/static/img/benefits/`.
 - [ ] [CLAUDE] `Catalogs`: listado y filtros con variables nativas de Twig + clase de comportamiento.
-- [ ] [CLAUDE/CODEX] Pasar CSS y JS inline de TEST a `src/`, módulo por módulo.
+- [x] [CLAUDE/CODEX] Pasar CSS y JS inline de TEST a `src/`, módulo por módulo. (rama `feat/universos`)
+  - Home: `home-portal` (Twig) + `LandingPage`; footer/global: `StoreTheme`, `MiniCart`, `DesignMocks`; categorías y productos: `universe-hero`, `kumo-store`, `product-universe` + `UniverseHero`, `KumoStore`, `ProductUniverse`.
+  - CSS por página (`page-home/category/product.css`) + global (`app.css`). JS original en `src/modules/legacy/` (copia fiel).
+  - Verificado con `visual --simulate`: 20/20 OK, consola limpia. Falta verificar en la preview real (fork).
+  - Ojo: las plantillas personalizadas `category.KUMO/ARTISTAS/NOVENTA` y `product.*` **no están asignadas** a ninguna categoría/producto publicado; lo que se ve en esas páginas lo arma `StoreTheme` por URL.
+- [ ] [CLAUDE] Refactorizar `src/modules/legacy/*` a clases (con preview para verificar). El id del tema TEST está fijo en esos scripts (`isTest`): pasarlo a configuración antes de publicar la copia.
+- [ ] [CLAUDE] Estudio 3D de la home (`code_mcom`): está deshabilitado en el editor; decidir con el humano si se migra o se borra.
 - **Cierre por módulo:** `npm run visual` sin diferencias en esa página + review de Codex aprobado + merge a `main`.
 
 ### Fase 3 · Contenido editable (semana 3)
