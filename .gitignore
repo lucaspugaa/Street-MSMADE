@@ -5,6 +5,7 @@ node_modules/
 # credenciales / config local de la CLI de Tiendanube
 .nuvemshop/
 .tiendanube/
+.nuvem
 # capturas temporales de comparación visual
 reference/_diff/
 reference/_current/
