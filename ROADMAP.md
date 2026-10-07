@@ -136,15 +136,15 @@ Leyenda: **[HUMANO]** lo hace la persona · **[CLAUDE]** Claude Code · **[CODEX
   - Clásico: `nuvemshop theme ftp setup --ftp-server <host> --ftp-username <user> --ftp-password <pass> --store-url <url>` (lo corre el humano) y luego `nuvemshop theme ftp pull`.
   - Por secciones: `nuvemshop theme authorize` → `nuvemshop theme list` → `nuvemshop theme fork` → `nuvemshop theme pull --theme-id <ID_TEST>`.
 - [x] [CLAUDE] Commit "TEST original" + tag `v0-original`.
-- [ ] [CLAUDE] Capturar `reference/` con Playwright: home, categoría, producto, carrito × 1440 px y 390 px.
+- [x] [CLAUDE] Capturar `reference/` con Playwright: home, categoría, producto, carrito × 1440 px y 390 px. (10 páginas: home, 4 categorías, 4 productos, carrito)
 - **Cierre:** el repo tiene TEST completo, el tag `v0-original` y las capturas de referencia.
 
 ### Fase 1 · Andamiaje (días 2–3)
 
 - [x] [CLAUDE] `package.json` con `esbuild`, `playwright`, `pixelmatch`, `pngjs` y scripts `build`, `watch`, `lint`, `visual`.
 - [x] [CLAUDE] `scripts/build.mjs` (src → theme/static) y `scripts/visual.mjs` (compara preview vs `reference/`, umbral configurable).
-- [ ] [CLAUDE] `src/core/Universe.js`, `registry.js`, `main.js` vacíos; incluir `app.js` y `app.css` en el layout de TEST con el mismo filtro que ya usa TEST para sus assets.
-  - Andamiaje JS/CSS creado y build/lint verificados. Falta incluir app.js/app.css en el layout (cuando esté bajado TEST) y la comparación visual (cuando haya referencias).
+- [x] [CLAUDE] `src/core/Universe.js`, `registry.js`, `main.js` vacíos; incluir `app.js` y `app.css` en el layout de TEST con el mismo filtro que ya usa TEST para sus assets.
+  - `app.css` en `<head>` tras el CSS de settings; `app.js` al final del `<body>` (`static_url`). Para verlo en la preview hace falta el fork de TEST (Copia).
 - [x] [CLAUDE] Verificar MCP: pedirle a Codex (`codex_start`) un review de prueba del commit de andamiaje.
 - **Cierre:** `npm run build` OK, la preview (`nuvemshop theme watch` o `ftp watch`) se ve idéntica a TEST y `npm run visual` = 0 diferencias.
 

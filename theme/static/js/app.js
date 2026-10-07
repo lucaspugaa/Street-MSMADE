@@ -1,0 +1,1 @@
+(()=>{var o={};function r(){document.querySelectorAll("[data-module]").forEach(e=>{let t=o[e.dataset.module];if(t)try{new t(e).init()}catch(n){console.error(`Error al iniciar el m\xF3dulo ${e.dataset.module}:`,n)}})}document.readyState==="loading"?document.addEventListener("DOMContentLoaded",r,{once:!0}):r();})();

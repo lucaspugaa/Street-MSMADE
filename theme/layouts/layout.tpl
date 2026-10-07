@@ -35,6 +35,9 @@
       </style>
     {% endif %}
 
+    {# MSMADE: estilos de los módulos (generado por npm run build desde src/styles) #}
+    <link rel="stylesheet" href="{{ 'css/app.css' | static_url }}">
+
     {% set async_js = true %}
 
     {# Platform head content #}
@@ -127,6 +130,9 @@
         document.body.appendChild(script);
       });
     </script>
+
+    {# MSMADE: comportamiento de los módulos (generado por npm run build desde src/) #}
+    {{ 'js/app.js' | static_url | script_tag }}
 
     {% platform_body_content %}
   </body>
