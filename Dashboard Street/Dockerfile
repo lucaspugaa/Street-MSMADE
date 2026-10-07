@@ -11,6 +11,9 @@ RUN dotnet publish src/Mismade.Web/Mismade.Web.csproj -c Release --no-restore -o
 
 # imagen oficial (Ubuntu 24.04); ya incluye tzdata para America/Argentina/Buenos_Aires
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
+# Npgsql intenta cargar Kerberos al conectar; sin esta librería loguea un error inofensivo
+RUN apt-get update && apt-get install -y --no-install-recommends libgssapi-krb5-2 \
+    && rm -rf /var/lib/apt/lists/*
 ENV ASPNETCORE_ENVIRONMENT=Production
 # Render/Railway terminan HTTPS en un proxy: respetar X-Forwarded-Proto/For
 ENV ASPNETCORE_FORWARDEDHEADERS_ENABLED=true
