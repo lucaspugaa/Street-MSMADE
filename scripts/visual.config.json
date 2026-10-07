@@ -74,7 +74,7 @@
       "blockUrlPatterns: el scroll infinito del listado carga más páginas según el timing; se corta para comparar siempre la primera página."
     ],
     "blockUrlPatterns": [
-      "/page/\\d+/\\?results_only=true"
+      "/page/\\d+/\\?(?:[^#]*&)?results_only=true"
     ]
   }
 }
