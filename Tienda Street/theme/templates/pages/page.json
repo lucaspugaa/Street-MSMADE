@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "page_content": {
+      "type": "main-page",
+      "settings": {}
+    }
+  },
+  "order": [
+    "heading",
+    "page_content"
+  ]
+}

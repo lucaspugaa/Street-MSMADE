@@ -1,0 +1,24 @@
+/* Universo · hero de categoría (bloque theme/blocks/universe-hero.tpl).
+   Base común: el acento sale de --universe-accent, que define cada universo en universe-<id>.css. */
+.universe{width:100%;font-family:Arial,sans-serif}
+.universe-hero{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:48px 0}
+.universe-back{color:inherit;font-size:13px;text-decoration:underline}
+.universe-eyebrow{font-size:13px;letter-spacing:.17em;margin:40px 0 22px;color:var(--universe-accent)}
+.universe h1{font-family:Arial,sans-serif;font-weight:900;letter-spacing:-.055em;font-size:clamp(44px,6vw,88px);line-height:.98;margin:0 0 24px}
+.universe-copy{font-size:18px;line-height:1.5;max-width:420px}
+.universe-cta{display:inline-block;background:var(--universe-accent);color:#111;padding:16px 24px;border-radius:4px;margin-top:20px;font-weight:700}
+.universe-picture{position:relative;background:var(--universe-accent);padding:18px;transform:rotate(2deg)}
+.universe-picture img{display:block;width:100%;height:360px;object-fit:contain;background:#eee9df}
+.universe-picture span{display:block;font-size:11px;font-weight:700;letter-spacing:.1em;padding:14px 0;color:#111}
+.universe-nav{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;border-top:1px solid var(--universe-accent);padding:24px 0}
+.universe-nav a{color:inherit;padding:20px 12px;font-size:18px;font-weight:700;border-bottom:1px solid var(--universe-accent)}
+#MainContent:has(.universe) a:focus-visible{outline:3px solid var(--universe-accent);outline-offset:4px}
+
+@media(max-width:700px){
+  .universe-hero{grid-template-columns:1fr;padding:20px 0;gap:32px}
+  .universe-eyebrow{margin-top:24px}
+  .universe-picture img{height:280px}
+  .universe-picture{transform:none}
+  .universe-nav{grid-template-columns:1fr;gap:0}
+  .universe-nav a{padding:18px 8px}
+}

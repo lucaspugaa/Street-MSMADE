@@ -1,0 +1,14 @@
+/* Universo NOVENTA / FÚTBOL · categoría */
+#MainContent:has(.universe-futbol){background:#12392f;color:#f7f4e9;--universe-accent:#d3eb66}
+#MainContent:has(.universe-futbol) .section-category-list{color:#f7f4e9}
+
+.universe-futbol h1{font-family:Impact,Arial,sans-serif;text-transform:uppercase;letter-spacing:-.02em}
+.universe-futbol .universe-picture{transform:none;border-radius:120px 120px 0 0;background:repeating-linear-gradient(90deg,#d3eb66 0 24px,#aac442 24px 48px)}
+.universe-futbol .universe-picture img{border-radius:105px 105px 0 0}
+.universe-futbol .universe-nav a{text-transform:uppercase}
+.universe-futbol .universe-cta{border-radius:999px}
+
+#MainContent:has(.universe-futbol) .section-main-products-grid{background:#faf7ef;color:#171717;border-radius:24px 24px 0 0;padding-top:28px;padding-bottom:40px}
+#MainContent:has(.universe-futbol) .section-main-products-grid a{color:#171717}
+#MainContent:has(.universe-futbol) .section-main-products-grid .price{color:#171717}
+@media(max-width:700px){#MainContent:has(.universe-futbol) .section-main-products-grid{border-radius:16px 16px 0 0}}

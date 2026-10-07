@@ -1,0 +1,25 @@
+{
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "watch": "node scripts/build.mjs --watch",
+    "lint": "eslint src scripts",
+    "visual": "node scripts/visual.mjs",
+    "visual:update": "node scripts/visual.mjs --update",
+    "check:blocks": "node scripts/check-blocks.mjs"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "esbuild": "^0.25.0",
+    "eslint": "^9.0.0",
+    "globals": "^16.0.0",
+    "pixelmatch": "^7.0.0",
+    "playwright": "^1.63.0",
+    "pngjs": "^7.0.0",
+    "twig": "^3.0.0"
+  }
+}

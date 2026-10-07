@@ -1,0 +1,15 @@
+{
+  "sections": {
+    "heading": {
+      "type": "page-header"
+    },
+    "blog_post_content": {
+      "type": "main-blog-post",
+      "settings": {}
+    }
+  },
+  "order": [
+    "heading",
+    "blog_post_content"
+  ]
+}
