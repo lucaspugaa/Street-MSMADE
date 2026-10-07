@@ -141,10 +141,11 @@ Leyenda: **[HUMANO]** lo hace la persona · **[CLAUDE]** Claude Code · **[CODEX
 
 ### Fase 1 · Andamiaje (días 2–3)
 
-- [ ] [CLAUDE] `package.json` con `esbuild`, `playwright`, `pixelmatch`, `pngjs` y scripts `build`, `watch`, `lint`, `visual`.
-- [ ] [CLAUDE] `scripts/build.mjs` (src → theme/static) y `scripts/visual.mjs` (compara preview vs `reference/`, umbral configurable).
+- [x] [CLAUDE] `package.json` con `esbuild`, `playwright`, `pixelmatch`, `pngjs` y scripts `build`, `watch`, `lint`, `visual`.
+- [x] [CLAUDE] `scripts/build.mjs` (src → theme/static) y `scripts/visual.mjs` (compara preview vs `reference/`, umbral configurable).
 - [ ] [CLAUDE] `src/core/Universe.js`, `registry.js`, `main.js` vacíos; incluir `app.js` y `app.css` en el layout de TEST con el mismo filtro que ya usa TEST para sus assets.
-- [ ] [CLAUDE] Verificar MCP: pedirle a Codex (`codex_start`) un review de prueba del commit de andamiaje.
+  - Andamiaje JS/CSS creado y build/lint verificados. Falta incluir app.js/app.css en el layout (cuando esté bajado TEST) y la comparación visual (cuando haya referencias).
+- [x] [CLAUDE] Verificar MCP: pedirle a Codex (`codex_start`) un review de prueba del commit de andamiaje.
 - **Cierre:** `npm run build` OK, la preview (`nuvemshop theme watch` o `ftp watch`) se ve idéntica a TEST y `npm run visual` = 0 diferencias.
 
 ### Fase 2 · Modularizar TEST (semanas 1–2)
