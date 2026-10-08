@@ -30,6 +30,17 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 - Respetar la estructura de carpetas que bajó la CLI dentro de `theme/`.
 - Sin dependencias de runtime en el navegador salvo que el humano lo apruebe.
 
+## Twig de Tiendanube: trampas conocidas
+
+Si una plantilla tiene algo que el motor de Tiendanube no acepta, **la sección desaparece sin error** (el `<main>` queda vacío). Twig.js (`check:blocks`) es más permisivo: siempre verificar en la preview.
+
+- `replace` va con dos argumentos: `replace(' | ', '<br>')`. La forma con hash `replace({...})` rompe el render.
+- No usar `{% if block | block_attributes %}`: escribir `{{ block | block_attributes }}` directo.
+- `setting_type` solo de los que ya usa Ipanema (`text`, `richtext`, `select`, `image_picker`, `url`, `color`, `range`, `toggle`…). `textarea` no existe.
+- Los settings omitidos en el JSON toman el `default` del schema (p. ej. `custom` → `section_width: "page"` agrega `div.container` y `vertical_padding: 64`). Al replicar una sección, replicar también esos defaults.
+- `'
+'` entre comillas simples se imprime literal: para un salto de línea, poner un salto real en la plantilla.
+
 ## Comandos
 
 - Home: `home-street.tpl` / `home-universe-banner.tpl` generan la portada editable; los dos contenedores vacíos conservan el gap original de 16 px. `LandingPage` lee la cuenta regresiva del montaje y respeta el masthead Twig.
