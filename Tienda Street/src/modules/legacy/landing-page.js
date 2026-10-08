@@ -1,6 +1,6 @@
 // Copia fiel del <script> del bloque de código original (home · code_twch).
 // Se ejecuta tal cual desde su módulo; el refactor a clases queda para cuando haya preview para verificar.
-export function run() {
+export function run(mount) {
 (function () {
 'use strict';
 
@@ -531,8 +531,8 @@ const editorialAssets = {
 }
 ;
 const countdownConfig = {
-"target": "2026-10-21T00:00:00-03:00",
-"label": "21 OCT 2026 / ARGENTINA · CUENTA HASTA EL DÍA DEL SHOW",
+"target": mount?.dataset.countdownTarget || "2026-10-21T00:00:00-03:00",
+"label": mount?.dataset.countdownLabel || "21 OCT 2026 / ARGENTINA · CUENTA HASTA EL DÍA DEL SHOW",
 "source": "https://btsworldtourofficial.com/",
 "confirmed": true
 }
@@ -1325,7 +1325,7 @@ const apply = index => {
 selected = index;
 parent.dataset.homeLayout = landingVariants[index].layout;
 parent.dataset.brandPreview = 'STREET';
-parent.querySelector('.portal-masthead h1').innerHTML = 'STREET <span>1640</span>';
+// The masthead is authored in Twig so editor changes survive layout selection.
 parent.querySelector('.home-proposal-label').textContent = `Propuesta ${index + 1} de ${landingVariants.length} · ${landingVariants[index].name}`;
 options.querySelectorAll('button').forEach((button, offset) => button.setAttribute('aria-pressed', String(offset === index)));
 if (location.href !== 'about:srcdoc') {
@@ -1348,6 +1348,7 @@ parent.querySelector('.portal-masthead').after(createBenefits());
 updateRewards();
 
 const host = parent.querySelector('.portal-countdown');
+if (!host) return; // The BTS banner can be removed or changed in the editor.
 host.append(element('p', '', countdownConfig.label));
 const clock = element('div', 'countdown-clock');
 host.append(clock);

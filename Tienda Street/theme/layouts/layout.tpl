@@ -101,6 +101,9 @@
 
     {# Footer layout template - adapts automatically for password page #}
     {% layout_template 'footer' %}
+    <div data-module="StoreTheme"></div>
+    <div data-module="MiniCart"></div>
+    <div data-module="DesignMocks"></div>
 
     {% if template != 'password' %}
       {# Quick shop modal #}

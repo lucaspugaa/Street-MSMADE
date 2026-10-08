@@ -1,3 +1,5 @@
+// Herramienta legacy: simula la migración de bloques de categorías/productos, no Home Street ni
+// los montajes globales actuales del layout. No sirve como verificación visual del editor nuevo de la home.
 // Simulación local de la migración, sin subir nada a Tiendanube.
 // Toma el HTML de la tienda publicada (TEST original) y, en el navegador de Playwright, reemplaza cada bloque de
 // código que ya se migró por lo que renderiza su bloque nuevo; además inyecta los CSS/JS generados en theme/static.
@@ -25,11 +27,13 @@ async function migratedBlocks(root, originalRef) {
 
     for (const [sectionId, section] of Object.entries(before.sections ?? {})) {
       const current = after.sections?.[sectionId];
+      if (path === 'theme/templates/pages/home.json' && sectionId === 'custom_1790906164690') continue;
       if (!current?.block_order || !section.block_order) continue;
 
       section.block_order.forEach((oldId, index) => {
         const newId = current.block_order[index];
         const oldBlock = section.blocks[oldId];
+        if (!current.blocks[newId]) return;
         if (oldId === newId || oldBlock?.type !== 'code') return;
         // Varias plantillas reutilizan el mismo id de bloque (code_1mdm, code_2cvl): se guarda cada variante
         // con una firma de su HTML original para elegir la correcta en cada página.
@@ -89,10 +93,7 @@ function transformBlocks(html, replacements, applied) {
       .replace('data-block-type="code"', `data-block-type="${block.type}"`)
       .replace(`data-store="code-block-${oldId}"`, `data-store="code-block-${block.newId}"`);
 
-    if (block.type === 'script-module') {
-      inner = '';
-      if (block.settings?.module) wrapper = wrapper.replace(/>$/, ` data-module="${block.settings.module}">`);
-    } else if (MODULE_BY_TYPE[block.type]) {
+    if (MODULE_BY_TYPE[block.type]) {
       inner = inner.replace(/^<(\w+)\b/, `<$1 data-module="${MODULE_BY_TYPE[block.type]}"`);
     }
 

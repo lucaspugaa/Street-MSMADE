@@ -32,6 +32,11 @@ Réplica pixel a pixel de TEST (ver `reference/`). **No inventar diseño**: ante
 
 ## Comandos
 
+- Home: `home-street.tpl` / `home-universe-banner.tpl` generan la portada editable; los dos contenedores vacíos conservan el gap original de 16 px. `LandingPage` lee la cuenta regresiva del montaje y respeta el masthead Twig.
+- Imágenes: URLs originales como settings de texto; `image_picker` opcional las reemplaza (URL directa o `@media-lib:` resuelta con `resolve_media.sourceUrl`, como Ipanema). En KUMØ, al editar la URL de respaldo también se debe editar/vaciar el srcset; el selector opcional lo desactiva automáticamente.
+- `StoreTheme`, `MiniCart`, `DesignMocks` se montan desde el layout tras el footer, en ese orden. Estudio 3D se conserva deshabilitado.
+- `scripts/lib/simulate.mjs` es legacy para bloques de categorías/productos: **no valida Home Street ni montajes globales**. `check:blocks` renderiza la nueva home con Twig.js, compara el HTML original completo (wrapper y gap incluidos) y prueba settings editados. La fidelidad visual en Tiendanube requiere preview real.
+
 - `npm run build` – compila `src/` a `theme/static/`
 - `npm run watch` – build en modo watch
 - `npm run lint`

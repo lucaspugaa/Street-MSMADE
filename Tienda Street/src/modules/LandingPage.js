@@ -5,6 +5,6 @@ import { run } from './legacy/landing-page.js';
 // Por ahora ejecuta el script original tal cual (src/modules/legacy/landing-page.js).
 export class LandingPage extends Universe {
   render() {
-    run();
+    run(this.el);
   }
 }
