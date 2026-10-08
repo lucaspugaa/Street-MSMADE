@@ -11,7 +11,7 @@ public class SyncJobTests
     {
         var store = new FakeStore();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(null), store, notifier).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(null), store, notifier, new FakeStock()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Skipped, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -26,7 +26,7 @@ public class SyncJobTests
         var store = new FakeStore();
         var lease = new FakeLease();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(lease), store, notifier).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(lease), store, notifier, new FakeStock()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -44,13 +44,60 @@ public class SyncJobTests
         var lease = new FakeLease();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            new SyncJob(new FakeLock(lease), store, new FakeNotifier()).RunAsync("Test", cts.Token));
+            new SyncJob(new FakeLock(lease), store, new FakeNotifier(), new FakeStock()).RunAsync("Test", cts.Token));
 
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.NotNull(store.Run.Error);
         Assert.NotNull(store.Run.FinishedAt);
         Assert.False(store.LastToken.IsCancellationRequested);
         Assert.True(lease.Disposed);
+    }
+
+    [Fact]
+    public async Task EnvioDeStockFallidoDejaFailedConElDetalleGuardado()
+    {
+        var store = new FakeStore();
+        var stock = new FakeStock(detalle =>
+        {
+            detalle.PedidosProcesados = 3;
+            detalle.PoolsEnviados.Add("crema_oversize_s");
+            detalle.PoolsFallidos.Add("negro_oversize_xl");
+            return new HttpRequestException("HTTP 500");
+        });
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock).RunAsync("Test", CancellationToken.None));
+
+        Assert.Equal(EstadoJob.Failed, store.Run!.Status);
+        Assert.Equal(3, store.Run.OrdersProcessed);
+        Assert.Equal(1, store.Run.CombinationsPushed);
+        Assert.Contains("negro_oversize_xl", store.Run.Detalle);
+    }
+
+    [Fact]
+    public async Task CorridaExitosaGuardaContadoresYDetalle()
+    {
+        var store = new FakeStore();
+        var stock = new FakeStock(detalle =>
+        {
+            detalle.PedidosProcesados = 2;
+            detalle.PoolsEnviados.AddRange(["a", "b"]);
+            detalle.Notas.Add("ok");
+            return null;
+        });
+
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock).RunAsync("Test", CancellationToken.None);
+
+        Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
+        Assert.Equal(2, store.Run.OrdersProcessed);
+        Assert.Equal(2, store.Run.CombinationsPushed);
+        Assert.Contains("ok", store.Run.Detalle);
+    }
+
+    private sealed class FakeStock(Func<SyncDetalle, Exception?>? run = null) : IStockSyncStep
+    {
+        public Task<Exception?> RunAsync(SyncDetalle detalle, CancellationToken ct) =>
+            Task.FromResult(run?.Invoke(detalle));
     }
 
     private sealed class FakeLock(IAsyncDisposable? lease) : IJobLock

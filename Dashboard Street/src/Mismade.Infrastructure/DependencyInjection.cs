@@ -32,6 +32,8 @@ public static class DependencyInjection
         services.AddScoped<IJobLock, PostgresJobLock>();
         services.AddScoped<IJobRunStore, JobRunStore>();
         services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
+        services.AddScoped<IStockSyncStore, StockSyncStore>();
+        services.AddScoped<IStockSyncStep, StockSyncStep>();
         services.AddScoped<SyncJob>();
         return services;
     }

@@ -516,6 +516,9 @@ namespace Mismade.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("Detalle")
+                        .HasColumnType("text");
+
                     b.Property<string>("Error")
                         .HasColumnType("text");
 

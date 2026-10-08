@@ -44,7 +44,41 @@
                 <dt>Próxima automática</dt>
                 <dd class="num">@ProximaCorrida()</dd>
             </div>
+            @if (ultima is not null && ultima.Status != EstadoJob.Skipped)
+            {
+                <div>
+                    <dt>Pedidos nuevos</dt>
+                    <dd class="num">@ultima.OrdersProcessed</dd>
+                </div>
+                <div>
+                    <dt>Stock actualizado en Tiendanube</dt>
+                    <dd class="num">@ultima.CombinationsPushed @(ultima.CombinationsPushed == 1 ? "combinación" : "combinaciones")</dd>
+                </div>
+            }
         </dl>
+
+        @if (detalle is { Alertas.Count: > 0 })
+        {
+            <div class="note bad">
+                <b>Revisá el stock:</b>
+                <ul class="alerts">
+                    @foreach (var alerta in detalle.Alertas)
+                    {
+                        <li>@TextoAlerta(alerta)</li>
+                    }
+                </ul>
+            </div>
+        }
+
+        @if (detalle is { Notas.Count: > 0 })
+        {
+            <ul class="run-notes">
+                @foreach (var nota in detalle.Notas)
+                {
+                    <li>@nota</li>
+                }
+            </ul>
+        }
 
         @if (ultima?.Status == EstadoJob.Failed && !string.IsNullOrEmpty(ultima.Error))
         {
@@ -54,10 +88,10 @@
                 <pre>@ultima.Error</pre>
             </details>
         }
-        else if (!integracionesListas)
+        else if (Faltantes.Count > 0)
         {
             <div class="note warn">
-                La sincronización corre, pero todavía no trae datos: faltan conectar Tiendanube y Meta. Mirá «Qué está conectado».
+                Para que el panel muestre todo falta @Lista(Faltantes). Mirá «Qué está conectado».
             </div>
         }
 
@@ -100,14 +134,14 @@
 @code {
     private static readonly TimeZoneInfo Ar = TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
 
-    private record Check(string Nombre, bool Ok, string SiOk, string SiFalta);
+    private record Check(string Nombre, bool Ok, string SiOk, string SiFalta, string Corto);
 
     private JobRun? ultima;
     private bool encolando;
     private string? mensaje;
     private string? usuario;
     private bool disposed;
-    private bool integracionesListas;
+    private SyncDetalle? detalle;
     private bool tiendanubeConectada;
     [SupplyParameterFromQuery(Name = "tiendanube")]
     public string? TiendanubeResultado { get; set; }
@@ -123,11 +157,41 @@
     private bool corriendo => ultima?.Status == EstadoJob.Running;
     private int listos => checks.Count(c => c.Ok);
 
+    private List<string> Faltantes => checks.Where(c => !c.Ok).Select(c => c.Corto).ToList();
+
+    private static string Lista(List<string> items) => items.Count switch
+    {
+        1 => items[0],
+        _ => string.Join(", ", items[..^1]) + " y " + items[^1]
+    };
+
+    private static SyncDetalle? LeerDetalle(JobRun? run)
+    {
+        if (string.IsNullOrEmpty(run?.Detalle))
+        {
+            return null;
+        }
+
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<SyncDetalle>(run.Detalle);
+        }
+        catch (System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    private static string TextoAlerta(AlertaDetalle alerta) => alerta.Tipo == "Sobreventa"
+        ? $"{PoolKeys.Legible(alerta.Pool)}: se vendieron {alerta.Faltante} más de las que había."
+        : $"{PoolKeys.Legible(alerta.Pool)} se quedó sin stock.";
+
     protected override async Task OnInitializedAsync()
     {
         Notifier.Refrescar += Refrescar;
         usuario = (await Authentication.GetAuthenticationStateAsync()).User.Identity?.Name;
         ultima = await Runs.GetLatestAsync(CancellationToken.None);
+        detalle = LeerDetalle(ultima);
         await CargarChecksAsync();
     }
 
@@ -154,19 +218,19 @@
         await using var db = await Db.CreateDbContextAsync();
         var stockCargado = await db.StockRemeras.AnyAsync();
 
-        integracionesListas = tiendanubeOk && metaOk;
         checks =
         [
-            new("Base de datos", true, "Conectada y al día.", ""),
+            new("Base de datos", true, "Conectada y al día.", "", "la base de datos"),
             new("Tiendanube", tiendanubeOk,
                 tienda,
-                "Falta conectar Tiendanube."),
+                "Falta conectar Tiendanube.", "conectar Tiendanube"),
             new("Meta Ads (Street y Kumo)", metaOk,
                 "Token y cuentas cargados.",
-                "Falta generar el token de Meta y cargar las cuentas de Street y Kumo en Render."),
+                "Falta generar el token de Meta y cargar las cuentas de Street y Kumo en Render.", "conectar Meta Ads"),
             new("Datos del dashboard anterior", stockCargado,
                 "Stock importado.",
-                "Falta importar el stock, las ventas en negro y el resto de la información del dashboard actual."),
+                "Falta importar el stock, las ventas en negro y el resto de la información del dashboard actual.",
+                "importar los datos del dashboard anterior"),
         ];
     }
 
@@ -175,6 +239,7 @@
         if (!disposed)
         {
             ultima = await Runs.GetLatestAsync(CancellationToken.None);
+            detalle = LeerDetalle(ultima);
             if (ultima?.Status != EstadoJob.Running)
             {
                 mensaje = ultima?.Status == EstadoJob.Failed ? "Terminó con error." : "Listo.";

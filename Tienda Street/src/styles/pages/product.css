@@ -1,2 +1,3 @@
 /* Página de producto (template == 'product'). Antes: bloques de código de las plantillas de producto. */
 @import '../modules/product-universe.css';
+@import '../modules/mocks-modified.css';

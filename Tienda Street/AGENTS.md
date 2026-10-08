@@ -43,6 +43,11 @@ Si una plantilla tiene algo que el motor de Tiendanube no acepta, **la sección 
 
 ## Comandos
 
+- Home: `home-street.tpl` / `home-universe-banner.tpl` generan la portada editable; los dos contenedores vacíos conservan el gap original de 16 px. `LandingPage` lee la cuenta regresiva del montaje y respeta el masthead Twig.
+- Imágenes: URLs originales como settings de texto; `image_picker` opcional las reemplaza (URL directa o `@media-lib:` resuelta con `resolve_media.sourceUrl`, como Ipanema). En KUMØ, al editar la URL de respaldo también se debe editar/vaciar el srcset; el selector opcional lo desactiva automáticamente.
+- `StoreTheme`, `MiniCart`, `DesignMocks` se montan desde el layout tras el footer, en ese orden. Estudio 3D se conserva deshabilitado.
+- `scripts/lib/simulate.mjs` es legacy para bloques de categorías/productos: **no valida Home Street ni montajes globales**. `check:blocks` renderiza la nueva home con Twig.js, compara el HTML original completo (wrapper y gap incluidos) y prueba settings editados. La fidelidad visual en Tiendanube requiere preview real.
+
 - `npm run build` – compila `src/` a `theme/static/`
 - `npm run watch` – build en modo watch
 - `npm run lint`
@@ -76,3 +81,12 @@ Si una plantilla tiene algo que el motor de Tiendanube no acepta, **la sección 
 ## Criterio de "terminado"
 
 Idéntico a TEST en 1440 px y 390 px, consola limpia, review aprobado, tarea marcada en `ROADMAP.md`.
+
+## MocksModified · preview de fondos en producto
+
+- Montaje global solo en `template == 'product'`; clase `MocksModified` y CSS en el bundle de producto.
+- Activar el preview con `?mocks=1` (primer set disponible) o `?mocks=oscuro` (set concreto). La selección se recuerda en `sessionStorage` entre productos; `?mocks=0` desactiva y borra la sesión. `Original` restaura las imágenes sin recargar y mantiene el control disponible.
+- Sin activación, el módulo no crea controles, observers ni solicitudes de imágenes. Solo modifica la galería de `#single-product`, incluidas miniaturas y enlaces de lightbox; no modifica el producto cargado ni relacionados.
+- Para agregar un mock: guardar el WebP en `theme/static/images/mocks/` y editar `theme/snippets/mocks-modified.tpl`. Clave: nombre base del CDN anterior a `-<hash>-<tamaño>.webp` (ej. `red-bull-1-dorso`); valor: mapa de sets a archivos resueltos con `static_url`. Agregar el nombre visible en `labels` (ej. `oscuro` → `Fondo oscuro`). El JSON usa `json_encode | escape` en un atributo de comillas dobles.
+- El control se fija arriba a la derecha debajo del header, con botones accesibles. Los originales se conservan en `data-mocks-modified-original`; el observer se limita a `.js-product-images` para soportar lazy/Swiper.
+- QA visual real de Tiendanube pendiente hasta que el humano habilite la preview con estos archivos; no desplegar ni leer `.env` para esta tarea.

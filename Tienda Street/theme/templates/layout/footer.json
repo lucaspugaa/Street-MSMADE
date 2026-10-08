@@ -87,33 +87,12 @@
             "variant": "primary",
             "size": "big"
           }
-        },
-        "store_theme": {
-          "type": "script-module",
-          "settings": {
-            "module": "StoreTheme"
-          }
-        },
-        "mini_cart": {
-          "type": "script-module",
-          "settings": {
-            "module": "MiniCart"
-          }
-        },
-        "design_mocks": {
-          "type": "script-module",
-          "settings": {
-            "module": "DesignMocks"
-          }
         }
       },
       "block_order": [
         "heading_aiww",
         "text_z3d1",
-        "button_wzx2",
-        "store_theme",
-        "mini_cart",
-        "design_mocks"
+        "button_wzx2"
       ]
     }
   },

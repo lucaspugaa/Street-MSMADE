@@ -39,6 +39,12 @@ public sealed class TiendanubeCredenciales(
         }
     }
 
+    public async Task DeleteAsync(long storeId, CancellationToken ct)
+    {
+        await using var db = await factory.CreateDbContextAsync(ct);
+        await db.TiendanubeConexiones.Where(x => x.StoreId == storeId).ExecuteDeleteAsync(ct);
+    }
+
     public async Task SaveAsync(long storeId, string token, string scope, string connectedBy, CancellationToken ct)
     {
         var encrypted = protector.Protect(token);

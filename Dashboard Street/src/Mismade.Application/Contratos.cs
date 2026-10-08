@@ -13,7 +13,10 @@ public enum CuentaMeta { Street, Kumo }
 public interface ITiendanubeClient
 {
     Task<string> GetStoreNameAsync(CancellationToken ct);
+    /// <summary>Pedidos pagos con número mayor a <paramref name="desdeOrderNumber"/>, ordenados.</summary>
     Task<IReadOnlyList<PedidoTiendanube>> GetOrdersAsync(long desdeOrderNumber, CancellationToken ct);
+    /// <summary>Número del pedido más reciente de la tienda (0 si no hay ninguno).</summary>
+    Task<long> GetLatestOrderNumberAsync(CancellationToken ct);
     Task<IReadOnlyList<VarianteTiendanube>> GetProductVariantsAsync(long productId, CancellationToken ct);
     /// <summary>Envía el stock en tandas de hasta 50 variantes.</summary>
     Task UpdateStockAsync(IReadOnlyList<VarianteTiendanube> variantes, CancellationToken ct);
@@ -23,6 +26,8 @@ public interface ITiendanubeCredenciales
 {
     Task<(long StoreId, string Token)?> GetAsync(CancellationToken ct);
     Task SaveAsync(long storeId, string token, string scope, string connectedBy, CancellationToken ct);
+    /// <summary>Borra la conexión guardada si es de esa tienda (desinstalación).</summary>
+    Task DeleteAsync(long storeId, CancellationToken ct);
 }
 
 public interface IMetaAdsClient

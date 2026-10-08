@@ -431,7 +431,7 @@
       "type": "custom",
       "settings": {
         "direction": "column",
-        "_custom_name": "Armá tu diseño · Estudio 3D"
+        "_custom_name": "Estudio 3D (en pausa)"
       },
       "blocks": {
         "group_ub8x": {
@@ -484,10 +484,6 @@
             "size": "big"
           }
         },
-        "home_portal": {
-          "type": "home-portal",
-          "settings": {}
-        },
         "code_mcom": {
           "type": "code",
           "disabled": true,
@@ -495,27 +491,131 @@
             "width": "fill",
             "code": "<section id=\"arma-tu-diseno\" class=\"s1640-studio\" data-model-url=\"https://street1640-modelo-original-test.ezequiel-corre871976.chatgpt.site\" aria-labelledby=\"s1640-studio-title\">\n  <span class=\"s1640-studio-label\">STREET 1640 · ESTUDIO / PRIMERA VERSIÓN</span>\n  <h2 id=\"s1640-studio-title\">Tu idea. Tu remera.</h2>\n  <p>Elegí un color, subí tu estampa y girá la remera para ver cómo queda.</p>\n  <button type=\"button\" class=\"studio-launch\">Personalizar en 3D ↗</button>\n  <p class=\"studio-status\" role=\"status\">Remera original del Estudio 3D. Tus imágenes se procesan en este dispositivo.</p>\n  <div class=\"studio-workspace\" hidden>\n    <div>\n      <div class=\"studio-viewport\" tabindex=\"0\" role=\"img\" aria-label=\"Remera 3D: arrastrá para girar; flechas para rotar\">\n        <span class=\"studio-drag\">ARRASTRÁ PARA GIRAR · 360°</span>\n      </div>\n      <div class=\"studio-views\">\n        <button type=\"button\" data-view=\"front\">Ver frente</button>\n        <button type=\"button\" data-view=\"back\">Ver espalda</button>\n        <button type=\"button\" class=\"studio-export\">Generar vista PNG</button>\n      </div>\n      <div class=\"studio-export-preview\" hidden><a class=\"studio-export-link\" download=\"street1640-diseno.png\">Guardar PNG ↗</a><img alt=\"Vista de tu diseño lista para guardar\"></div>\n    </div>\n    <div class=\"studio-controls\">\n      <label>Color de remera\n        <select class=\"studio-color\"><option value=\"#f4f3ef\">Blanco</option><option value=\"#ded0b6\">Natural</option><option value=\"#202124\">Negro</option></select>\n      </label>\n      <label>Lado a personalizar\n        <select class=\"studio-side\"><option value=\"front\">Frente</option><option value=\"back\">Espalda</option></select>\n      </label>\n      <label>Tu estampa (PNG o JPG, hasta 10 MB)\n        <input class=\"studio-artwork\" type=\"file\" accept=\"image/png,image/jpeg\">\n      </label>\n      <p class=\"studio-file-name\">Sin estampa propia. Podés probar el ejemplo.</p>\n      <label>Tamaño de estampa <input class=\"studio-scale\" type=\"range\" min=\"20\" max=\"180\" value=\"80\"></label>\n      <label>Posición horizontal <input class=\"studio-x\" type=\"range\" min=\"-80\" max=\"80\" value=\"0\"></label>\n      <label>Posición vertical <input class=\"studio-y\" type=\"range\" min=\"-80\" max=\"80\" value=\"0\"></label>\n      <label>Zoom <input class=\"studio-zoom\" type=\"range\" min=\"45\" max=\"75\" value=\"60\"></label>\n      <div class=\"studio-views\"><button type=\"button\" class=\"studio-example\">Probar ejemplo</button><button type=\"button\" class=\"studio-clear\">Quitar estampa</button></div>\n      <p>Una imagen por lado. PNG transparente conserva el fondo de la remera. La vista es orientativa: no representa medidas de impresión.</p>\n    </div>\n  </div>\n</section>\n<style>\n.s1640-studio{scroll-margin-top:100px;background:#141414;color:#f6f4ef;border-radius:24px;padding:clamp(22px,4vw,48px);width:100%;box-sizing:border-box;font-family:Arial,sans-serif;text-align:left}\n.s1640-studio .s1640-studio-label{font-size:11px;letter-spacing:.15em;color:#c6cd94}\n.s1640-studio h2{font-size:clamp(32px,4vw,56px);line-height:1.05;margin:20px 0}\n.s1640-studio p{font-size:14px;line-height:1.6}\n.s1640-studio button{background:#d7e3a3;color:#171717;border:0;border-radius:8px;padding:13px 18px;font:inherit;font-size:13px;font-weight:700;cursor:pointer}\n.s1640-studio button:disabled{opacity:.5;cursor:wait}\n.s1640-studio :focus-visible{outline:3px solid #d7e3a3;outline-offset:3px}\n.s1640-studio .studio-status{color:#c7c7c7;font-size:12px;min-height:20px}\n.studio-workspace:not([hidden]){display:grid;grid-template-columns:minmax(0,1.35fr) minmax(240px,1fr);gap:24px;margin-top:24px}\n.studio-viewport{height:460px;position:relative;background:#e7e6ed;border-radius:14px;overflow:hidden;touch-action:pan-y;cursor:grab}\n.studio-viewport canvas{display:block;width:100%;height:100%;touch-action:pan-y}\n.studio-drag{position:absolute;left:0;right:0;bottom:15px;text-align:center;font-size:10px;letter-spacing:.12em;color:#555;pointer-events:none}\n.studio-views{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}\n.s1640-studio .studio-views button{font-size:11px;padding:11px 12px}\n.studio-controls{min-width:0}\n.studio-controls label{display:block;font-size:12px;margin-bottom:16px;line-height:1.5}\n.studio-controls input,.studio-controls select{display:block;width:100%;max-width:100%;box-sizing:border-box;margin-top:7px;accent-color:#d7e3a3}\n.studio-controls select,.studio-controls input[type=file]{background:#242424;color:#f6f4ef;border:1px solid #555;border-radius:6px;padding:10px;font-size:12px}\n.studio-controls p{color:#bdbdbd;font-size:11px}\n.studio-export-preview img{display:block;max-width:100%;height:auto;margin-top:12px;border-radius:12px}.studio-export-link{color:#d7e3a3!important;text-decoration:underline;display:inline-block;padding:12px 0}\n@media(max-width:700px){.studio-workspace:not([hidden]){grid-template-columns:1fr}.studio-viewport{height:350px}.s1640-studio .studio-views button{flex:1}.s1640-studio{border-radius:16px}.studio-controls{padding-top:12px}}\n</style>\n<script>\n(function () {\n  const root = document.getElementById('arma-tu-diseno');\n  if (!root || root.dataset.studioReady) {\n    return;\n  }\n  root.dataset.studioReady = 'true';\n  const find = selector => root.querySelector(selector);\n  const status = find('.studio-status');\n  const launch = find('.studio-launch');\n  let started = false;\n\n  document.addEventListener('click', function (event) {\n    const link = event.target.closest('a[href]');\n    if (link && link.getAttribute('href').split('#')[1] === 'arma-tu-diseno') {\n      event.preventDefault();\n      root.scrollIntoView({ behavior: 'auto', block: 'start' });\n    }\n  });\n\n  launch.addEventListener('click', async function () {\n    if (started) {\n      return;\n    }\n    started = true;\n    launch.disabled = true;\n    status.textContent = 'Cargando el estudio 3D…';\n\n    try {\n      const THREE = await import('https://cdn.jsdelivr.net/npm/three@0.182.0/build/three.module.js');\n\n      const modelUrl = root.dataset.modelUrl;\n      if (!modelUrl) {\n        throw new Error('Falta configurar la URL HTTPS del modelo original.');\n      }\n      status.textContent = 'Cargando la remera original (28 MB)…';\n      const parts = [\"original-5fd47b7d8503-1.js\",\"original-5fd47b7d8503-2.js\"];\n      const downloaded = [];\n      for (let index = 0; index < parts.length; index++) {\n        status.textContent = 'Cargando la remera original · Parte ' + (index + 1) + ' de ' + parts.length + '…';\n        const script = document.createElement('script');\n        script.src = new URL(parts[index], modelUrl + '/').href;\n        try {\n          await new Promise((resolve, reject) => {\n            script.onload = resolve;\n            script.onerror = () => reject(new Error('No se pudo descargar la remera original.'));\n            document.head.appendChild(script);\n          });\n          const encoded = window.__s1640OriginalModelParts?.[index];\n          if (typeof encoded !== 'string') {\n            throw new Error('No se recibió una parte válida de la remera.');\n          }\n          downloaded.push(Uint8Array.from(atob(encoded), character => character.charCodeAt(0)).buffer);\n          delete window.__s1640OriginalModelParts[index];\n        } finally {\n          script.remove();\n        }\n      }\n      const compressed = new Blob(downloaded).stream();\n      const bytes = await new Response(compressed.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();\n      downloaded.length = 0;\n      const digest = await crypto.subtle.digest('SHA-256', bytes);\n      const checksum = Array.from(new Uint8Array(digest), value => value.toString(16).padStart(2, '0')).join('');\n      if (checksum !== '5fd47b7d8503e1ff9691dff55676940e365f2531cced59338a0b68f5b9076c71') {\n        throw new Error('El archivo no coincide con el modelo elegido en localhost:5080.');\n      }\n      const view = new DataView(bytes);\n      const jsonLength = view.getUint32(12, true);\n      const gltfDocument = JSON.parse(new TextDecoder().decode(new Uint8Array(bytes, 20, jsonLength)));\n      const binaryOffset = 20 + jsonLength + 8;\n      const primitive = gltfDocument.meshes[0].primitives[0];\n\n      // This loader preserves every attribute and triangle of the verified original GLB.\n      function attribute(index) {\n        const accessor = gltfDocument.accessors[index];\n        const bufferView = gltfDocument.bufferViews[accessor.bufferView];\n        const components = { SCALAR: 1, VEC2: 2, VEC3: 3 }[accessor.type];\n        const ArrayType = accessor.componentType === 5126 ? Float32Array : Uint32Array;\n        const offset = binaryOffset + (bufferView.byteOffset || 0) + (accessor.byteOffset || 0);\n        return new THREE.BufferAttribute(new ArrayType(bytes, offset, accessor.count * components), components);\n      }\n\n      const geometry = new THREE.BufferGeometry();\n      geometry.setAttribute('position', attribute(primitive.attributes.POSITION));\n      geometry.setAttribute('normal', attribute(primitive.attributes.NORMAL));\n      geometry.setAttribute('uv', attribute(primitive.attributes.TEXCOORD_0));\n      geometry.setIndex(attribute(primitive.indices));\n      geometry.computeBoundingBox();\n      const center = geometry.boundingBox.getCenter(new THREE.Vector3());\n      const size = geometry.boundingBox.getSize(new THREE.Vector3());\n      const scale = 2.76 / size.y;\n      const normalization = new THREE.Matrix4().makeScale(scale, scale, scale);\n      normalization.setPosition(center.multiplyScalar(-scale));\n      geometry.applyMatrix4(normalization);\n      geometry.computeBoundingSphere();\n\n      const frontCanvas = document.createElement('canvas');\n      const backCanvas = document.createElement('canvas');\n      frontCanvas.width = backCanvas.width = 1024;\n      frontCanvas.height = backCanvas.height = 1024;\n      const textures = { front: new THREE.CanvasTexture(frontCanvas), back: new THREE.CanvasTexture(backCanvas) };\n      Object.values(textures).forEach(texture => { texture.colorSpace = THREE.SRGBColorSpace; });\n      const uniforms = { frontArtwork: { value: textures.front }, backArtwork: { value: textures.back } };\n      const material = new THREE.MeshStandardMaterial({ color: '#f4f3ef', roughness: .9, side: THREE.DoubleSide });\n      material.onBeforeCompile = shader => {\n        Object.assign(shader.uniforms, uniforms);\n        shader.vertexShader = shader.vertexShader.replace('#include <common>', '#include <common>\\nvarying vec3 printPosition;\\nvarying vec3 printNormal;')\n          .replace('#include <begin_vertex>', '#include <begin_vertex>\\nprintPosition = position;\\nprintNormal = normal;');\n        shader.fragmentShader = shader.fragmentShader.replace('#include <common>', '#include <common>\\nuniform sampler2D frontArtwork;\\nuniform sampler2D backArtwork;\\nvarying vec3 printPosition;\\nvarying vec3 printNormal;')\n          .replace('#include <map_fragment>', `\n            #include <map_fragment>\n            vec3 surface = normalize(printNormal);\n            vec2 f = vec2(printPosition.x / 1.7 + 0.5, (printPosition.y - 0.1) / 1.7 + 0.5);\n            vec2 b = vec2(-printPosition.x / 1.7 + 0.5, (printPosition.y - 0.1) / 1.7 + 0.5);\n            vec4 fi = texture2D(frontArtwork, f);\n            vec4 bi = texture2D(backArtwork, b);\n            float fm = step(0.0,f.x)*step(f.x,1.0)*step(0.0,f.y)*step(f.y,1.0)*step(0.0,printPosition.z)*step(0.25,surface.z);\n            float bm = step(0.0,b.x)*step(b.x,1.0)*step(0.0,b.y)*step(b.y,1.0)*step(printPosition.z,0.0)*step(surface.z,-0.25);\n            diffuseColor.rgb = mix(diffuseColor.rgb, fi.rgb, fi.a * fm);\n            diffuseColor.rgb = mix(diffuseColor.rgb, bi.rgb, bi.a * bm);\n          `);\n      };\n\n      const viewport = find('.studio-viewport');\n      const renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });\n      renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));\n      renderer.setClearColor('#e7e6ed');\n      renderer.outputColorSpace = THREE.SRGBColorSpace;\n      renderer.toneMapping = THREE.ACESFilmicToneMapping;\n      renderer.toneMappingExposure = 1;\n      renderer.shadowMap.enabled = true;\n      renderer.shadowMap.type = THREE.PCFSoftShadowMap;\n      viewport.appendChild(renderer.domElement);\n      const scene = new THREE.Scene();\n      const camera = new THREE.PerspectiveCamera(36, 1, .1, 100);\n      camera.position.set(0, 0.18, 5.6);\n      scene.add(new THREE.HemisphereLight(0xffffff, 0xa9a1b9, 1.35));\n      const key = new THREE.DirectionalLight(0xffffff, 3);\n      key.position.set(-3, 5, 5);\n      key.castShadow = true;\n      key.shadow.mapSize.set(1024, 1024);\n      Object.assign(key.shadow.camera, { left: -3, right: 3, top: 3, bottom: -3 });\n      key.shadow.normalBias = 0.025;\n      scene.add(key);\n      const fill = new THREE.DirectionalLight(0xdad8ff, 1.4);\n      fill.position.set(3, 1, -4);\n      scene.add(fill);\n      const shirt = new THREE.Mesh(geometry, material);\n      shirt.castShadow = true;\n      scene.add(shirt);\n      const backLight = new THREE.DirectionalLight(0xffffff, 1);\n      backLight.position.set(0, 2, -5);\n      scene.add(backLight);\n      const floor = new THREE.Mesh(\n        new THREE.PlaneGeometry(200, 200),\n        new THREE.ShadowMaterial({ color: 0x554967, opacity: 0.045 })\n      );\n      floor.rotation.x = -Math.PI / 2;\n      floor.position.y = -1.52;\n      floor.receiveShadow = true;\n      scene.add(floor);\n      const sides = { front: { image: null, scale: 80, x: 0, y: 0, name: '' }, back: { image: null, scale: 80, x: 0, y: 0, name: '' } };\n      let activeSide = 'front';\n      let drag = null;\n\n      function render() {\n        renderer.render(scene, camera);\n      }\n      function resize() {\n        if (!viewport.clientWidth) {\n          return;\n        }\n        camera.aspect = viewport.clientWidth / viewport.clientHeight;\n        camera.updateProjectionMatrix();\n        renderer.setSize(viewport.clientWidth, viewport.clientHeight, false);\n        render();\n      }\n      function repaint() {\n        const data = sides[activeSide];\n        const canvas = activeSide === 'front' ? frontCanvas : backCanvas;\n        const context = canvas.getContext('2d');\n        context.clearRect(0, 0, 1024, 1024);\n        if (data.image) {\n          const width = 700 * data.scale / 100;\n          const height = width * data.image.height / data.image.width;\n          context.drawImage(data.image, 512 + data.x * 5 - width / 2, 512 - data.y * 5 - height / 2, width, height);\n        }\n        textures[activeSide].needsUpdate = true;\n        render();\n      }\n      function selectSide(side) {\n        activeSide = side;\n        find('.studio-side').value = side;\n        find('.studio-scale').value = sides[side].scale;\n        find('.studio-x').value = sides[side].x;\n        find('.studio-y').value = sides[side].y;\n        find('.studio-artwork').value = '';\n        find('.studio-file-name').textContent = sides[side].name || 'Sin estampa propia. Podés probar el ejemplo.';\n        shirt.rotation.set(0, side === 'back' ? Math.PI : 0, 0);\n        render();\n      }\n\n      find('.studio-color').addEventListener('change', function () { material.color.set(this.value); render(); });\n      find('.studio-side').addEventListener('change', function () { selectSide(this.value); });\n      root.querySelectorAll('[data-view]').forEach(button => button.addEventListener('click', () => selectSide(button.dataset.view)));\n      [['.studio-scale', 'scale'], ['.studio-x', 'x'], ['.studio-y', 'y']].forEach(([selector, property]) => {\n        find(selector).addEventListener('input', function () { sides[activeSide][property] = Number(this.value); repaint(); });\n      });\n      find('.studio-zoom').addEventListener('input', function () { camera.position.z = Number(this.value) / 10; render(); });\n      find('.studio-artwork').addEventListener('change', async function () {\n        const file = this.files[0];\n        const sideAtSelection = activeSide;\n        if (!file) {\n          return;\n        }\n        if (!['image/png', 'image/jpeg'].includes(file.type) || file.size > 10 * 1024 * 1024) {\n          status.textContent = 'Elegí un PNG o JPG de hasta 10 MB.';\n          return;\n        }\n        const url = URL.createObjectURL(file);\n        try {\n          const image = new Image();\n          image.src = url;\n          await image.decode();\n          if (image.width * image.height > 32000000 || image.width > 8192 || image.height > 8192) {\n            throw new Error('La imagen es demasiado grande. Usá hasta 8192 px por lado.');\n          }\n          sides[sideAtSelection].image = image;\n          sides[sideAtSelection].name = file.name;\n          selectSide(sideAtSelection);\n          repaint();\n          status.textContent = 'Estampa aplicada. Ajustá su tamaño y posición.';\n        } catch (error) {\n          status.textContent = error.message || 'No se pudo leer la imagen.';\n        } finally {\n          URL.revokeObjectURL(url);\n        }\n      });\n      find('.studio-example').addEventListener('click', function () {\n        const art = document.createElement('canvas');\n        art.width = art.height = 700;\n        const context = art.getContext('2d');\n        context.fillStyle = '#df533b';\n        context.fillRect(80, 100, 540, 450);\n        context.fillStyle = '#fff8e8';\n        context.textAlign = 'center';\n        context.font = 'bold 125px Arial';\n        context.fillText('STREET', 350, 295);\n        context.font = 'bold 150px Arial';\n        context.fillText('1640', 350, 455);\n        sides[activeSide].image = art;\n        sides[activeSide].name = 'Ejemplo STREET 1640';\n        find('.studio-file-name').textContent = sides[activeSide].name;\n        repaint();\n      });\n      find('.studio-clear').addEventListener('click', function () {\n        sides[activeSide].image = null;\n        sides[activeSide].name = '';\n        find('.studio-artwork').value = '';\n        find('.studio-file-name').textContent = 'Sin estampa propia. Podés probar el ejemplo.';\n        repaint();\n      });\n      viewport.addEventListener('pointerdown', function (event) {\n        drag = { x: event.clientX, rotation: shirt.rotation.y };\n        viewport.setPointerCapture(event.pointerId);\n      });\n      viewport.addEventListener('pointermove', function (event) {\n        if (!drag) {\n          return;\n        }\n        shirt.rotation.y = drag.rotation + (event.clientX - drag.x) * .012;\n        render();\n      });\n      ['pointerup', 'pointercancel'].forEach(name => viewport.addEventListener(name, () => { drag = null; }));\n      viewport.addEventListener('keydown', function (event) {\n        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') {\n          return;\n        }\n        event.preventDefault();\n        shirt.rotation.y += event.key === 'ArrowLeft' ? -.2 : .2;\n        render();\n      });\n      find('.studio-export').addEventListener('click', function () {\n        render();\n        const link = find('.studio-export-link');\n        link.download = 'street1640-diseno-' + activeSide + '.png';\n        link.href = renderer.domElement.toDataURL('image/png');\n        find('.studio-export-preview img').src = link.href;\n        find('.studio-export-preview').hidden = false;\n        status.textContent = 'Vista PNG lista. Tocá Guardar PNG o mantené presionada la imagen en el celular. Las estampas no se guardan al recargar.';\n      });\n      new ResizeObserver(resize).observe(viewport);\n      find('.studio-workspace').hidden = false;\n      launch.hidden = true;\n      resize();\n      status.textContent = 'Estudio listo · Modelo original 01 · Sin conexión a pedidos.';\n      find('.studio-workspace').scrollIntoView({ behavior: 'auto', block: 'start' });\n      renderer.domElement.addEventListener('webglcontextlost', function (event) {\n        event.preventDefault();\n        status.textContent = 'El visor 3D se interrumpió. Recargá la preview para volver a abrirlo.';\n      });\n    } catch (error) {\n      started = false;\n      launch.disabled = false;\n      find('.studio-workspace').hidden = true;\n      status.textContent = 'No se pudo abrir el visor 3D. Revisá la conexión y volvé a intentarlo.';\n      console.error('STREET 1640 studio:', error);\n    }\n  });\n})();\n</script>\n"
           }
-        },
-        "landing_page": {
-          "type": "script-module",
-          "settings": {
-            "module": "LandingPage"
-          }
-        },
-        "home_layouts": {
-          "type": "script-module",
-          "settings": {
-            "module": ""
-          }
         }
       },
       "block_order": [
         "group_ub8x",
         "button_dmfc",
-        "home_portal",
-        "code_mcom",
-        "landing_page",
-        "home_layouts"
+        "code_mcom"
+      ],
+      "disabled": true
+    },
+    "home_street": {
+      "type": "home-street",
+      "settings": {
+        "masthead_subtitle": "INDUMENTARIA / MARTÍNEZ, BUENOS AIRES",
+        "masthead_title": "STREET",
+        "masthead_number": "1640",
+        "nav_kumo": "#kumo-preview",
+        "nav_futbol": "#football-preview",
+        "nav_artistas": "#artistas-preview",
+        "nav_f1": "#f1-preview",
+        "countdown_target": "2026-10-21T00:00:00-03:00",
+        "countdown_label": "21 OCT 2026 / ARGENTINA · CUENTA HASTA EL DÍA DEL SHOW"
+      },
+      "blocks": {
+        "banner_bts": {
+          "type": "home-universe-banner",
+          "settings": {
+            "variant": "bts",
+            "link": "#artistas-preview",
+            "aria_label": "Entrar a BTS ARIRANG",
+            "eyebrow": "BTS / WORLD TOUR",
+            "title": "ARIRANG",
+            "description": "ARGENTINA / 21.10.2026",
+            "enter": "VER BTS ↗",
+            "image_url": "https://acdn-us.mitiendanube.com/stores/004/626/860/products/bts-artistas-frente-b1171d1da2ff30342f17874347053002-480-0.webp",
+            "image_2_url": "https://acdn-us.mitiendanube.com/stores/004/626/860/products/bts-2-0-negrodorso-9cc59272b32d0b8aac17874366236354-480-0.webp",
+            "image_srcset": "",
+            "art_text": "ARTISTAS",
+            "art_text_2": "BTS",
+            "art_text_3": "ARG",
+            "index": "01"
+          }
+        },
+        "banner_kumo": {
+          "type": "home-universe-banner",
+          "settings": {
+            "variant": "kumo",
+            "link": "#kumo-preview",
+            "aria_label": "Entrar a KUMØ · comparar tres propuestas",
+            "eyebrow": "ANIME / 雲",
+            "title": "KUMØ",
+            "description": "",
+            "enter": "VER KUMØ ↗",
+            "image_url": "https://acdn-us.mitiendanube.com/stores/004/626/860/media/ae3bff32-kumo-lossless/source.webp",
+            "image_2_url": "",
+            "image_srcset": "https://acdn-us.mitiendanube.com/stores/004/626/860/media/d9af73a8-kumo-480/source.webp 480w, https://acdn-us.mitiendanube.com/stores/004/626/860/media/f31f98f0-kumo-960/source.webp 960w, https://acdn-us.mitiendanube.com/stores/004/626/860/media/ae3bff32-kumo-lossless/source.webp 1672w",
+            "art_text": "ARTISTAS",
+            "art_text_2": "BTS",
+            "art_text_3": "ARG",
+            "index": "02"
+          }
+        },
+        "banner_futbol": {
+          "type": "home-universe-banner",
+          "settings": {
+            "variant": "futbol",
+            "link": "#football-preview",
+            "aria_label": "Entrar a 90 — comparar cinco propuestas",
+            "eyebrow": "FÚTBOL / ARCHIVO 90 MINUTOS",
+            "title": "90",
+            "description": "SELECCIÓN ARGENTINA / ÍDOLOS",
+            "enter": "VER FÚTBOL ↗",
+            "image_url": "",
+            "image_2_url": "",
+            "image_srcset": "",
+            "art_text": "90",
+            "art_text_2": "FÚTBOL",
+            "art_text_3": "ARG",
+            "index": "03"
+          }
+        },
+        "banner_artistas": {
+          "type": "home-universe-banner",
+          "settings": {
+            "variant": "artistas",
+            "link": "#artistas-preview",
+            "aria_label": "Entrar a ARTISTAS — comparar cinco propuestas",
+            "eyebrow": "ARTISTAS / BTS",
+            "title": "ARTISTAS",
+            "description": "OASIS / AIRBAG | BAD BUNNY / DUKI / TRUENO | LANZAMIENTO / BTS",
+            "enter": "VER ARTISTAS ↗",
+            "image_url": "",
+            "image_2_url": "",
+            "image_srcset": "",
+            "art_text": "ARTISTAS",
+            "art_text_2": "BTS",
+            "art_text_3": "ARG",
+            "index": "04"
+          }
+        },
+        "banner_f1": {
+          "type": "home-universe-banner",
+          "settings": {
+            "variant": "f1",
+            "link": "#f1-preview",
+            "aria_label": "Entrar a F1 — comparar cinco propuestas",
+            "eyebrow": "MOTORSPORT",
+            "title": "F1",
+            "description": "COLAPINTO / FERRARI / MCLAREN",
+            "enter": "VER F1 ↗",
+            "image_url": "",
+            "image_2_url": "",
+            "image_srcset": "",
+            "art_text": "ARTISTAS",
+            "art_text_2": "BTS",
+            "art_text_3": "ARG",
+            "index": "05"
+          }
+        }
+      },
+      "block_order": [
+        "banner_bts",
+        "banner_kumo",
+        "banner_futbol",
+        "banner_artistas",
+        "banner_f1"
       ]
     }
   },
@@ -526,6 +626,7 @@
     "product-list_1790906018394",
     "banners_grid_3_vertical",
     "featured-categories_1790905534986",
+    "home_street",
     "custom_1790906164690"
   ]
 }

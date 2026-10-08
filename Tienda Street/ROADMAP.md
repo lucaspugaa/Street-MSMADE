@@ -165,6 +165,7 @@ Una rama por módulo (`feat/<modulo>`). Claude lidera; Codex toma el módulo par
 - [ ] [CLAUDE] Refactorizar `src/modules/legacy/*` a clases (con preview para verificar). El id del tema TEST está fijo en esos scripts (`isTest`): pasarlo a configuración antes de publicar la copia.
 - [ ] [CLAUDE] Estudio 3D de la home (`code_mcom`): **NO borrar**. Decisión del humano (2026-10-07): se quiere implementar, pero la versión pegada en el editor hacía lenta la página; queda en standby para rehacerlo como módulo propio con carga diferida (solo al pedirlo).
 - [ ] [CLAUDE] **Editor nuevo de la home** (pedido del humano, 2026-10-07): rearmar la home en secciones propias y editables desde el panel (Portada STREET 1640, Banner BTS/lanzamiento con fecha de cuenta regresiva, Universos, Más vendidos, Beneficios), sin bloques "Código"/"Módulo JS" visibles (módulos JS cargados desde el layout). Renombrar la sección "Armá tu diseño · Estudio 3D". Cada paso: push a TEST (Copia) + `npm run visual` contra TEST. **No publicar** hasta que el humano lo pida.
+  - 2026-10-08, `feat/editor-home`: alcance local pedido implementado: sección **Home · Street 1640**, cinco banners reordenables con textos/links/imágenes, masthead y countdown editables; Estudio 3D conservado en pausa; módulos globales desde layout. HTML completo contra `tienda-v0-original` con normalización estricta y dos hijos vacíos para conservar el gap. El simulador queda legacy. Pendiente preview real/QA visual (sin comandos CLI ni push en esta tarea); más vendidos/beneficios siguen generados por el legacy, sin ampliar este alcance.
 - **Cierre por módulo:** `npm run visual` sin diferencias en esa página + review de Codex aprobado + merge a `main`.
 
 ### Fase 3 · Contenido editable (semana 3)
@@ -207,3 +208,10 @@ Cada cambio: rama → agente → `npm run build` → preview con watch → revie
 - Cómo modificar el diseño desde el código – https://ayuda.tiendanube.com/123227-editar-el-codigo-de-diseno/como-modificar-el-diseno-desde-el-codigo-de-mi-tienda
 - CLI de Tiendanube – https://ayuda.tiendanube.com/134111-asociate-con-tiendanube/como-instalar-y-utilizar-el-cli-de-tiendanube-para-editar-disenos
 - Theme Development – https://dev.tiendanube.com/en/docs/developer-tools/cli/theme-development
+
+## MocksModified · 2026-10-08
+
+- [x] Implementación local: mapa Twig editable y montaje exclusivo de producto, clase Universe registrada, CSS de producto, preview opt-in persistido en sesión y control Original/sets. Reemplazo reversible acotado a galería, miniaturas y links; soporte lazy/Swiper mediante MutationObserver.
+- [x] Agregada `producto-redbull` a la configuración visual sin activar mocks.
+- [x] Verificación local: `npm run build`, `npm run lint` (dos warnings legacy), `npm run check:blocks` (8/8), `node scripts/check-mocks-modified.mjs` (escape Twig, sesión, restauración, lazy/observer, aislamiento y control a 1440/390 px).
+- [ ] QA visual en preview real (1440/390 px), sin mocks idéntico a TEST y con `?mocks=oscuro`; pendiente, sin push ni comandos CLI en esta tarea.
