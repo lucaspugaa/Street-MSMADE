@@ -24,6 +24,56 @@ El comando lee el catálogo público como un visitante, con una pausa entre pág
 
 Agrega productos nuevos, actualiza nombres y portadas actuales, y ordena por nombre. Conserva tus fondos y otras columnas. Un producto que ya no está en el catálogo queda en la planilla con `estado` = `no disponible`; no se borra su fila. Si falla la lectura o no puede confirmar el catálogo completo, no cambia la planilla.
 
+## Atajo: generar los mocks automáticamente
+
+En vez de preparar cada imagen a mano, el script toma la portada actual de cada producto, recorta la prenda y la pone sobre el fondo que elijas. Corre en tu compu, es gratis y no usa IA: los diseños y logos quedan exactamente iguales.
+
+Cerrá la planilla en Excel y ejecutá:
+
+```powershell
+npm run mocks:generar
+```
+
+Para probar primero con algunos productos, pasá sus `handle` separados por comas:
+
+```powershell
+npm run mocks:generar -- --solo remera-oversize-alpine-x-colapinto-1invl,hoodie-oversize-basico-crema-1d3fg
+```
+
+Las imágenes quedan en `mocks/imagenes/generados/` y la planilla se completa sola. Revisalas y después seguí con el paso 4 (`npm run mocks:aplicar`).
+
+- Si una celda ya tiene una imagen tuya (cualquier ruta que no esté en `imagenes/generados/`), **no se toca**. Para que el script la genere, vaciá la celda.
+- Si la portada es una foto o un collage (sin fondo liso), el producto queda con error y se saltea. Podés indicarle otra imagen con `origen` (ver abajo).
+- Las portadas se descargan una sola vez y se guardan en `mocks/originales/`.
+
+### Personalizar: `mocks/estilos.json`
+
+Cada estilo es un fondo. El estilo `oscuro` completa la columna `fondo_oscuro`; si agregás un estilo `crema`, se crea la columna `fondo_crema`. Para generar uno solo: `npm run mocks:generar -- crema`.
+
+| Opción | Qué hace | Valor inicial |
+| --- | --- | --- |
+| `fondo` | Color (`"#1c1c1c"`), imagen (`"fondos/mi-fondo.jpg"`, relativa a `mocks/`) o degradado (`{ "degradado": ["#3a3a3a", "#141414"] }`, centro y bordes). | degradado oscuro |
+| `ancho`, `alto` | Tamaño de la imagen final en píxeles. | 1200 × 1500 |
+| `escala` | Qué tanto ocupa la prenda (0,78 = 78 % del lienzo). | 0.78 |
+| `posicion_vertical` | Dónde queda el centro de la prenda (0 = arriba, 0,5 = centro, 1 = abajo). | 0.5 |
+| `tolerancia` | Cuánto puede variar el color del fondo original. Subila si quedan restos del fondo; bajala si se comen partes claras de la prenda. | 8 |
+| `recortar_borde` | Píxeles que se recortan del contorno para limpiar filetes claros. | 1 |
+| `borde_suave` | Suavizado del contorno. | 0.6 |
+| `sombra_original` | Convierte la sombra gris de la foto original en sombra sobre el fondo nuevo. | `true` |
+| `quitar_huecos` | Quita zonas cerradas del color del fondo, como el hueco entre brazo y cuerpo. Puede borrar estampas blancas sobre prendas blancas. | `false` |
+| `sombra` | Sombra nueva bajo la prenda: `opacidad` (0 a 1), `desenfoque`, `x`, `y`. Con `false`, sin sombra. | 0.45, 22, 0, 16 |
+
+Para cambiar algo en un solo producto, usá `ajustes` con su `handle`. También podés indicarle otra imagen de origen (una ruta en tu compu o una dirección web):
+
+```json
+"ajustes": {
+  "remera-oversize-alpine-x-colapinto-1invl": { "tolerancia": 5, "escala": 0.72 },
+  "remera-x-sabrina-carpenter-manchild-1liuo": { "origen": "imagenes/sabrina-fondo-blanco.png" }
+}
+```
+
+Guardá `estilos.json` y volvé a ejecutar el comando; los productos generados se rehacen.
+
 ## 3. Completá los fondos en Excel
 
 Abrí `mocks/productos.csv` con Excel. El archivo usa UTF-8 con BOM y separador `;` para que se vean bien los acentos y las columnas en Excel en español.

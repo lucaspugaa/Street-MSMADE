@@ -230,3 +230,8 @@ Cada cambio: rama → agente → `npm run build` → preview con watch → revie
 - [x] Comando mocks:subir preparado para diff/push interactivos exclusivamente a TEST (Copia) 14597412; no ejecutado. Guía simple en mocks/LEEME.md e instrucciones actualizadas.
 - [x] Verificación local: mocks:productos leyó 141 productos en 12 páginas públicas; mocks:aplicar preparó Red Bull y en la segunda ejecución informó 1 sin cambios. Pruebas locales CSV/HTTP/sharp y Playwright OK; build OK, lint OK (dos warnings legacy), check:blocks 8/8. Fixtures temporales eliminadas.
 - [ ] QA del snippet generado en preview real; mocks:subir no se ejecutó, sin commits ni despliegue en esta tarea.
+
+### Generador de mocks sin IA · 2026-10-08
+
+- [x] `npm run mocks:generar`: recorte local de portadas con fondo liso y composición sobre fondo configurable (`mocks/estilos.json`, ajustes por handle). Probado con 9 portadas: remeras/buzos negros, crema y gris, jogging; collages detectados y salteados. lint OK, `node scripts/mocks/check.mjs` OK.
+- [ ] [HUMANO] Pasar el fondo definitivo y revisar el lote completo antes de `mocks:aplicar` + `mocks:subir`.

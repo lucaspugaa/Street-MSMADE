@@ -12,6 +12,7 @@
     "visual:update": "node scripts/visual.mjs --update",
     "check:blocks": "node scripts/check-blocks.mjs",
     "mocks:productos": "node scripts/mocks/productos.mjs",
+    "mocks:generar": "node scripts/mocks/generar.mjs",
     "mocks:aplicar": "node scripts/mocks/aplicar.mjs",
     "mocks:subir": "node scripts/mocks/subir.mjs"
   },
