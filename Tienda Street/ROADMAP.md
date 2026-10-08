@@ -222,3 +222,11 @@ Cada cambio: rama → agente → `npm run build` → preview con watch → revie
 - [x] Portadas en tarjetas de categoría, búsqueda y relacionados, incluyendo sliders y tarjetas lazy/scroll infinito; observer solo dentro de MainContent. Montaje en product/category/search; home/más vendidos excluidos.
 - [x] Prueba local Playwright actualizada para Swiper real, fallback e inicialización tardía, preservación de originales, controles, tarjetas/lazy, sesión/off, almacenamiento bloqueado y mobile. `npm run build` OK, `npm run lint` OK (dos warnings legacy), `npm run check:blocks` OK (8/8), `node scripts/check-mocks-modified.mjs` OK (390/1440 px).
 - [ ] QA visual de este ajuste en preview real (1440/390 px), con y sin activación; sin comandos CLI, commits, push ni despliegue en esta tarea.
+
+### Administración de mocks con planilla · 2026-10-08
+
+- [x] Fuente CSV UTF-8 con BOM y `;`: todos los productos públicos, nombres y portadas; columnas fondo_* editables y estado de disponibilidad, sin perder fondos completados. Importador visitante con GET/paginación/pausas y sin escrituras parciales si falla el catálogo.
+- [x] Aplicador con sharp: valida imágenes/rutas, avisa anchos menores a 800, optimiza a WebP hasta 1600, limpia huérfanos, genera Twig y corre build; conserva versión anterior ante errores de imagen. Mock de Red Bull migrado a origen separado en mocks/imagenes/ y salida por handle.
+- [x] Comando mocks:subir preparado para diff/push interactivos exclusivamente a TEST (Copia) 14597412; no ejecutado. Guía simple en mocks/LEEME.md e instrucciones actualizadas.
+- [x] Verificación local: mocks:productos leyó 141 productos en 12 páginas públicas; mocks:aplicar preparó Red Bull y en la segunda ejecución informó 1 sin cambios. Pruebas locales CSV/HTTP/sharp y Playwright OK; build OK, lint OK (dos warnings legacy), check:blocks 8/8. Fixtures temporales eliminadas.
+- [ ] QA del snippet generado en preview real; mocks:subir no se ejecutó, sin commits ni despliegue en esta tarea.

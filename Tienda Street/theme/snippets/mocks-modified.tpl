@@ -1,14 +1,11 @@
-{# MocksModified: preview opt-in; no modifica productos ni imágenes en Tiendanube.
-   Clave: handle del producto en /productos/<handle>/, independiente de sus fotos.
-   Agregar cada set y su archivo con static_url dentro del handle; su etiqueta en labels.
-   Guardar los archivos en static/images/mocks/.
-   Ejemplo: 'otro-producto': { 'oscuro': 'images/mocks/otro-producto-oscuro.webp' | static_url }
-   En ficha y sliders el mock es una portada adicional; Original conserva todas las fotos.
+{# archivo generado por npm run mocks:aplicar, no editar a mano.
+   Fuente: mocks/productos.csv. Clave: handle de /productos/<handle>/.
+   Activar preview con ?mocks=1 o ?mocks=<set>; Original restaura las fotos.
 #}
 {% set mocks_modified = {
   'products': {
     'remera-oversize-red-bull-racing-v7yyp': {
-      'oscuro': 'images/mocks/red-bull-1-dorso-oscuro.webp' | static_url
+      'oscuro': 'images/mocks/remera-oversize-red-bull-racing-v7yyp-oscuro.webp' | static_url
     }
   },
   'labels': {
