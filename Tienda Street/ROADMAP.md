@@ -215,3 +215,10 @@ Cada cambio: rama → agente → `npm run build` → preview con watch → revie
 - [x] Agregada `producto-redbull` a la configuración visual sin activar mocks.
 - [x] Verificación local: `npm run build`, `npm run lint` (dos warnings legacy), `npm run check:blocks` (8/8), `node scripts/check-mocks-modified.mjs` (escape Twig, sesión, restauración, lazy/observer, aislamiento y control a 1440/390 px).
 - [ ] QA visual en preview real (1440/390 px), sin mocks idéntico a TEST y con `?mocks=oscuro`; pendiente, sin push ni comandos CLI en esta tarea.
+
+### Ajuste MocksModified · portadas por handle (2026-10-08)
+
+- [x] Mapa asociado al handle del producto; portada adicional en ficha, miniaturas y zoom, sin reemplazar/ocultar originales. Inserción/remoción con API Swiper o DOM/fallback y sincronización tardía; Original restaura índices, contadores y nodos.
+- [x] Portadas en tarjetas de categoría, búsqueda y relacionados, incluyendo sliders y tarjetas lazy/scroll infinito; observer solo dentro de MainContent. Montaje en product/category/search; home/más vendidos excluidos.
+- [x] Prueba local Playwright actualizada para Swiper real, fallback e inicialización tardía, preservación de originales, controles, tarjetas/lazy, sesión/off, almacenamiento bloqueado y mobile. `npm run build` OK, `npm run lint` OK (dos warnings legacy), `npm run check:blocks` OK (8/8), `node scripts/check-mocks-modified.mjs` OK (390/1440 px).
+- [ ] QA visual de este ajuste en preview real (1440/390 px), con y sin activación; sin comandos CLI, commits, push ni despliegue en esta tarea.

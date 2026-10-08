@@ -1,12 +1,13 @@
-{# MocksModified: preview opt-in; no cambia el producto ni sus imágenes cargadas.
-   Agregar una clave con el nombre anterior a -<hash>-<tamaño>.webp del CDN.
-   Dentro de esa clave, agregar cada set y su archivo con static_url.
-   Agregar la etiqueta del set en labels; guardar archivos en static/images/mocks/.
-   Ejemplo: 'otra-imagen': { 'oscuro': 'images/mocks/otra-imagen-oscuro.webp' | static_url }
+{# MocksModified: preview opt-in; no modifica productos ni imágenes en Tiendanube.
+   Clave: handle del producto en /productos/<handle>/, independiente de sus fotos.
+   Agregar cada set y su archivo con static_url dentro del handle; su etiqueta en labels.
+   Guardar los archivos en static/images/mocks/.
+   Ejemplo: 'otro-producto': { 'oscuro': 'images/mocks/otro-producto-oscuro.webp' | static_url }
+   En ficha y sliders el mock es una portada adicional; Original conserva todas las fotos.
 #}
 {% set mocks_modified = {
-  'images': {
-    'red-bull-1-dorso': {
+  'products': {
+    'remera-oversize-red-bull-racing-v7yyp': {
       'oscuro': 'images/mocks/red-bull-1-dorso-oscuro.webp' | static_url
     }
   },

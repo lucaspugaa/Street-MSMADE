@@ -82,11 +82,13 @@ Si una plantilla tiene algo que el motor de Tiendanube no acepta, **la sección 
 
 Idéntico a TEST en 1440 px y 390 px, consola limpia, review aprobado, tarea marcada en `ROADMAP.md`.
 
-## MocksModified · preview de fondos en producto
+## MocksModified · preview de portadas por producto
 
-- Montaje global solo en `template == 'product'`; clase `MocksModified` y CSS en el bundle de producto.
-- Activar el preview con `?mocks=1` (primer set disponible) o `?mocks=oscuro` (set concreto). La selección se recuerda en `sessionStorage` entre productos; `?mocks=0` desactiva y borra la sesión. `Original` restaura las imágenes sin recargar y mantiene el control disponible.
-- Sin activación, el módulo no crea controles, observers ni solicitudes de imágenes. Solo modifica la galería de `#single-product`, incluidas miniaturas y enlaces de lightbox; no modifica el producto cargado ni relacionados.
-- Para agregar un mock: guardar el WebP en `theme/static/images/mocks/` y editar `theme/snippets/mocks-modified.tpl`. Clave: nombre base del CDN anterior a `-<hash>-<tamaño>.webp` (ej. `red-bull-1-dorso`); valor: mapa de sets a archivos resueltos con `static_url`. Agregar el nombre visible en `labels` (ej. `oscuro` → `Fondo oscuro`). El JSON usa `json_encode | escape` en un atributo de comillas dobles.
-- El control se fija arriba a la derecha debajo del header, con botones accesibles. Los originales se conservan en `data-mocks-modified-original`; el observer se limita a `.js-product-images` para soportar lazy/Swiper.
-- QA visual real de Tiendanube pendiente hasta que el humano habilite la preview con estos archivos; no desplegar ni leer `.env` para esta tarea.
+- Montaje en `product`, `category` y `search`; nunca en home. Clase `MocksModified`, estilos exclusivos del control/fallback en el bundle global para cubrir búsqueda también.
+- Activar con `?mocks=1` (primer set disponible) o `?mocks=oscuro`. La selección se recuerda en `sessionStorage` entre páginas; `?mocks=0` borra y apaga. `Original` restaura sin recargar y conserva el control.
+- Sin activación (URL ni sesión), no crea controles, observers ni solicitudes de mocks. No modifica datos de productos en Tiendanube.
+- Para agregar un mock: guardar el WebP en `theme/static/images/mocks/` y editar `theme/snippets/mocks-modified.tpl`. Clave de `products`: handle de `/productos/<handle>/` (ej. `remera-oversize-red-bull-racing-v7yyp`), independiente de los nombres de las fotos. Valor: mapa de sets a archivos con `static_url`; nombre visible en `labels` (`oscuro` → `Fondo oscuro`). JSON con `json_encode | escape` en atributo de comillas dobles.
+- Ficha: agrega el mock como primera imagen, miniatura y link de zoom si existe. Conserva los nodos de todas las fotos originales y su orden; desplaza y restaura índices de miniaturas y contadores. Usa `prependSlide/update/removeSlide` de Swiper cuando está inicializado; antes, inserta en DOM con navegación temporal, fracción y scroll horizontal. Soporta inicialización tardía del Swiper nativo.
+- Tarjetas nativas dentro de `#MainContent`: detecta el handle del link. Con slider agrega una portada; sin slider conserva el nodo original y muestra una imagen de mock en su lugar hasta volver a Original. No modifica links de compra, información ni imagen secundaria.
+- MutationObserver acotado a `#MainContent`, solo activo; cubre scroll infinito, relacionados lazy y cambios de atributos lazy. Home/más vendidos quedan excluidos por montaje y guard adicional.
+- Prueba aislada: `node scripts/check-mocks-modified.mjs` usa Swiper real del tema, sin `.env` ni acceso a la tienda. QA del motor Twig/preview real sigue pendiente para este ajuste local; no desplegar desde esta tarea.
