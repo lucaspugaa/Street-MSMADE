@@ -104,7 +104,7 @@
     <div data-module="StoreTheme"></div>
     <div data-module="MiniCart"></div>
     <div data-module="DesignMocks"></div>
-    {% if template == 'product' %}
+    {% if template == 'product' or template == 'category' or template == 'search' %}
       {% include 'snippets/mocks-modified.tpl' %}
     {% endif %}
 

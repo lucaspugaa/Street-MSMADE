@@ -37,3 +37,48 @@
   outline: 3px solid #235bc7;
   outline-offset: 2px;
 }
+
+/* Navegación temporal mientras el slider nativo todavía no tiene instancia. */
+.mocks-modified-fallback {
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+}
+
+.mocks-modified-fallback > .swiper-wrapper {
+  display: flex;
+  transform: none !important;
+}
+
+.mocks-modified-fallback > .swiper-wrapper > .swiper-slide {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+}
+
+@media (min-width: 768px) {
+  [data-gallery-format='grid'] .mocks-modified-fallback {
+    overflow: visible;
+    scroll-snap-type: none;
+  }
+
+  [data-gallery-format='grid'] .mocks-modified-fallback > .swiper-wrapper {
+    display: grid;
+  }
+}
+
+.mocks-modified-navigation {
+  display: flex;
+  gap: 8px;
+}
+
+.mocks-modified-navigation button {
+  padding: 4px 12px;
+  border: 1px solid currentColor;
+  background: #fff;
+  color: #181818;
+  cursor: pointer;
+}
+
+.mocks-modified-navigation button:focus-visible {
+  outline: 3px solid #235bc7;
+  outline-offset: 2px;
+}
