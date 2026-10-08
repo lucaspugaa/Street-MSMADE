@@ -5,33 +5,33 @@
 {% if image_2 starts with '@media-lib:' -%}{% set image_2 = (image_2 | resolve_media).sourceUrl -%}{% endif -%}
 {% set banner = block.settings -%}
 {% if banner.variant == 'bts' -%}
-<a class="portal-banner portal-bts"{% if block | block_attributes %} {{ block | block_attributes }}{% endif %} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
-<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace({"\n": "<br>"}) | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
+<a class="portal-banner portal-bts" {{ block | block_attributes }} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
+<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace(' | ', '<br>') | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
 <div class="portal-bts-art" aria-hidden="true"><img src="{{ image_1 | escape }}" alt="" width="480" height="600" fetchpriority="high"><img src="{{ image_2 | escape }}" alt="" width="480" height="600" fetchpriority="high"></div>
 <div class="portal-countdown" aria-label="Cuenta hasta el día del primer show"></div>
 <span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
 </a>
 {% elseif banner.variant == 'kumo' -%}
-<a class="portal-banner portal-kumo card-kumo"{% if block | block_attributes %} {{ block | block_attributes }}{% endif %} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
-<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace({"\n": "<br>"}) | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
+<a class="portal-banner portal-kumo card-kumo" {{ block | block_attributes }} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
+<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace(' | ', '<br>') | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
 <img class="portal-kumo-art" src="{{ image_1 | escape }}"{% if not banner.image and banner.image_srcset %} srcset="{{ banner.image_srcset | escape }}"{% endif %} sizes="(max-width: 600px) 60vw, 30vw" alt="" width="1920" height="960" loading="lazy" decoding="async">
 <span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
 </a>
 {% elseif banner.variant == 'futbol' -%}
-<a class="portal-banner portal-football card-futbol"{% if block | block_attributes %} {{ block | block_attributes }}{% endif %} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
-<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace({"\n": "<br>"}) | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
+<a class="portal-banner portal-football card-futbol" {{ block | block_attributes }} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
+<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace(' | ', '<br>') | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
 <div class="portal-football-art" aria-hidden="true"><span>{{ banner.art_text | escape }}</span><i>{{ banner.art_text_2 | escape }}</i><b>{{ banner.art_text_3 | escape }}</b></div>
 <span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
 </a>
 {% elseif banner.variant == 'artistas' -%}
-<a class="portal-banner portal-artists card-artistas"{% if block | block_attributes %} {{ block | block_attributes }}{% endif %} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
-<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace({"\n": "<br>"}) | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
+<a class="portal-banner portal-artists card-artistas" {{ block | block_attributes }} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
+<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace(' | ', '<br>') | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div>
 <div class="portal-record-art" aria-hidden="true"><span>{{ banner.art_text | escape }}</span><span>{{ banner.art_text_2 | escape }}</span></div>
 <span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
 </a>
 {% elseif banner.variant == 'f1' -%}
-<a class="portal-banner portal-f1"{% if block | block_attributes %} {{ block | block_attributes }}{% endif %} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
-<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace({"\n": "<br>"}) | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div><span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
+<a class="portal-banner portal-f1" {{ block | block_attributes }} href="{{ banner.link | escape }}" aria-label="{{ banner.aria_label | escape }}">
+<div class="portal-banner-copy"><span class="portal-eyebrow">{{ banner.eyebrow | escape }}</span><h2>{{ banner.title | escape }}</h2>{% if banner.description %}<p>{{ banner.description | escape | replace(' | ', '<br>') | raw }}</p>{% endif %}<span class="portal-enter">{{ banner.enter | escape }}</span></div><span class="portal-index" aria-hidden="true">{{ banner.index | escape }}</span>
 </a>
 {%- endif -%}
 {% schema %}
@@ -97,9 +97,9 @@
     },
     {
       "type": "setting",
-      "setting_type": "textarea",
+      "setting_type": "text",
       "id": "description",
-      "label": "Descripción (una línea por renglón)",
+      "label": "Descripción (separá renglones con |)",
       "default": "ARGENTINA / 21.10.2026"
     },
     {

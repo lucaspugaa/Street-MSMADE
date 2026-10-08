@@ -15,11 +15,19 @@ const ORIGINAL = originalRef(ROOT);
 Twig.extendFilter('block_attributes', () => '');
 Twig.extendFilter('resolve_media', value => ({ sourceUrl: `https://example.test/${value.slice(11)}.webp` }));
 Twig.cache(false);
+// Tiendanube usa replace(buscar, reemplazo) (ver layout.tpl); el hash de Twig rompe el render en la plataforma
+// sin avisar. Se aceptan las dos formas acá para poder renderizar las plantillas tal como las usa Tiendanube.
+Twig.extendFilter('replace', (value, params = []) => {
+  const pairs = typeof params[0] === 'object' && params[0] !== null ? Object.entries(params[0]) : [[params[0], params[1]]];
+  return pairs.reduce((text, [from, to]) => String(text).split(String(from)).join(String(to ?? '')), value ?? '');
+});
 
 const original = path => originalJson(ROOT, ORIGINAL, path);
 
 // Etiquetas de bloque: el espacio en blanco junto a ellas no se renderiza. Junto a elementos inline
-// (a, span, strong, img…) sí puede verse, así que ahí NO se normaliza y cualquier diferencia cuenta.
+// (a, span, strong, img…) sí puede verse: ahí se distingue "hay espacio" de "no hay espacio", pero una
+// tira de espacios/saltos equivale a un solo espacio (white-space normal; el tema no usa white-space: pre
+// en este HTML — si alguna vez lo usa, quitar el colapso de abajo).
 const BLOCK = 'address|article|aside|blockquote|div|footer|form|h[1-6]|header|li|main|nav|ol|p|section|ul';
 const BLOCK_EDGE = new RegExp(`(<\\/?(?:${BLOCK})\\b[^>]*>)\\s+|\\s+(?=<\\/?(?:${BLOCK})\\b)`, 'gi');
 
@@ -29,6 +37,7 @@ function normalize(html) {
     .replace(/ data-module="[^"]*"/g, '')
     .replace(/&amp;/g, '&')
     .replace(BLOCK_EDGE, (match, tag) => tag ?? '')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
@@ -63,7 +72,11 @@ const expectedChildren = `<div class="code-block block-fill" data-store="code-bl
 const customTemplate = await readFile(join(ROOT, 'theme/sections/custom.tpl'), 'utf8');
 // Explicit falsy values emulate Twig/PHP for omitted settings: Twig.js treats its
 // undefined sentinel differently in ternaries. Keep the template's own fallbacks.
-const customDefaults = { mobile_direction_enabled: false, section_width: '', alignment: '', alignment_vertical: '', custom_background_color: '', custom_text_color: '' };
+// Tiendanube completa los settings omitidos con los "default" del schema (p. ej. section_width: "page",
+// que agrega el div.container): se toman del propio custom.tpl en vez de suponerlos.
+const customSchema = JSON.parse(/{%\s*schema\s*%}([\s\S]*?){%\s*endschema\s*%}/.exec(customTemplate)[1]);
+const schemaDefaults = Object.fromEntries(customSchema.settings.filter(s => s.id && 'default' in s).map(s => [s.id, s.default]));
+const customDefaults = { mobile_direction_enabled: false, alignment: '', alignment_vertical: '', custom_background_color: '', custom_text_color: '', ...schemaDefaults };
 const customSource = stripSchema(customTemplate)
   .replace(/{% for block in section.blocks %}[\s\S]*?{% endfor %}/, expectedChildren);
 const expectedStreet = Twig.twig({ data: customSource, rethrow: true }).render({ section: { id: 'home_street', settings: { ...customDefaults, ...oldHome.settings } } });

@@ -1,8 +1,9 @@
+using System.Text.Json;
 using Mismade.Domain;
 
 namespace Mismade.Application;
 
-public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier)
+public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier, IStockSyncStep stock)
 {
     public async Task RunAsync(string trigger, CancellationToken ct)
     {
@@ -23,20 +24,26 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
         }
 
         await store.SaveAsync(run, ct);
+        var detalle = new SyncDetalle();
 
         try
         {
-            await PedidosDesdeWatermarkAsync(ct);
+            // Pasos 1, 4 y 5: pedidos desde el watermark y sync de remeras y pools manuales.
+            var errorStock = await stock.RunAsync(detalle, ct);
             await CalcularComisionesAsync(ct);
             await CalcularEnvioAsync(ct);
-            await SincronizarRemerasAsync(ct);
-            await SincronizarPoolsManualesAsync(ct);
             await ProcesarVentasPerdidasCambiosAsync(ct);
             await SincronizarMetaAsync(ct);
             await CerrarMesAsync(ct);
             await NotificarUiAsync(ct);
             await RegistrarLogAsync(ct);
             ct.ThrowIfCancellationRequested();
+            if (errorStock is not null)
+            {
+                throw new InvalidOperationException(
+                    $"No se pudo enviar el stock de {detalle.PoolsFallidos.Count} combinación(es) a Tiendanube.", errorStock);
+            }
+
             run.Status = EstadoJob.Succeeded;
         }
         catch (Exception error)
@@ -49,17 +56,15 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             run.UpdatedAt = run.FinishedAt.Value;
+            run.OrdersProcessed = detalle.PedidosProcesados;
+            run.CombinationsPushed = detalle.PoolsEnviados.Count;
+            run.Detalle = JsonSerializer.Serialize(detalle);
             // Persistir también si el host canceló el trabajo.
             await store.SaveAsync(run, CancellationToken.None);
             notifier.Notify();
         }
     }
 
-    private static Task PedidosDesdeWatermarkAsync(CancellationToken ct)
-    {
-        // TODO 1: obtener pedidos a partir de SyncWatermark y actualizar OrdersProcessed.
-        return Task.CompletedTask;
-    }
 
     private static Task CalcularComisionesAsync(CancellationToken ct)
     {
@@ -73,17 +78,7 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
         return Task.CompletedTask;
     }
 
-    private static Task SincronizarRemerasAsync(CancellationToken ct)
-    {
-        // TODO 4: sincronizar StockRemera, mapas, exclusiones y LastPushedStock en tandas de 50.
-        return Task.CompletedTask;
-    }
 
-    private static Task SincronizarPoolsManualesAsync(CancellationToken ct)
-    {
-        // TODO 5: sincronizar pools con su propio watermark.
-        return Task.CompletedTask;
-    }
 
     private static Task ProcesarVentasPerdidasCambiosAsync(CancellationToken ct)
     {

@@ -40,7 +40,16 @@ public sealed class TiendanubeClientTests
         var count = 0;
         using var http = new HttpClient(new FakeHttpHandler((request, _) =>
         {
+            // Primero busca el id del último pedido procesado (#10) para pedir solo los posteriores.
+            if (request.RequestUri!.Query.Contains("q=10"))
+            {
+                return Task.FromResult(Json(request.RequestUri.Query.Contains("page=1")
+                    ? """[{"id": 900, "number": 100}, {"id": 555, "number": 10}]"""
+                    : "[]"));
+            }
+
             count++;
+            Assert.Contains("since_id=555", request.RequestUri.Query);
             Assert.Contains("payment_status=paid", request.RequestUri!.Query);
             Assert.Contains("per_page=200", request.RequestUri.Query);
             Assert.Contains($"page={count}", request.RequestUri.Query);
@@ -53,7 +62,7 @@ public sealed class TiendanubeClientTests
             if (useLink)
             {
                 response.Headers.TryAddWithoutValidation("Link", count == 1
-                    ? "<https://api.tiendanube.com/v1/123/orders?payment_status=paid&per_page=200&page=2>; rel=\"next\""
+                    ? "<https://api.tiendanube.com/v1/123/orders?payment_status=paid&since_id=555&per_page=200&page=2>; rel=\"next\""
                     : "<https://api.tiendanube.com/v1/123/orders?page=1>; rel=\"prev\"");
             }
 
@@ -255,6 +264,8 @@ internal sealed class FakeCredentials : ITiendanubeCredenciales
 
     public Task<(long StoreId, string Token)?> GetAsync(CancellationToken ct) =>
         Task.FromResult<(long, string)?>((123, "fake-token"));
+
+    public Task DeleteAsync(long storeId, CancellationToken ct) => Task.CompletedTask;
 
     public Task SaveAsync(long storeId, string token, string scope, string connectedBy, CancellationToken ct)
     {

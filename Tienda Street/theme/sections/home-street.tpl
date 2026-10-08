@@ -1,7 +1,10 @@
+{# Mismo contenedor que renderizaba la sección custom con los defaults de su schema
+   (section_width "page" → div.container, vertical_padding 64, fondo transparente). #}
 <div
 	class="section-custom "
 	data-section-id="{{ section.id }}"
-	>
+	style="padding-top: 64px; padding-bottom: 64px; background-color: transparent;">
+<div class="container">
 <div class="custom-section-content d-flex flex-column align-items-start justify-content-center" style="gap: 16px; text-align: left;">
 <div class="code-block block-fill" data-store="code-block-home_portal">
 <section class="parent-universes portal-home" aria-label="STREET 1640 · Portada y universos" data-home-layout="covers">
@@ -15,7 +18,8 @@
 <nav aria-label="Universos"><a href="{{ section.settings.nav_kumo | escape }}">KUMØ</a><a href="{{ section.settings.nav_futbol | escape }}">90</a><a href="{{ section.settings.nav_artistas | escape }}">ARTISTAS</a><a href="{{ section.settings.nav_f1 | escape }}">F1</a></nav>
 </div>
 <div class="portal-banners">
-{% for block in section.blocks %}{% set banner_html %}{% include 'blocks/home-universe-banner.tpl' with { block: block } %}{% endset %}{{ banner_html | trim | raw }}{{ '\n' }}{% endfor %}
+{% for block in section.blocks %}{% include 'blocks/home-universe-banner.tpl' with { block: block } %}
+{% endfor %}
 </div>
 <div class="portal-bestsellers" aria-label="Más vendidos por universo"></div>
 <div class="portal-trust-host"></div>
@@ -24,6 +28,7 @@
 {# Both empty flex children preserve the original two 16px gaps. They are not editor blocks. #}
 <div class="code-block block-fill" data-store="code-block-landing_page" data-module="LandingPage" data-countdown-target="{{ section.settings.countdown_target | escape }}" data-countdown-label="{{ section.settings.countdown_label | escape }}"></div>
 <div class="code-block block-fill" data-store="code-block-home_layouts"></div>
+</div>
 </div>
 </div>
 

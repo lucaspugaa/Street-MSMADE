@@ -31,8 +31,15 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
 
     public async Task<IReadOnlyList<PedidoTiendanube>> GetOrdersAsync(long desdeOrderNumber, CancellationToken ct)
     {
+        // La API corta en 10.000 resultados y no documenta el orden: en vez de recorrer todo el
+        // historial, se busca el id del último pedido procesado y se piden solo los posteriores.
+        var sinceId = desdeOrderNumber > 0 ? await FindOrderIdAsync(desdeOrderNumber, ct) : null;
+        var resource = sinceId is not null
+            ? $"orders?payment_status=paid&since_id={sinceId}"
+            : $"orders?payment_status=paid&created_at_min={Desde(TimeSpan.FromDays(60))}";
+
         var orders = new List<PedidoTiendanube>();
-        await foreach (var item in GetPagesAsync("orders?payment_status=paid", ct))
+        await foreach (var item in GetPagesAsync(resource, ct))
         {
             var number = Integer(item, "number");
             if (number <= desdeOrderNumber || Text(item, "payment_status") != "paid")
@@ -54,6 +61,40 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
 
         return orders.OrderBy(x => x.Number).ToArray();
     }
+
+    public async Task<long> GetLatestOrderNumberAsync(CancellationToken ct)
+    {
+        var ultimo = await MaxNumberAsync($"orders?fields=number&created_at_min={Desde(TimeSpan.FromDays(30))}", ct);
+        return ultimo > 0 ? ultimo : await MaxNumberAsync("orders?fields=number", ct);
+    }
+
+    private async Task<long?> FindOrderIdAsync(long number, CancellationToken ct)
+    {
+        // q busca por número de pedido (también por texto): nos quedamos con la coincidencia exacta.
+        await foreach (var item in GetPagesAsync($"orders?q={number}&fields=id,number", ct))
+        {
+            if (Integer(item, "number") == number)
+            {
+                return Integer(item, "id");
+            }
+        }
+
+        return null;
+    }
+
+    private async Task<long> MaxNumberAsync(string resource, CancellationToken ct)
+    {
+        long max = 0;
+        await foreach (var item in GetPagesAsync(resource, ct))
+        {
+            max = Math.Max(max, Integer(item, "number"));
+        }
+
+        return max;
+    }
+
+    private static string Desde(TimeSpan hace) =>
+        (DateTimeOffset.UtcNow - hace).ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
     public async Task<IReadOnlyList<VarianteTiendanube>> GetProductVariantsAsync(long productId, CancellationToken ct)
     {

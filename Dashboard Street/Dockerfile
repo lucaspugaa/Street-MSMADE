@@ -7,7 +7,9 @@ COPY src/Mismade.Infrastructure/Mismade.Infrastructure.csproj src/Mismade.Infras
 COPY src/Mismade.Web/Mismade.Web.csproj src/Mismade.Web/
 RUN dotnet restore src/Mismade.Web/Mismade.Web.csproj --configfile NuGet.Config
 COPY src/ src/
-RUN dotnet publish src/Mismade.Web/Mismade.Web.csproj -c Release --no-restore -o /app/publish
+# sin --no-restore: los assets del framework de Blazor (_framework/blazor.web.js) se resuelven en el restore del publish
+RUN dotnet publish src/Mismade.Web/Mismade.Web.csproj -c Release -o /app/publish --configfile NuGet.Config \
+    && test -f /app/publish/wwwroot/_framework/blazor.web.js
 
 # imagen oficial (Ubuntu 24.04); ya incluye tzdata para America/Argentina/Buenos_Aires
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final

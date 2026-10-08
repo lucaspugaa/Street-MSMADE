@@ -58,6 +58,8 @@ jobs:
           set -e
           docker logs app 2>&1 | grep -q "Owner inicial owner creado"
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/Account/Login)" = 200
+          # el script de Blazor tiene que estar: sin él los botones no funcionan
+          test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8080/_framework/blazor.web.js)" = 200
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST http://localhost:8080/jobs/sync)" = 401
           test "$(curl -s -o /dev/null -w '%{http_code}' -X POST -H 'X-Job-Key: ci-key' http://localhost:8080/jobs/sync)" = 202
           sleep 5
@@ -67,4 +69,6 @@ jobs:
           for i in $(seq 1 30); do curl -fs http://localhost:8080/health && break; sleep 2; done
           test "$(docker logs app 2>&1 | grep -c 'Owner inicial owner creado')" = 1
       - if: failure()
-        run: docker logs app
+        run: |
+          docker logs app
+          docker run --rm --entrypoint sh mismade-dashboard -c 'ls -la /app/wwwroot /app/wwwroot/_framework' || true

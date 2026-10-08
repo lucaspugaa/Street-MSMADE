@@ -65,6 +65,7 @@ app.MapStaticAssets();
 app.MapRazorPages();
 app.MapHealthChecks("/health").AllowAnonymous();
 app.MapTiendanubeOAuth();
+app.MapTiendanubeWebhooks();
 
 if (mode.Equals("Endpoint", StringComparison.OrdinalIgnoreCase))
 {

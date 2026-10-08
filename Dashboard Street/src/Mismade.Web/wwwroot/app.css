@@ -257,6 +257,9 @@ a { color: var(--accent); }
 .note.bad { background: var(--bad-soft); color: var(--bad); }
 .note.warn { background: var(--warn-soft); color: var(--warn); }
 
+.note ul.alerts { margin: 6px 0 0; padding-left: 18px; }
+.run-notes { margin: 0; padding-left: 18px; font-size: 13.5px; color: var(--muted); display: flex; flex-direction: column; gap: 2px; }
+
 details summary { cursor: pointer; font-size: 13px; color: var(--muted); }
 details pre {
     margin: 8px 0 0;

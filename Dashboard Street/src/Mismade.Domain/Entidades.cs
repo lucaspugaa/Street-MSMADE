@@ -209,4 +209,6 @@ public class JobRun : Entidad
     public int OrdersProcessed { get; set; }
     public int CombinationsPushed { get; set; }
     public string? Error { get; set; }
+    /// <summary>SyncDetalle serializado en JSON.</summary>
+    public string? Detalle { get; set; }
 }
