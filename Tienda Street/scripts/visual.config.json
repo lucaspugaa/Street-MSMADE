@@ -37,6 +37,10 @@
       "path": "/productos/hoodie-oversize-basico-crema-1d3fg/"
     },
     {
+      "name": "producto-redbull",
+      "path": "/productos/remera-oversize-red-bull-racing-v7yyp/"
+    },
+    {
       "name": "carrito",
       "path": "/comprar/"
     }

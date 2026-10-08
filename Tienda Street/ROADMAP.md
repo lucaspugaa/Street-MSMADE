@@ -208,3 +208,10 @@ Cada cambio: rama → agente → `npm run build` → preview con watch → revie
 - Cómo modificar el diseño desde el código – https://ayuda.tiendanube.com/123227-editar-el-codigo-de-diseno/como-modificar-el-diseno-desde-el-codigo-de-mi-tienda
 - CLI de Tiendanube – https://ayuda.tiendanube.com/134111-asociate-con-tiendanube/como-instalar-y-utilizar-el-cli-de-tiendanube-para-editar-disenos
 - Theme Development – https://dev.tiendanube.com/en/docs/developer-tools/cli/theme-development
+
+## MocksModified · 2026-10-08
+
+- [x] Implementación local: mapa Twig editable y montaje exclusivo de producto, clase Universe registrada, CSS de producto, preview opt-in persistido en sesión y control Original/sets. Reemplazo reversible acotado a galería, miniaturas y links; soporte lazy/Swiper mediante MutationObserver.
+- [x] Agregada `producto-redbull` a la configuración visual sin activar mocks.
+- [x] Verificación local: `npm run build`, `npm run lint` (dos warnings legacy), `npm run check:blocks` (8/8), `node scripts/check-mocks-modified.mjs` (escape Twig, sesión, restauración, lazy/observer, aislamiento y control a 1440/390 px).
+- [ ] QA visual en preview real (1440/390 px), sin mocks idéntico a TEST y con `?mocks=oscuro`; pendiente, sin push ni comandos CLI en esta tarea.

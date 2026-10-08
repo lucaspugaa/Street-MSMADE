@@ -104,6 +104,9 @@
     <div data-module="StoreTheme"></div>
     <div data-module="MiniCart"></div>
     <div data-module="DesignMocks"></div>
+    {% if template == 'product' %}
+      {% include 'snippets/mocks-modified.tpl' %}
+    {% endif %}
 
     {% if template != 'password' %}
       {# Quick shop modal #}
