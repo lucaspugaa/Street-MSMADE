@@ -1,4 +1,6 @@
 import sharp from 'sharp';
+// Ojo: en sharp, erode() agranda las zonas blancas de una máscara y dilate() las achica
+// (la morfología de libvips toma el negro como figura). Acá: erode = agrandar, dilate = achicar.
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises';
 import { resolve, isAbsolute } from 'node:path';
@@ -201,7 +203,7 @@ export async function cutout(bytes, { tolerancia, recortar_borde, rellenar_borde
         pieces.push({ pixels: queue.slice(0, size), size });
       }
     }
-    const largest = Math.max(0, ...pieces.map(piece => piece.size));
+    const largest = pieces.reduce((max, piece) => Math.max(max, piece.size), 0);
     for (const piece of pieces) {
       if (piece.size < largest * 0.03) {
         for (const i of piece.pixels) {
@@ -227,8 +229,8 @@ export async function cutout(bytes, { tolerancia, recortar_borde, rellenar_borde
         }
       }
       const raw = { raw: { width: paddedWidth, height: paddedHeight, channels: 1 } };
-      const dilated = await sharp(garment, raw).dilate(radius).extractChannel(0).raw().toBuffer();
-      const closed = await sharp(dilated, raw).erode(radius).extractChannel(0).raw().toBuffer();
+      const dilated = await sharp(garment, raw).erode(radius).extractChannel(0).raw().toBuffer();
+      const closed = await sharp(dilated, raw).dilate(radius).extractChannel(0).raw().toBuffer();
       for (let i = 0; i < total; i++) {
         const x = i % width;
         if (closed[(((i - x) / width) + pad) * paddedWidth + x + pad] > 127 && isBackground[i]) {
@@ -339,7 +341,7 @@ export async function cutout(bytes, { tolerancia, recortar_borde, rellenar_borde
   let base = alpha;
   if (recortar_borde > 0) {
     // Come unos píxeles del contorno: saca el filete claro de las sombras de la foto original.
-    base = await single(alpha).erode(Math.round(recortar_borde)).extractChannel(0).raw().toBuffer();
+    base = await single(alpha).dilate(Math.round(recortar_borde)).extractChannel(0).raw().toBuffer();
   }
   let mask = base;
   if (borde_suave > 0) {
