@@ -8,6 +8,8 @@
       "posicion_vertical": 0.5,
       "tolerancia": 8,
       "recortar_borde": 1,
+      "rellenar_bordes": 8,
+      "suavizar_contorno": 3,
       "borde_suave": 0.6,
       "quitar_huecos": false,
       "sombra_original": true,

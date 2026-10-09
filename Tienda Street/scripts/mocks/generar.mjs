@@ -18,6 +18,8 @@ export const DEFAULTS = {
   posicion_vertical: 0.5,
   tolerancia: 8,
   recortar_borde: 1,
+  rellenar_bordes: 8,
+  suavizar_contorno: 3,
   borde_suave: 0.6,
   quitar_huecos: false,
   sombra_original: true,
@@ -65,9 +67,10 @@ async function sourceImage(origin, handle, pause) {
 }
 
 // Recorta la prenda: el fondo es el color liso que toca los bordes de la foto.
-export async function cutout(bytes, { tolerancia, recortar_borde, borde_suave, quitar_huecos, sombra_original }) {
+export async function cutout(bytes, { tolerancia, recortar_borde, rellenar_bordes, suavizar_contorno, borde_suave, quitar_huecos, sombra_original }) {
   const { data, info } = await sharp(bytes).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
+  const original = Buffer.from(data);
   const total = width * height;
   const border = [];
   for (let x = 0; x < width; x++) {
@@ -158,11 +161,34 @@ export async function cutout(bytes, { tolerancia, recortar_borde, borde_suave, q
       };
       const reach = new Uint8Array(total);
       const size = fill(border, j => isBackground[j] || darkening(j) >= 0, reach);
+      const candidate = Buffer.alloc(total);
       for (let j = 0; j < size; j++) {
         const i = queue[j];
         if (!isBackground[i]) {
-          shadowAlpha[i] = Math.round(darkening(i) * 255);
+          candidate[i] = 255;
           isBackground[i] = 1;
+        }
+      }
+      // Solo cuentan como sombra las franjas horizontales (bajo el ruedo y las mangas). En los costados
+      // el filo iluminado de la prenda se confunde con sombra: si se oscurece parece mordido.
+      const horizontal = new Uint8Array(total);
+      for (let y = 0; y < height; y++) {
+        let start = 0;
+        for (let x = 0; x <= width; x++) {
+          const inside = x < width && candidate[y * width + x];
+          if (!inside) {
+            if (x - start >= 24) {
+              horizontal.fill(1, y * width + start, y * width + x);
+            }
+            start = x + 1;
+          }
+        }
+      }
+      for (let i = 0; i < total; i++) {
+        if (candidate[i] && horizontal[i]) {
+          shadowAlpha[i] = Math.round(darkening(i) * 255);
+        } else if (candidate[i]) {
+          isBackground[i] = 0;
         }
       }
     }
@@ -179,6 +205,59 @@ export async function cutout(bytes, { tolerancia, recortar_borde, borde_suave, q
     for (const piece of pieces) {
       if (piece.size < largest * 0.03) {
         for (const i of piece.pixels) {
+          isBackground[i] = 1;
+        }
+      }
+    }
+
+    if (rellenar_bordes > 0) {
+      // Rellena las "mordidas" del contorno: en las zonas muy iluminadas la tela es casi del color
+      // del fondo y el recorte se mete adentro. Un cierre morfológico (dilatar + erosionar) tapa los
+      // entrantes angostos y devuelve a esos píxeles su color original de la foto.
+      const radius = Math.round(rellenar_bordes);
+      // Margen alrededor para que la prenda no "se pegue" al borde de la foto al dilatar.
+      const pad = radius * 2;
+      const paddedWidth = width + pad * 2;
+      const paddedHeight = height + pad * 2;
+      const garment = Buffer.alloc(paddedWidth * paddedHeight);
+      for (let i = 0; i < total; i++) {
+        if (!isBackground[i]) {
+          const x = i % width;
+          garment[(((i - x) / width) + pad) * paddedWidth + x + pad] = 255;
+        }
+      }
+      const raw = { raw: { width: paddedWidth, height: paddedHeight, channels: 1 } };
+      const dilated = await sharp(garment, raw).dilate(radius).extractChannel(0).raw().toBuffer();
+      const closed = await sharp(dilated, raw).erode(radius).extractChannel(0).raw().toBuffer();
+      for (let i = 0; i < total; i++) {
+        const x = i % width;
+        if (closed[(((i - x) / width) + pad) * paddedWidth + x + pad] > 127 && isBackground[i]) {
+          isBackground[i] = 0;
+          shadowAlpha[i] = 0;
+          data[i * 4] = original[i * 4];
+          data[i * 4 + 1] = original[i * 4 + 1];
+          data[i * 4 + 2] = original[i * 4 + 2];
+        }
+      }
+    }
+
+    if (suavizar_contorno > 0) {
+      // Alisa el contorno: los dientes (píxeles sueltos que el recorte se comió o dejó de más)
+      // se resuelven por mayoría en un entorno. Lo que vuelve a la prenda recupera su color original.
+      const garment = Buffer.alloc(total);
+      for (let i = 0; i < total; i++) {
+        garment[i] = isBackground[i] ? 0 : 255;
+      }
+      const smooth = await sharp(garment, { raw: { width, height, channels: 1 } })
+        .blur(Math.max(0.3, suavizar_contorno)).extractChannel(0).raw().toBuffer();
+      for (let i = 0; i < total; i++) {
+        if (smooth[i] >= 128 && isBackground[i]) {
+          isBackground[i] = 0;
+          shadowAlpha[i] = 0;
+          data[i * 4] = original[i * 4];
+          data[i * 4 + 1] = original[i * 4 + 1];
+          data[i * 4 + 2] = original[i * 4 + 2];
+        } else if (smooth[i] < 128 && !isBackground[i]) {
           isBackground[i] = 1;
         }
       }

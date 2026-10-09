@@ -58,8 +58,10 @@ Cada estilo es un fondo. El estilo `oscuro` completa la columna `fondo_oscuro`; 
 | `posicion_vertical` | Dónde queda el centro de la prenda (0 = arriba, 0,5 = centro, 1 = abajo). | 0.5 |
 | `tolerancia` | Cuánto puede variar el color del fondo original. Subila si quedan restos del fondo; bajala si se comen partes claras de la prenda. | 8 |
 | `recortar_borde` | Píxeles que se recortan del contorno para limpiar filetes claros. | 1 |
+| `rellenar_bordes` | Tapa mordidas angostas del contorno en las zonas muy iluminadas de la prenda. | 8 |
+| `suavizar_contorno` | Alisa los dientes del contorno. Más alto = borde más parejo, menos detalle. | 3 |
 | `borde_suave` | Suavizado del contorno. | 0.6 |
-| `sombra_original` | Convierte la sombra gris de la foto original en sombra sobre el fondo nuevo. | `true` |
+| `sombra_original` | Convierte la sombra gris bajo el ruedo y las mangas en sombra sobre el fondo nuevo (los costados no se tocan). | `true` |
 | `quitar_huecos` | Quita zonas cerradas del color del fondo, como el hueco entre brazo y cuerpo. Puede borrar estampas blancas sobre prendas blancas. | `false` |
 | `sombra` | Sombra nueva bajo la prenda: `opacidad` (0 a 1), `desenfoque`, `x`, `y`. Con `false`, sin sombra. | 0.45, 22, 0, 16 |
 
