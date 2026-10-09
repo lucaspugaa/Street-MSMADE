@@ -28,7 +28,13 @@ public static class DependencyInjection
                 options.Retry.DelayGenerator = args =>
                     new ValueTask<TimeSpan?>(TiendanubeRateLimit.GetDelay(args.Outcome.Result));
             });
-        services.AddHttpClient<IMetaAdsClient, MetaAdsClient>().AddStandardResilienceHandler();
+        services.AddHttpClient<IMetaAdsClient, MetaAdsClient>(http => http.Timeout = TimeSpan.FromSeconds(60))
+            .RemoveAllLoggers();
+        services.AddScoped<IMetaConfiguration>(provider =>
+            provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<MetaOptions>>().Value);
+        services.AddSingleton(TimeProvider.System);
+        services.AddScoped<IMetaInsightStore, MetaInsightStore>();
+        services.AddScoped<IMetaSyncStep, MetaSyncStep>();
         services.AddScoped<IJobLock, PostgresJobLock>();
         services.AddScoped<IJobRunStore, JobRunStore>();
         services.AddSingleton<IDashboardNotifier, DashboardNotifier>();

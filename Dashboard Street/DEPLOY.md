@@ -26,7 +26,9 @@ Todo lo que se puede automatizar ya está en el repo. Lo que queda son las altas
    - `Tiendanube__AppId` y `Tiendanube__ClientSecret`: de la app creada en Partners (ver abajo).
    - `Tiendanube__UserAgent`: nombre de la app y email o URL de contacto; default `MISMADE Dashboard`.
    - `Tiendanube__StoreId` y `Tiendanube__AccessToken`: opcionales; juntos reemplazan las credenciales guardadas por OAuth.
-   - Meta: podés dejar sus variables vacías hasta implementar esa integración.
+   - `Meta__SystemUserToken`: token del usuario del sistema de Meta con permiso `ads_read`.
+   - `Meta__StreetAccountId` y `Meta__KumoAccountId`: IDs de las cuentas publicitarias (dígitos o `act_<dígitos>`).
+   - `Meta__GraphVersion`: opcional; por defecto `v23.0`.
 4. Esperá el primer deploy y entrá a `https://<servicio>.onrender.com`. Iniciá sesión con el Owner.
 5. En **Environment**, borrá `Seed__OwnerPassword` (ya no se usa).
 
@@ -40,6 +42,16 @@ Todo lo que se puede automatizar ya está en el repo. Lo que queda son las altas
 El token se guarda cifrado en PostgreSQL junto con las claves de Data Protection. No copies tokens ni secretos al repo.
 La cookie OAuth es HttpOnly, Secure, SameSite=Lax y vence a los diez minutos; usá HTTPS.
 La actualización batch de stock está prevista para un único depósito; múltiples depósitos necesitan IDs de ubicación.
+
+### Conexión de Meta Ads (Street y Kumo)
+1. En Meta for Developers, creá o seleccioná una app con Marketing API y vinculala al portfolio empresarial que administra las cuentas de Street y Kumo.
+2. En **Configuración del negocio > Usuarios > Usuarios del sistema**, creá un usuario del sistema.
+3. En **Asignar activos**, asignale la app y **ambas cuentas publicitarias**, Street y Kumo, con acceso para ver su rendimiento. Si pertenecen a otro negocio, primero compartí esos activos con el portfolio correspondiente.
+4. Seleccioná **Generar token**, elegí la app y habilitá el permiso **ads_read**. Copiá el token a `Meta__SystemUserToken` en las variables del servicio; nunca al repo ni a los logs.
+5. Cargá los IDs correspondientes en `Meta__StreetAccountId` y `Meta__KumoAccountId`. Opcionalmente configurá `Meta__GraphVersion`; si la omitís usa `v23.0`.
+6. Ejecutá **Sincronizar ahora** desde Inicio. El indicador confirma fecha y gasto de los últimos siete días por cuenta después de sincronizar ambas. Un token cargado por sí solo no confirma acceso.
+
+La primera sincronización de cada cuenta trae desde el día 1 del mes anterior hasta hoy, en hora Argentina. Las siguientes reemplazan los últimos siete días (hoy y los seis anteriores), para incorporar ajustes de atribución. Una cuenta sin configuración se omite; un error en una cuenta no frena la otra ni el stock y la corrida queda marcada como fallida con detalle por cuenta.
 
 ### 3. Disparador del job (elegí uno)
 **cron-job.org** (más puntual):

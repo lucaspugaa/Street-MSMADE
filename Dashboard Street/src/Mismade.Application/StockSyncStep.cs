@@ -25,6 +25,7 @@ public sealed record AlertaDetalle(string Pool, string Tipo, int Faltante);
 /// <summary>Lo que queda registrado de una corrida (JobRun.Detalle, en JSON).</summary>
 public sealed class SyncDetalle
 {
+    public List<MetaSyncDetalle> Meta { get; init; } = [];
     public List<AlertaDetalle> Alertas { get; init; } = [];
     public int LineasSinPool { get; set; }
     public List<string> PoolsEnviados { get; init; } = [];
