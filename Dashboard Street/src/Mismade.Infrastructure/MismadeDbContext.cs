@@ -11,6 +11,7 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
     public DbSet<JobRun> JobRuns => Set<JobRun>();
+    public DbSet<MetaInsightEntity> MetaInsights => Set<MetaInsightEntity>();
     public DbSet<TiendanubeConexion> TiendanubeConexiones => Set<TiendanubeConexion>();
     public DbSet<StockRemera> StockRemeras => Set<StockRemera>();
     public DbSet<StockManualPool> StockManualPools => Set<StockManualPool>();
@@ -38,6 +39,9 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        modelBuilder.Entity<MetaInsightEntity>().ToTable("MetaInsights");
+        modelBuilder.Entity<MetaInsightEntity>().HasKey(x => new { x.Cuenta, x.Fecha, x.CampaignId });
 
         modelBuilder.Entity<TiendanubeConexion>().ToTable("TiendanubeConexiones",
             table => table.HasCheckConstraint("CK_TiendanubeConexion_Unica", "\"Id\" = 1"));

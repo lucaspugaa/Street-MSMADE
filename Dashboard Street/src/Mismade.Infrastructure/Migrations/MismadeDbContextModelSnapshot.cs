@@ -570,6 +570,47 @@ namespace Mismade.Infrastructure.Migrations
                     b.ToTable("LastPushedStocks");
                 });
 
+            modelBuilder.Entity("Mismade.Domain.MetaInsightEntity", b =>
+                {
+                    b.Property<string>("Cuenta")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Fecha")
+                        .HasColumnType("date");
+
+                    b.Property<string>("CampaignId")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("ActualizadoEn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CampaignName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("Clicks")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Compras")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("Gasto")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<long>("Impresiones")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("ValorCompras")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.HasKey("Cuenta", "Fecha", "CampaignId");
+
+                    b.ToTable("MetaInsights", (string)null);
+                });
+
             modelBuilder.Entity("Mismade.Domain.MonthlyHistory", b =>
                 {
                     b.Property<Guid>("Id")

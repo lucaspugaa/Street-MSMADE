@@ -11,7 +11,7 @@ public class SyncJobTests
     {
         var store = new FakeStore();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(null), store, notifier, new FakeStock()).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(null), store, notifier, new FakeStock(), new FakeMeta()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Skipped, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -26,7 +26,7 @@ public class SyncJobTests
         var store = new FakeStore();
         var lease = new FakeLease();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(lease), store, notifier, new FakeStock()).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(lease), store, notifier, new FakeStock(), new FakeMeta()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -44,7 +44,7 @@ public class SyncJobTests
         var lease = new FakeLease();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            new SyncJob(new FakeLock(lease), store, new FakeNotifier(), new FakeStock()).RunAsync("Test", cts.Token));
+            new SyncJob(new FakeLock(lease), store, new FakeNotifier(), new FakeStock(), new FakeMeta()).RunAsync("Test", cts.Token));
 
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.NotNull(store.Run.Error);
@@ -66,7 +66,7 @@ public class SyncJobTests
         });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock).RunAsync("Test", CancellationToken.None));
+            new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta()).RunAsync("Test", CancellationToken.None));
 
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.Equal(3, store.Run.OrdersProcessed);
@@ -86,12 +86,46 @@ public class SyncJobTests
             return null;
         });
 
-        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
         Assert.Equal(2, store.Run.OrdersProcessed);
         Assert.Equal(2, store.Run.CombinationsPushed);
         Assert.Contains("ok", store.Run.Detalle);
+    }
+
+    [Fact]
+    public async Task FalloMetaDejaFailedConAvisoYDetalleAunqueStockSeComplete()
+    {
+        var store = new FakeStore();
+        var stock = new FakeStock(detalle =>
+        {
+            detalle.PoolsEnviados.Add("a");
+            return null;
+        });
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FailedMeta())
+            .RunAsync("Test", default);
+        Assert.Equal(EstadoJob.Failed, store.Run!.Status);
+        Assert.Equal(1, store.Run.CombinationsPushed);
+        Assert.Contains("Street", store.Run.Error);
+        var detalle = System.Text.Json.JsonSerializer.Deserialize<SyncDetalle>(store.Run.Detalle!);
+        Assert.Contains(detalle!.Meta, x => x.Cuenta == CuentaMeta.Kumo && x.Estado == "ok");
+    }
+
+    private sealed class FailedMeta : IMetaSyncStep
+    {
+        public Task RunAsync(SyncDetalle detalle, CancellationToken ct)
+        {
+            var fecha = new DateOnly(2026, 10, 9);
+            detalle.Meta.Add(new(CuentaMeta.Street, "error", "Token vencido", 0, fecha, fecha));
+            detalle.Meta.Add(new(CuentaMeta.Kumo, "ok", "Sincronizada", 1, fecha, fecha));
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeMeta : IMetaSyncStep
+    {
+        public Task RunAsync(SyncDetalle detalle, CancellationToken ct) => Task.CompletedTask;
     }
 
     private sealed class FakeStock(Func<SyncDetalle, Exception?>? run = null) : IStockSyncStep

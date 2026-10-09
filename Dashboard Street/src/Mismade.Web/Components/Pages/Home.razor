@@ -9,6 +9,7 @@
 @inject ITiendanubeCredenciales Credenciales
 @inject ITiendanubeClient Tiendanube
 @inject IOptions<MetaOptions> Meta
+@inject IMetaInsightStore MetaInsights
 @inject IDbContextFactory<MismadeDbContext> Db
 
 <PageTitle>Inicio · MISMADE</PageTitle>
@@ -217,6 +218,35 @@
 
         await using var db = await Db.CreateDbContextAsync();
         var stockCargado = await db.StockRemeras.AnyAsync();
+        var metaTexto = "Falta configurar: cargá el token y las cuentas Street y Kumo.";
+        if (metaOk)
+        {
+            var ultimaMeta = await db.JobRuns.AsNoTracking()
+                .Where(x => x.FinishedAt != null && x.Detalle != null && x.Detalle.Contains("\"Meta\":[{"))
+                .OrderByDescending(x => x.StartedAt).FirstOrDefaultAsync();
+            var resultados = LeerDetalle(ultimaMeta)?.Meta;
+            var errores = resultados?.Where(x => x.Estado == "error").ToList();
+            metaOk = resultados is not null && new[] { CuentaMeta.Street, CuentaMeta.Kumo }
+                .All(cuenta => resultados.Any(x => x.Cuenta == cuenta && x.Estado == "ok"));
+
+            if (errores is { Count: > 0 })
+            {
+                metaTexto = "Error: " + string.Join("; ", errores.Select(x => $"{x.Cuenta}: {x.Mensaje}"));
+            }
+            else if (metaOk)
+            {
+                var (desde, hasta) = MetaSyncVentana.Calcular(true, DateTimeOffset.UtcNow);
+                var street = await MetaInsights.GastoAsync(CuentaMeta.Street, desde, hasta, CancellationToken.None);
+                var kumo = await MetaInsights.GastoAsync(CuentaMeta.Kumo, desde, hasta, CancellationToken.None);
+                var cultura = new System.Globalization.CultureInfo("es-AR");
+                metaTexto = $"OK · {HoraArt(ultimaMeta!.FinishedAt!.Value)} · Gasto últimos 7 días: "
+                    + $"Street {street.ToString("C", cultura)} · Kumo {kumo.ToString("C", cultura)}";
+            }
+            else
+            {
+                metaTexto = "Configurado, sin sincronizar ambas cuentas.";
+            }
+        }
 
         checks =
         [
@@ -225,8 +255,7 @@
                 tienda,
                 "Falta conectar Tiendanube.", "conectar Tiendanube"),
             new("Meta Ads (Street y Kumo)", metaOk,
-                "Token y cuentas cargados.",
-                "Falta generar el token de Meta y cargar las cuentas de Street y Kumo en Render.", "conectar Meta Ads"),
+                metaTexto, metaTexto, "sincronizar Meta Ads"),
             new("Datos del dashboard anterior", stockCargado,
                 "Stock importado.",
                 "Falta importar el stock, las ventas en negro y el resto de la información del dashboard actual.",
@@ -240,6 +269,7 @@
         {
             ultima = await Runs.GetLatestAsync(CancellationToken.None);
             detalle = LeerDetalle(ultima);
+            await CargarChecksAsync();
             if (ultima?.Status != EstadoJob.Running)
             {
                 mensaje = ultima?.Status == EstadoJob.Failed ? "Terminó con error." : "Listo.";

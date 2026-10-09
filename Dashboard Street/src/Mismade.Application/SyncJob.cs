@@ -3,7 +3,8 @@ using Mismade.Domain;
 
 namespace Mismade.Application;
 
-public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier, IStockSyncStep stock)
+public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier,
+    IStockSyncStep stock, IMetaSyncStep meta)
 {
     public async Task RunAsync(string trigger, CancellationToken ct)
     {
@@ -33,7 +34,7 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
             await CalcularComisionesAsync(ct);
             await CalcularEnvioAsync(ct);
             await ProcesarVentasPerdidasCambiosAsync(ct);
-            await SincronizarMetaAsync(ct);
+            await meta.RunAsync(detalle, ct);
             await CerrarMesAsync(ct);
             await NotificarUiAsync(ct);
             await RegistrarLogAsync(ct);
@@ -44,7 +45,10 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
                     $"No se pudo enviar el stock de {detalle.PoolsFallidos.Count} combinación(es) a Tiendanube.", errorStock);
             }
 
-            run.Status = EstadoJob.Succeeded;
+            var erroresMeta = detalle.Meta.Where(x => x.Estado == "error").ToList();
+            run.Status = erroresMeta.Count > 0 ? EstadoJob.Failed : EstadoJob.Succeeded;
+            run.Error = erroresMeta.Count > 0
+                ? string.Join("; ", erroresMeta.Select(x => $"{x.Cuenta}: {x.Mensaje}")) : null;
         }
         catch (Exception error)
         {
@@ -83,25 +87,6 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
     private static Task ProcesarVentasPerdidasCambiosAsync(CancellationToken ct)
     {
         // TODO 6: incorporar ventas en negro, pérdidas y cambios sin duplicar movimientos.
-        return Task.CompletedTask;
-    }
-
-    private static async Task SincronizarMetaAsync(CancellationToken ct)
-    {
-        // Paso 7: mantener las cuentas separadas.
-        await SincronizarMetaStreetAsync(ct);
-        await SincronizarMetaKumoAsync(ct);
-    }
-
-    private static Task SincronizarMetaStreetAsync(CancellationToken ct)
-    {
-        // TODO: consultar y persistir insights únicamente de CuentaMeta.Street.
-        return Task.CompletedTask;
-    }
-
-    private static Task SincronizarMetaKumoAsync(CancellationToken ct)
-    {
-        // TODO: consultar y persistir insights únicamente de CuentaMeta.Kumo.
         return Task.CompletedTask;
     }
 

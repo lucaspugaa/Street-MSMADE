@@ -7,7 +7,8 @@ public record PedidoTiendanube(long Id, long Number, DateTimeOffset CreatedAt, d
     IReadOnlyList<LineaPedido> Productos);
 public record LineaPedido(long ProductId, long VariantId, int Quantity);
 public record VarianteTiendanube(long ProductId, long VariantId, int? Stock);
-public record MetaInsight(DateOnly Fecha, decimal Gasto);
+public record MetaInsight(CuentaMeta Cuenta, DateOnly Fecha, string CampaignId, string CampaignName,
+    decimal Gasto, long Impresiones, long Clicks, decimal Compras, decimal ValorCompras);
 public enum CuentaMeta { Street, Kumo }
 
 public interface ITiendanubeClient
