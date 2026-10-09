@@ -14,6 +14,7 @@
     "mocks:productos": "node scripts/mocks/productos.mjs",
     "mocks:generar": "node scripts/mocks/generar.mjs",
     "mocks:aplicar": "node scripts/mocks/aplicar.mjs",
+    "mocks:vincular": "node scripts/mocks/vincular.mjs",
     "mocks:subir": "node scripts/mocks/subir.mjs"
   },
   "devDependencies": {

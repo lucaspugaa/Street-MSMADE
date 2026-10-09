@@ -102,6 +102,22 @@ Para otro fondo, agregá una columna como `fondo_crema` o `fondo_azul_claro`. El
 
 Guardá como **CSV UTF-8**, manteniendo el separador **punto y coma (`;`)**, y cerrá Excel antes del siguiente paso. No guardes como XLSX. Si Excel muestra todo en una sola columna, importá desde Datos → Desde texto/CSV, elegí UTF-8 y delimitador punto y coma.
 
+### Atajo: cargar una carpeta entera de imágenes
+
+Si generaste las imágenes con `ImageGenerator` (por ejemplo en `ImageGenerator\IMAGES\Categories\COMPLETE\KUMO`), no hace falta copiarlas ni escribir las rutas a mano. Cerrá la planilla en Excel y ejecutá:
+
+```powershell
+npm run mocks:vincular -- "D:\Proyectos\Street-MSMADE\ImageGenerator\IMAGES\Categories\COMPLETE\KUMO"
+```
+
+Cada imagen se asigna al producto cuyo `handle` coincide con el nombre del archivo: `<handle>.webp`, `<handle>-mock.webp` o `<handle>-01-mock.webp`. En la celda queda la ruta completa a esa carpeta, con el mismo nombre de archivo. Las imágenes que no corresponden a ningún producto se listan y no se usan.
+
+- Por defecto completa `fondo_oscuro`. Para otro fondo: `--columna fondo_azul` (si la columna no existe, la crea).
+- Si una celda ya tenía otra imagen, se reemplaza. Con `--conservar` se dejan las que ya estaban.
+- Podés pasar varias carpetas a la vez.
+
+Después seguí con el paso 4.
+
 ## 4. Prepará los mocks
 
 ```powershell
