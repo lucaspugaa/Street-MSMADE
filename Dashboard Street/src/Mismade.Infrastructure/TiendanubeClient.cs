@@ -65,7 +65,7 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
     public async Task<IReadOnlyList<VentaTiendanube>> GetOrdersUpdatedSinceAsync(
         DateTimeOffset desde, CancellationToken ct)
     {
-        var fecha = Uri.EscapeDataString(desde.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+        var fecha = desde.ToUniversalTime().ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
         var ventas = new List<VentaTiendanube>();
         await foreach (var item in GetPagesAsync($"orders?updated_at_min={fecha}&status=any&payment_status=any", ct))
         {
@@ -221,7 +221,12 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
 
         while (next is not null)
         {
-            using var response = await SendAsync(HttpMethod.Get, next, null, ct);
+            using var response = await SendPageAsync(next, ct);
+            if (response is null)
+            {
+                yield break;
+            }
+
             using var json = await ReadAsync(response, ct);
             if (json.RootElement.GetArrayLength() == 0)
             {
@@ -242,6 +247,20 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
             {
                 next = $"{resource}{separator}per_page=200&page={++page}";
             }
+        }
+    }
+
+    private async Task<HttpResponseMessage?> SendPageAsync(string resource, CancellationToken ct)
+    {
+        try
+        {
+            return await SendAsync(HttpMethod.Get, resource, null, ct);
+        }
+        // Un listado sin resultados, o una página después de la última, responde 404 "Last page is N".
+        catch (HttpRequestException error) when (error.StatusCode == HttpStatusCode.NotFound
+            && error.Message.Contains("Last page", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
         }
     }
 
@@ -276,8 +295,11 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
         if (!response.IsSuccessStatusCode)
         {
             var status = response.StatusCode;
+            var detalle = await response.Content.ReadAsStringAsync(ct);
             response.Dispose();
-            throw new HttpRequestException($"Tiendanube respondió HTTP {(int)status}.", null, status);
+            detalle = detalle.Length > 300 ? detalle[..300] : detalle;
+            throw new HttpRequestException(
+                $"Tiendanube respondió HTTP {(int)status}{(detalle.Length > 0 ? $": {detalle}" : "")}.", null, status);
         }
 
         return response;
