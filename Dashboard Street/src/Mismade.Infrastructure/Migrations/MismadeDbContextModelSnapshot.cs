@@ -1006,6 +1006,131 @@ namespace Mismade.Infrastructure.Migrations
                         });
                 });
 
+            modelBuilder.Entity("Mismade.Domain.Venta", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset?>("CancelledAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Currency")
+                        .HasColumnType("text");
+
+                    b.Property<string>("CustomerEmail")
+                        .HasColumnType("text");
+
+                    b.Property<long?>("CustomerId")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("CustomerName")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Discount")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<string>("Gateway")
+                        .HasColumnType("text");
+
+                    b.Property<long>("Number")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset?>("PaidAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PaymentStatus")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("ShippingCostCustomer")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<decimal>("ShippingCostOwner")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<string>("ShippingOption")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Subtotal")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<long>("TiendanubeOrderId")
+                        .HasColumnType("bigint");
+
+                    b.Property<decimal>("Total")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAtTiendanube")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Number");
+
+                    b.HasIndex("TiendanubeOrderId")
+                        .IsUnique();
+
+                    b.ToTable("Ventas");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.VentaItem", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("Price")
+                        .HasPrecision(14, 2)
+                        .HasColumnType("numeric(14,2)");
+
+                    b.Property<long>("ProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<int>("Quantity")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Sku")
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("VariantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<Guid>("VentaId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("VentaId");
+
+                    b.ToTable("VentaItems");
+                });
+
             modelBuilder.Entity("Mismade.Domain.VentaNegro", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1072,6 +1197,39 @@ namespace Mismade.Infrastructure.Migrations
                     b.HasIndex("VentaNegroId");
 
                     b.ToTable("VentaNegroItems");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.VentasSyncEstado", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Clave")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset?>("HistorialDesde")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UltimoUpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Clave")
+                        .IsUnique();
+
+                    b.ToTable("VentasSyncEstados", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_VentasSyncEstado_Unico", "\"Clave\" = 'ventas'");
+                        });
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -1180,6 +1338,17 @@ namespace Mismade.Infrastructure.Migrations
                     b.Navigation("StockRemera");
                 });
 
+            modelBuilder.Entity("Mismade.Domain.VentaItem", b =>
+                {
+                    b.HasOne("Mismade.Domain.Venta", "Venta")
+                        .WithMany("Items")
+                        .HasForeignKey("VentaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Venta");
+                });
+
             modelBuilder.Entity("Mismade.Domain.VentaNegroItem", b =>
                 {
                     b.HasOne("Mismade.Domain.VentaNegro", "VentaNegro")
@@ -1196,6 +1365,11 @@ namespace Mismade.Infrastructure.Migrations
                     b.Navigation("ItemsRecibidos");
 
                     b.Navigation("ItemsSalida");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.Venta", b =>
+                {
+                    b.Navigation("Items");
                 });
 
             modelBuilder.Entity("Mismade.Domain.VentaNegro", b =>

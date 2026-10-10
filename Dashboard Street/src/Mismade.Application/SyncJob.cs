@@ -4,7 +4,7 @@ using Mismade.Domain;
 namespace Mismade.Application;
 
 public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier,
-    IStockSyncStep stock, IMetaSyncStep meta)
+    IStockSyncStep stock, IMetaSyncStep meta, IVentasSyncStep ventas)
 {
     public async Task RunAsync(string trigger, CancellationToken ct)
     {
@@ -29,6 +29,8 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
 
         try
         {
+            await ventas.RunAsync(detalle, ct);
+
             // Pasos 1, 4 y 5: pedidos desde el watermark y sync de remeras y pools manuales.
             var errorStock = await stock.RunAsync(detalle, ct);
             await CalcularComisionesAsync(ct);
@@ -46,9 +48,14 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
             }
 
             var erroresMeta = detalle.Meta.Where(x => x.Estado == "error").ToList();
-            run.Status = erroresMeta.Count > 0 ? EstadoJob.Failed : EstadoJob.Succeeded;
-            run.Error = erroresMeta.Count > 0
-                ? string.Join("; ", erroresMeta.Select(x => $"{x.Cuenta}: {x.Mensaje}")) : null;
+            var errores = erroresMeta.Select(x => $"{x.Cuenta}: {x.Mensaje}").ToList();
+            if (detalle.ErrorVentas is not null)
+            {
+                errores.Add(detalle.ErrorVentas);
+            }
+
+            run.Status = errores.Count > 0 ? EstadoJob.Failed : EstadoJob.Succeeded;
+            run.Error = errores.Count > 0 ? string.Join("; ", errores) : null;
         }
         catch (Exception error)
         {
@@ -60,7 +67,7 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
         {
             run.FinishedAt = DateTimeOffset.UtcNow;
             run.UpdatedAt = run.FinishedAt.Value;
-            run.OrdersProcessed = detalle.PedidosProcesados;
+            run.OrdersProcessed = Math.Max(detalle.PedidosProcesados, detalle.VentasNuevas);
             run.CombinationsPushed = detalle.PoolsEnviados.Count;
             run.Detalle = JsonSerializer.Serialize(detalle);
             // Persistir también si el host canceló el trabajo.

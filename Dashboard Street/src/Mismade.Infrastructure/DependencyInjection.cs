@@ -40,6 +40,11 @@ public static class DependencyInjection
         services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
         services.AddScoped<IStockSyncStore, StockSyncStore>();
         services.AddScoped<IStockSyncStep, StockSyncStep>();
+        services.AddScoped<IVentasConfiguration>(provider =>
+            provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<TiendanubeOptions>>().Value);
+        services.AddScoped<IVentasStore, VentasStore>();
+        services.AddScoped<IVentasSyncStep, VentasSyncStep>();
+        services.AddScoped<FinanzasConsulta>();
         services.AddScoped<SyncJob>();
         return services;
     }

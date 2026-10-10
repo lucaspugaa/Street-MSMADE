@@ -13,6 +13,7 @@ public enum CuentaMeta { Street, Kumo }
 
 public interface ITiendanubeClient
 {
+    Task<IReadOnlyList<VentaTiendanube>> GetOrdersUpdatedSinceAsync(DateTimeOffset desde, CancellationToken ct);
     Task<string> GetStoreNameAsync(CancellationToken ct);
     /// <summary>Pedidos pagos con número mayor a <paramref name="desdeOrderNumber"/>, ordenados.</summary>
     Task<IReadOnlyList<PedidoTiendanube>> GetOrdersAsync(long desdeOrderNumber, CancellationToken ct);
@@ -58,3 +59,13 @@ public interface ISyncQueue
 {
     ValueTask EnqueueAsync(string trigger, CancellationToken ct = default);
 }
+
+public sealed record VentaTiendanube(
+    long TiendanubeOrderId, long Number, DateTimeOffset CreatedAt, DateTimeOffset UpdatedAtTiendanube,
+    DateTimeOffset? PaidAt, DateTimeOffset? CancelledAt, string Status, string PaymentStatus,
+    decimal Total, decimal Subtotal, decimal Discount, decimal ShippingCostCustomer,
+    decimal ShippingCostOwner, string? Gateway, string? ShippingOption, string? Currency,
+    long? CustomerId, string? CustomerName, string? CustomerEmail, IReadOnlyList<VentaItemTiendanube> Items);
+
+public sealed record VentaItemTiendanube(
+    long ProductId, long VariantId, int Quantity, decimal Price, string Name, string? Sku);
