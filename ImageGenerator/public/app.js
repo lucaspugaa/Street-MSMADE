@@ -6,6 +6,8 @@ const numericFields = [
   ['posicion_vertical', 'Posición vertical', 0, 1, 0.01],
   ['tolerancia', 'Tolerancia', 0, 255, 0.1],
   ['recortar_borde', 'Recortar borde (px)', 0, 20, 1],
+  ['rellenar_bordes', 'Rellenar mordidas (px)', 0, 40, 1],
+  ['suavizar_contorno', 'Suavizar contorno (px)', 0, 20, 0.5],
   ['borde_suave', 'Borde suave (px)', 0, 100, 0.1],
 ];
 const shadowFields = [
@@ -106,6 +108,7 @@ function readOptions() {
   for (const [key] of numericFields) {
     options[key] = Number($(key).value);
   }
+  options.recorte = $('recorte').value;
   options.quitar_huecos = $('quitar_huecos').checked;
   options.sombra_original = $('sombra_original').checked;
   options.sombra = false;
@@ -130,6 +133,13 @@ async function run(selected) {
   busy = true;
   updateButtons();
   try {
+    const configResponse = await fetch('/api/config', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ destino: $('destination').value }),
+    });
+    const config = await configResponse.json();
+    if (!configResponse.ok) throw new Error(config.error);
+    $('destination').value = config.destino;
     const fondo = backgroundFile ? await dataURL(backgroundFile) : null;
     let completed = 0;
     for (const card of selected) {
@@ -140,7 +150,7 @@ async function run(selected) {
       $('message').textContent = `Procesando ${completed + 1} de ${selected.length}…`;
       try {
         const imagen = await dataURL(card.file);
-        const body = JSON.stringify({ imagen, fondo, opciones: options });
+        const body = JSON.stringify({ imagen, fondo, opciones: options, destino: config.destino, nombre: card.file.name });
         if (new Blob([body]).size > 25 * 1024 * 1024) {
           throw new Error('La foto y el fondo juntos superan los 25 MB del pedido. Elegí archivos más chicos.');
         }
@@ -159,7 +169,7 @@ async function run(selected) {
         const download = card.element.querySelector('.download');
         download.href = card.resultURL;
         download.download = `${card.file.name.replace(/\.[^.]+$/, '')}-mock.webp`;
-        status.textContent = 'Listo';
+        status.textContent = `Listo · Guardado en ${decodeURIComponent(response.headers.get('X-Saved-Path') ?? '')}`;
       } catch (error) {
         status.textContent = `Error: ${error.message}`;
         status.classList.add('error');
@@ -169,7 +179,7 @@ async function run(selected) {
     }
     $('message').textContent = 'Terminó el procesamiento. Podés descargar los resultados o ajustar y regenerar.';
   } catch (error) {
-    $('message').textContent = `Error en el fondo: ${error.message}`;
+    $('message').textContent = `Error: ${error.message}`;
   } finally {
     busy = false;
     updateButtons();
@@ -256,6 +266,10 @@ try {
     throw new Error('No se pudieron cargar los ajustes.');
   }
   const defaults = await response.json();
+  $('recorte').value = defaults.recorte;
+  const configResponse = await fetch('/api/config');
+  if (!configResponse.ok) throw new Error('No se pudo leer la carpeta destino.');
+  $('destination').value = (await configResponse.json()).destino;
   createFields(numericFields, $('numeric-controls'), defaults);
   createFields(shadowFields, $('shadow-fields'), defaults.sombra || {}, 'shadow-');
   $('sombra_original').checked = defaults.sombra_original;

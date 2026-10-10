@@ -1,2 +1,5 @@
 node_modules/
 salida/
+config.json
+config.json.*.tmp
+scratch/

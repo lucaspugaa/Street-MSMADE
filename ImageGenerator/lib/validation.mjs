@@ -7,6 +7,8 @@ export const LIMITS = {
   posicion_vertical: [0, 1],
   tolerancia: [0, 255],
   recortar_borde: [0, 20, true],
+  rellenar_bordes: [0, 40, true],
+  suavizar_contorno: [0, 20],
   borde_suave: [0, 100],
 };
 
@@ -38,6 +40,10 @@ export function validateOptions(options) {
   for (const [key, value] of Object.entries(options)) {
     if (Object.hasOwn(LIMITS, key)) {
       number(value, key, LIMITS[key]);
+    } else if (key === 'recorte') {
+      if (!['preciso', 'rapido'].includes(value)) {
+        throw new Error('recorte: usá "preciso" o "rapido".');
+      }
     } else if (key === 'quitar_huecos' || key === 'sombra_original') {
       if (typeof value !== 'boolean') {
         throw new Error(`${key}: usá true o false.`);

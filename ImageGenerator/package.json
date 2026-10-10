@@ -7,8 +7,7 @@
   },
   "scripts": {
     "start": "node server.mjs",
-    "generar": "node cli.mjs",
-    "descargar": "node descargar.mjs"
+    "generar": "node cli.mjs"
   },
   "dependencies": {
     "@imgly/background-removal-node": "^1.4.5",

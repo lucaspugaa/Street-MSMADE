@@ -57,6 +57,36 @@ export function merge(...layers) {
 }
 
 
+// Interpola la iluminación de los cuatro bordes sin muestrear la prenda.
+function backgroundModel(data, width, height) {
+  const profile = indices => indices.map((_, position) => {
+    const samples = indices.slice(Math.max(0, position - 16), position + 17);
+    return [0, 1, 2].map(channel => {
+      const values = samples.map(i => data[i * 4 + channel]).sort((a, b) => a - b);
+      return values[values.length >> 1];
+    });
+  });
+  const top = profile(Array.from({ length: width }, (_, x) => x));
+  const bottom = profile(Array.from({ length: width }, (_, x) => (height - 1) * width + x));
+  const left = profile(Array.from({ length: height }, (_, y) => y * width));
+  const right = profile(Array.from({ length: height }, (_, y) => y * width + width - 1));
+  const model = new Float32Array(width * height * 3);
+  for (let y = 0; y < height; y++) {
+    const v = y / Math.max(1, height - 1);
+    for (let x = 0; x < width; x++) {
+      const u = x / Math.max(1, width - 1);
+      for (let c = 0; c < 3; c++) {
+        const corners = (1 - v) * ((1 - u) * top[0][c] + u * top[width - 1][c])
+          + v * ((1 - u) * bottom[0][c] + u * bottom[width - 1][c]);
+        const value = (1 - u) * left[y][c] + u * right[y][c]
+          + (1 - v) * top[x][c] + v * bottom[x][c] - corners;
+        model[(y * width + x) * 3 + c] = Math.min(255, Math.max(0, value));
+      }
+    }
+  }
+  return model;
+}
+
 export async function cutout(bytes, { recorte, tolerancia, recortar_borde, rellenar_bordes, suavizar_contorno, borde_suave, quitar_huecos, sombra_original }) {
   const { data, info } = await sharp(bytes).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
   const { width, height } = info;
@@ -159,13 +189,11 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
       }
     }
   } else {
-    const median = channel => {
-      const values = border.map(i => data[i * 4 + channel]).sort((a, b) => a - b);
-      return values[values.length >> 1];
-    };
-    const bg = [median(0), median(1), median(2)];
+    const background = backgroundModel(data, width, height);
     const distance = i => Math.max(
-      Math.abs(data[i * 4] - bg[0]), Math.abs(data[i * 4 + 1] - bg[1]), Math.abs(data[i * 4 + 2] - bg[2]));
+      Math.abs(data[i * 4] - background[i * 3]),
+      Math.abs(data[i * 4 + 1] - background[i * 3 + 1]),
+      Math.abs(data[i * 4 + 2] - background[i * 3 + 2]));
     // Cada lado de la foto tiene que ser mayormente fondo liso; si no, es una foto o un collage.
     const near = i => distance(i) <= Math.max(tolerancia * 2, 20);
     const sides = [
@@ -194,7 +222,7 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
         const i = queue[head++];
         const x = i % width;
         for (const next of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
-          if (next >= 0 && next < total && !region[next] && accept(next)) {
+          if (next >= 0 && next < total && !region[next] && accept(next, i)) {
             region[next] = 1;
             queue[tail++] = next;
           }
@@ -226,12 +254,28 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
     const shadowAlpha = new Uint8Array(total);
     if (sombra_original) {
       const darkening = i => {
-        const k = [0, 1, 2].map(c => data[i * 4 + c] / Math.max(bg[c], 1));
+        const k = [0, 1, 2].map(c => data[i * 4 + c] / Math.max(background[i * 3 + c], 1));
         const average = (k[0] + k[1] + k[2]) / 3;
         return Math.max(...k) - Math.min(...k) <= 0.025 && average < 1 && average >= 0.82 ? 1 - average : -1;
       };
       const reach = new Uint8Array(total);
-      const size = fill(border, j => isBackground[j] || darkening(j) >= 0, reach);
+      // La sombra varía gradualmente. Un salto de color marca el filo de la tela,
+      // incluso cuando una costura crema/gris tiene el mismo matiz que el fondo.
+      const maximumStep = Math.max(2, Math.min(5, tolerancia / 2));
+      const size = fill(border, (j, from = j) => {
+        if (isBackground[j]) {
+          return true;
+        }
+        if (darkening(j) < 0) {
+          return false;
+        }
+        for (let c = 0; c < 3; c++) {
+          if (Math.abs(data[j * 4 + c] - data[from * 4 + c]) > maximumStep) {
+            return false;
+          }
+        }
+        return true;
+      }, reach);
       const candidate = Buffer.alloc(total);
       for (let j = 0; j < size; j++) {
         const i = queue[j];
@@ -384,8 +428,8 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
       let dot = 0;
       let length = 0;
       for (let c = 0; c < 3; c++) {
-        const towards = data[inner * 4 + c] - bg[c];
-        dot += (data[i * 4 + c] - bg[c]) * towards;
+        const towards = data[inner * 4 + c] - background[i * 3 + c];
+        dot += (data[i * 4 + c] - background[i * 3 + c]) * towards;
         length += towards * towards;
       }
       if (length < 400) {
@@ -394,7 +438,8 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
       const coverage = Math.min(1, Math.max(0.05, dot / length));
       alpha[i] = Math.round(coverage * 255);
       for (let c = 0; c < 3; c++) {
-        const value = bg[c] + (data[i * 4 + c] - bg[c]) / coverage;
+        const bg = background[i * 3 + c];
+        const value = bg + (data[i * 4 + c] - bg) / coverage;
         data[i * 4 + c] = Math.min(255, Math.max(0, Math.round(value)));
       }
     }

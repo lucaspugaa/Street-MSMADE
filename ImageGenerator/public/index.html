@@ -49,11 +49,22 @@
         </section>
         <section>
           <h2>3. Ajustá el resultado</h2>
+          <label for="recorte">Recorte</label>
+          <select id="recorte">
+            <option value="preciso">Preciso (modelo local, unos segundos por foto)</option>
+            <option value="rapido">Rápido (color del fondo)</option>
+          </select>
           <div id="numeric-controls" class="fields"></div>
           <label class="check"><input id="sombra_original" type="checkbox"> Conservar sombra original</label>
           <label class="check"><input id="quitar_huecos" type="checkbox"> Quitar huecos del color del fondo</label>
           <label class="check"><input id="shadow-enabled" type="checkbox"> Agregar sombra</label>
           <fieldset id="shadow-controls"><legend>Sombra agregada</legend><div id="shadow-fields" class="fields"></div></fieldset>
+        </section>
+        <section>
+          <h2>4. Elegí dónde guardar</h2>
+          <label for="destination">Carpeta destino (ruta absoluta)</label>
+          <input id="destination" type="text" required spellcheck="false" autocomplete="off">
+          <p class="hint">Se crea si no existe y se recuerda para la próxima vez. También podés descargar desde el navegador.</p>
         </section>
         <button id="generate" class="primary" type="submit">Generar</button>
         <p class="hint">Los cambios se aplican cuando tocás Generar o Regenerar.</p>
