@@ -28,7 +28,7 @@ const css = await readFile(new URL('src/styles/modules/mocks-modified.css', root
 const libraries = await readFile(new URL('theme/static/js/libraries-standalone.js', root), 'utf8');
 const COVER_SELECTOR = '[data-mocks-modified-cover]';
 const handle = 'remera-oversize-red-bull-racing-v7yyp';
-const mock = 'https://assets.test/images/mocks/red-bull-1-dorso-oscuro.webp?a=1&b="quoted"';
+const mock = `https://assets.test/images/mocks/${handle}-oscuro.webp?a=1&b="quoted"`;
 const image = number => `https://cdn.test/foto-original-${number}.webp`;
 const img = number => `<img width="200" height="200" class="product-item-image" src="${image(number)}" srcset="${image(number)} 480w">`;
 const gallery = `<section id="single-product"><div class="js-product-images">

@@ -15,3 +15,5 @@ Thumbs.db
 # copias sueltas de la config (la vigente es .claude/settings.json)
 claude-settings.json
 Claude outputs/
+# copias descargadas de las portadas (npm run mocks:generar)
+mocks/originales/
