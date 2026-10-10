@@ -2,6 +2,7 @@ import http from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readFile, realpath, stat } from 'node:fs/promises';
+import { getConfig, prepareDestination, rememberDestination, saveImage } from './lib/output.mjs';
 import { DEFAULTS, generate } from './lib/mockup.mjs';
 import { decodeImage, isObject, validateOptions } from './lib/validation.mjs';
 
@@ -71,21 +72,46 @@ const server = http.createServer(async (request, response) => {
     return;
   }
 
+  if (pathname === '/api/config' && ['GET', 'POST'].includes(request.method)) {
+    try {
+      if (request.method === 'GET') {
+        json(response, 200, await getConfig());
+      } else {
+        const body = await readJSON(request);
+        if (!isObject(body) || Object.keys(body).length !== 1 || !Object.hasOwn(body, 'destino')) {
+          throw new Error('Enviá { destino: ruta absoluta }.');
+        }
+        const destino = await prepareDestination(body.destino);
+        json(response, 200, await rememberDestination(destino));
+      }
+    } catch (error) {
+      json(response, 400, { error: error.message });
+    }
+    return;
+  }
+
   if (request.method === 'POST' && pathname === '/api/generar') {
     let image;
     let options;
+    let destination;
+    let originalName;
     try {
       const body = await readJSON(request);
       if (!isObject(body) || !Object.hasOwn(body, 'imagen')
           || (body.fondo !== null && typeof body.fondo !== 'string')
-          || Object.keys(body).some(key => !['imagen', 'fondo', 'opciones'].includes(key))) {
+          || Object.keys(body).some(key => !['imagen', 'fondo', 'opciones', 'destino', 'nombre'].includes(key))) {
         throw new Error('Enviá { imagen, fondo: dataURL o null, opciones: {} }.');
       }
+      if (body.nombre !== undefined && (typeof body.nombre !== 'string' || body.nombre.length > 255)) {
+        throw new Error('nombre tiene que ser un texto de hasta 255 caracteres.');
+      }
+      originalName = body.nombre;
       options = { ...validateOptions(body.opciones) };
       image = await decodeImage(body.imagen);
       if (body.fondo !== null) {
         options.fondo = await decodeImage(body.fondo);
       }
+      destination = await prepareDestination(body.destino ?? (await getConfig()).destino);
     } catch (error) {
       json(response, 400, { error: error.message });
       return;
@@ -93,7 +119,9 @@ const server = http.createServer(async (request, response) => {
 
     try {
       const result = await generate(image, options);
-      response.writeHead(200, { 'Content-Type': 'image/webp' });
+      const savedPath = await saveImage(destination, originalName, result);
+      await rememberDestination(destination);
+      response.writeHead(200, { 'Content-Type': 'image/webp', 'X-Saved-Path': encodeURIComponent(savedPath) });
       response.end(result);
     } catch (error) {
       json(response, 422, { error: error.message });
