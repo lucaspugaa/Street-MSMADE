@@ -235,6 +235,83 @@ public sealed class TiendanubeClientTests
         Assert.Equal(2, calls);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task UpdatedOrdersParseAllStatusesAndPaginate(bool useLink)
+    {
+        var calls = 0;
+        using var http = new HttpClient(new FakeHttpHandler((request, _) =>
+        {
+            calls++;
+            Assert.Contains("updated_at_min=2026-10-01T00%3A00%3A00", request.RequestUri!.Query);
+            Assert.Contains("status=any", request.RequestUri.Query);
+            Assert.DoesNotContain("payment_status=paid", request.RequestUri.Query);
+            Assert.Contains("payment_status=any", request.RequestUri.Query);
+            var response = Json(calls switch
+            {
+                1 => """
+                    [{"id":"20","number":"30","created_at":"2026-10-01T02:00:00+0000",
+                    "updated_at":"2026-10-02T00:00:00-0300","paid_at":null,
+                    "cancelled_at":"2026-10-02T01:00:00-0300","status":"cancelled",
+                    "payment_status":"pending","total":"1500.25","subtotal":"1600.00",
+                    "discount":"200.00","shipping_cost_customer":"100.25","shipping_cost_owner":"50.00",
+                    "gateway":"offline","shipping_option":"Correo","currency":"ARS","customer":null,
+                    "products":[{"product_id":"7","variant_id":"8","quantity":"2","price":"800.00",
+                    "name":{"pt":"Camisa","es":"Remera"},"sku":null}]}]
+                    """,
+                2 => """
+                    [{"id":21,"number":31,"created_at":"2026-10-01T00:00:00+0000",
+                    "updated_at":"2026-10-02T00:00:00+0000","paid_at":"2026-10-02T00:00:00+0000",
+                    "cancelled_at":null,"status":"closed","payment_status":"paid","total":20,
+                    "subtotal":20,"discount":0,"shipping_cost_customer":0,"shipping_cost_owner":0,
+                    "gateway":null,"shipping_option":null,"currency":null,
+                    "customer":{"id":"40","name":"Ana","email":"ana@example.com"},
+                    "products":[{"product_id":7,"variant_id":8,"quantity":1,"price":20,"name":"Remera","sku":"R"}]}]
+                    """,
+                _ => "[]"
+            });
+            if (useLink)
+            {
+                response.Headers.TryAddWithoutValidation("Link", calls == 1
+                    ? "<https://api.tiendanube.com/v1/123/orders?updated_at_min=2026-10-01T00%3A00%3A00Z&status=any&payment_status=any&page=2>; rel=next"
+                    : "<https://api.tiendanube.com/v1/123/orders?page=1>; rel=prev");
+            }
+
+            return Task.FromResult(response);
+        }));
+
+        var orders = await Client(http).GetOrdersUpdatedSinceAsync(DateTimeOffset.Parse("2026-10-01T00:00:00Z"), default);
+        Assert.Equal(2, orders.Count);
+        var first = orders[0];
+        Assert.Equal(20, first.TiendanubeOrderId);
+        Assert.Equal(30, first.Number);
+        Assert.Equal(1500.25m, first.Total);
+        Assert.Equal(1600m, first.Subtotal);
+        Assert.Equal(200m, first.Discount);
+        Assert.Equal(100.25m, first.ShippingCostCustomer);
+        Assert.Equal(50m, first.ShippingCostOwner);
+        Assert.Equal("offline", first.Gateway);
+        Assert.Equal("Correo", first.ShippingOption);
+        Assert.Equal("ARS", first.Currency);
+        Assert.Equal("pending", first.PaymentStatus);
+        Assert.Equal("cancelled", first.Status);
+        Assert.Null(first.CustomerId);
+        Assert.Null(first.CustomerName);
+        Assert.Null(first.CustomerEmail);
+        Assert.Null(first.PaidAt);
+        Assert.NotNull(first.CancelledAt);
+        Assert.Equal(TimeSpan.Zero, first.CreatedAt.Offset);
+        Assert.Equal(TimeSpan.FromHours(-3), first.UpdatedAtTiendanube.Offset);
+        Assert.Equal(new VentaItemTiendanube(7, 8, 2, 800, "Remera", null), Assert.Single(first.Items));
+        Assert.Equal(40, orders[1].CustomerId);
+        Assert.Equal("Ana", orders[1].CustomerName);
+        Assert.Equal("ana@example.com", orders[1].CustomerEmail);
+        Assert.NotNull(orders[1].PaidAt);
+        Assert.Equal("Remera", Assert.Single(orders[1].Items).Name);
+        Assert.Equal(useLink ? 2 : 3, calls);
+    }
+
     private static TiendanubeClient Client(HttpClient http) =>
         new(http, Options.Create(new TiendanubeOptions()), new FakeCredentials());
 

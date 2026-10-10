@@ -168,6 +168,9 @@ public sealed class StockSyncStepTests
         public int PedidosConsultados => Desdes.Count;
         public long? FallarVariante { get; init; }
 
+        public Task<IReadOnlyList<VentaTiendanube>> GetOrdersUpdatedSinceAsync(DateTimeOffset desde, CancellationToken ct) =>
+            Task.FromResult<IReadOnlyList<VentaTiendanube>>([]);
+
         public Task<string> GetStoreNameAsync(CancellationToken ct) => Task.FromResult("Test");
 
         public Task<IReadOnlyList<PedidoTiendanube>> GetOrdersAsync(long desde, CancellationToken ct)

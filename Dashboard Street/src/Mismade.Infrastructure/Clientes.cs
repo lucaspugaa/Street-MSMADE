@@ -7,8 +7,9 @@ using Mismade.Application;
 
 namespace Mismade.Infrastructure;
 
-public sealed class TiendanubeOptions
+public sealed class TiendanubeOptions : IVentasConfiguration
 {
+    public int HistorialVentasDias { get; set; } = 400;
     public string AppId { get; set; } = "";
     public string ClientSecret { get; set; } = "";
     public string UserAgent { get; set; } = "MISMADE Dashboard";

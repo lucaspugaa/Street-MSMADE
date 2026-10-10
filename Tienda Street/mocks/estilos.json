@@ -1,0 +1,20 @@
+{
+  "estilos": {
+    "oscuro": {
+      "fondo": { "degradado": ["#3a3a3a", "#141414"] },
+      "ancho": 1200,
+      "alto": 1500,
+      "escala": 0.78,
+      "posicion_vertical": 0.5,
+      "tolerancia": 8,
+      "recortar_borde": 1,
+      "rellenar_bordes": 8,
+      "suavizar_contorno": 3,
+      "borde_suave": 0.6,
+      "quitar_huecos": false,
+      "sombra_original": true,
+      "sombra": { "opacidad": 0.45, "desenfoque": 22, "x": 0, "y": 16 }
+    }
+  },
+  "ajustes": {}
+}
