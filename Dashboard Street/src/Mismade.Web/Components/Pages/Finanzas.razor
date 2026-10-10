@@ -1,14 +1,50 @@
 @page "/finanzas"
 @attribute [Authorize]
+@inject FinanzasConsulta Consulta
 
 <PageTitle>Finanzas · MISMADE</PageTitle>
 
 <header class="page-head">
     <span class="eyebrow">Street</span>
     <h1>Finanzas</h1>
-    <p>Facturación y margen real del día, el mes y el año, ya descontadas comisiones, envíos absorbidos, costo de prenda y Ads.</p>
+    <p>Facturación de pedidos pagos, sin cancelaciones, por fecha de creación en hora argentina.</p>
 </header>
 
-<EmptyState Titulo="Las finanzas se arman con los pedidos de Tiendanube"
-            Texto="Cuando lleguen los pedidos vas a ver el margen del día, del mes y del año, el historial mensual, los gastos operativos y las confirmaciones de Pago Nube en cuotas. El balance con Cris queda aparte y nunca se mezcla con el margen."
-            Falta="@(["Conectar Tiendanube.", "Conectar Meta Ads, para descontar el gasto en publicidad de Street.", "Importar el historial mensual y los gastos del dashboard anterior."])" />
+@if (resumen is { TieneVentas: true })
+{
+    <div class="grid">
+        @foreach (var periodo in new[] { ("Hoy", resumen.Hoy), ("Este mes", resumen.Mes), ("Este año", resumen.Anio) })
+        {
+            <section class="card">
+                <div class="card-head"><h2>@periodo.Item1</h2></div>
+                <dl class="facts">
+                    <div><dt>Facturado</dt><dd class="num">@periodo.Item2.Facturado.ToString("C", Cultura)</dd></div>
+                    <div><dt>Pedidos</dt><dd class="num">@periodo.Item2.Pedidos</dd></div>
+                </dl>
+            </section>
+        }
+    </div>
+    <EmptyState Titulo="La facturación ya está disponible; el margen sigue pendiente"
+                Texto="Los importes todavía no descuentan comisiones, envíos absorbidos, costo de prenda ni Ads."
+                Falta="@Pendientes" />
+}
+else
+{
+    <EmptyState Titulo="Las finanzas se arman con los pedidos de Tiendanube"
+                Texto="Cuando lleguen los pedidos vas a ver la facturación del día, del mes y del año, el historial mensual, los gastos operativos y las confirmaciones de Pago Nube en cuotas. El balance con Cris queda aparte y nunca se mezcla con el margen."
+                Falta="@(["Completar la carga inicial del historial de ventas de Tiendanube.", .. Pendientes])" />
+}
+
+@code {
+    private static readonly System.Globalization.CultureInfo Cultura = new("es-AR");
+    private static readonly string[] Pendientes =
+    [
+        "Definir comisiones, envío absorbido y margen.",
+        "Incorporar Meta Ads al cálculo financiero.",
+        "Importar el historial mensual y los gastos del dashboard anterior."
+    ];
+    private FinanzasResumen? resumen;
+
+    protected override async Task OnInitializedAsync() =>
+        resumen = await Consulta.ConsultarAsync(CancellationToken.None);
+}

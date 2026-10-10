@@ -212,3 +212,45 @@ public class JobRun : Entidad
     /// <summary>SyncDetalle serializado en JSON.</summary>
     public string? Detalle { get; set; }
 }
+
+public class Venta : Entidad
+{
+    public long TiendanubeOrderId { get; set; }
+    public long Number { get; set; }
+    public DateTimeOffset UpdatedAtTiendanube { get; set; }
+    public DateTimeOffset? PaidAt { get; set; }
+    public DateTimeOffset? CancelledAt { get; set; }
+    public string Status { get; set; } = "";
+    public string PaymentStatus { get; set; } = "";
+    public decimal Total { get; set; }
+    public decimal Subtotal { get; set; }
+    public decimal Discount { get; set; }
+    public decimal ShippingCostCustomer { get; set; }
+    public decimal ShippingCostOwner { get; set; }
+    public string? Gateway { get; set; }
+    public string? ShippingOption { get; set; }
+    public string? Currency { get; set; }
+    public long? CustomerId { get; set; }
+    public string? CustomerName { get; set; }
+    public string? CustomerEmail { get; set; }
+    public ICollection<VentaItem> Items { get; set; } = [];
+}
+
+public class VentaItem : Entidad
+{
+    public Guid VentaId { get; set; }
+    public Venta Venta { get; set; } = null!;
+    public long ProductId { get; set; }
+    public long VariantId { get; set; }
+    public int Quantity { get; set; }
+    public decimal Price { get; set; }
+    public string Name { get; set; } = "";
+    public string? Sku { get; set; }
+}
+
+public class VentasSyncEstado : Entidad
+{
+    public string Clave { get; set; } = "ventas";
+    public DateTimeOffset UltimoUpdatedAt { get; set; }
+    public DateTimeOffset? HistorialDesde { get; set; }
+}

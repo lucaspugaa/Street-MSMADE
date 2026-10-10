@@ -31,6 +31,9 @@ public sealed class SyncDetalle
     public List<string> PoolsEnviados { get; init; } = [];
     public List<string> PoolsFallidos { get; init; } = [];
     public List<string> Notas { get; init; } = [];
+    public int VentasNuevas { get; set; }
+    public int VentasActualizadas { get; set; }
+    public string? ErrorVentas { get; set; }
     public int PedidosProcesados { get; set; }
 }
 

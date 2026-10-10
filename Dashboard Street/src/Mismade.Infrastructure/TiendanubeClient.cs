@@ -62,6 +62,79 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
         return orders.OrderBy(x => x.Number).ToArray();
     }
 
+    public async Task<IReadOnlyList<VentaTiendanube>> GetOrdersUpdatedSinceAsync(
+        DateTimeOffset desde, CancellationToken ct)
+    {
+        var fecha = Uri.EscapeDataString(desde.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+        var ventas = new List<VentaTiendanube>();
+        await foreach (var item in GetPagesAsync($"orders?updated_at_min={fecha}&status=any&payment_status=any", ct))
+        {
+            var customer = item.TryGetProperty("customer", out var value)
+                && value.ValueKind == JsonValueKind.Object ? (JsonElement?)value : null;
+            var items = item.GetProperty("products").EnumerateArray()
+                .Select(p => new VentaItemTiendanube(Integer(p, "product_id"), Integer(p, "variant_id"),
+                    checked((int)Integer(p, "quantity")), Decimal(p, "price"),
+                    LocalizedText(p, "name") ?? "", Text(p, "sku"))).ToArray();
+
+            ventas.Add(new VentaTiendanube(Integer(item, "id"), Integer(item, "number"),
+                Date(item, "created_at")!.Value, Date(item, "updated_at")!.Value,
+                Date(item, "paid_at"), Date(item, "cancelled_at"), Text(item, "status")!,
+                Text(item, "payment_status")!, Decimal(item, "total"), Decimal(item, "subtotal"),
+                Decimal(item, "discount"), Decimal(item, "shipping_cost_customer"),
+                Decimal(item, "shipping_cost_owner"), Text(item, "gateway"),
+                LocalizedText(item, "shipping_option"), Text(item, "currency"),
+                customer is { } c && c.TryGetProperty("id", out var id) && id.ValueKind != JsonValueKind.Null
+                    ? Integer(c, "id") : null,
+                customer is { } nombre ? LocalizedText(nombre, "name") : null,
+                customer is { } email ? Text(email, "email") : null, items));
+        }
+
+        return ventas;
+    }
+
+    private static decimal Decimal(JsonElement item, string key) =>
+        decimal.Parse(item.GetProperty(key).ToString(), CultureInfo.InvariantCulture);
+
+    private static DateTimeOffset? Date(JsonElement item, string key)
+    {
+        var value = Text(item, key);
+        if (string.IsNullOrEmpty(value))
+        {
+            return null;
+        }
+
+        return DateTimeOffset.Parse(Regex.Replace(value, @"([+-]\d{2})(\d{2})$", "$1:$2"),
+            CultureInfo.InvariantCulture);
+    }
+
+    private static string? LocalizedText(JsonElement item, string key)
+    {
+        if (!item.TryGetProperty(key, out var value) || value.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (value.ValueKind == JsonValueKind.String)
+        {
+            return value.GetString();
+        }
+
+        if (value.TryGetProperty("es", out var spanish))
+        {
+            return spanish.GetString();
+        }
+
+        foreach (var localized in value.EnumerateObject())
+        {
+            if (localized.Value.ValueKind == JsonValueKind.String)
+            {
+                return localized.Value.GetString();
+            }
+        }
+
+        return null;
+    }
+
     public async Task<long> GetLatestOrderNumberAsync(CancellationToken ct)
     {
         var ultimo = await MaxNumberAsync($"orders?fields=number&created_at_min={Desde(TimeSpan.FromDays(30))}", ct);

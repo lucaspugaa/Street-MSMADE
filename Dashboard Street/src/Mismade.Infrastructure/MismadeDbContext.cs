@@ -10,6 +10,9 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
     : IdentityDbContext<IdentityUser>(options), IDataProtectionKeyContext
 {
     public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
+    public DbSet<Venta> Ventas => Set<Venta>();
+    public DbSet<VentaItem> VentaItems => Set<VentaItem>();
+    public DbSet<VentasSyncEstado> VentasSyncEstados => Set<VentasSyncEstado>();
     public DbSet<JobRun> JobRuns => Set<JobRun>();
     public DbSet<MetaInsightEntity> MetaInsights => Set<MetaInsightEntity>();
     public DbSet<TiendanubeConexion> TiendanubeConexiones => Set<TiendanubeConexion>();
@@ -53,6 +56,15 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
             modelBuilder.Entity(type);
         }
 
+        modelBuilder.Entity<Venta>().HasIndex(x => x.TiendanubeOrderId).IsUnique();
+        modelBuilder.Entity<Venta>().HasIndex(x => x.Number);
+        modelBuilder.Entity<VentasSyncEstado>().HasIndex(x => x.Clave).IsUnique();
+        modelBuilder.Entity<VentasSyncEstado>().ToTable("VentasSyncEstados",
+            table => table.HasCheckConstraint("CK_VentasSyncEstado_Unico", "\"Clave\" = 'ventas'"));
+        modelBuilder.Entity<VentaItem>().HasOne(x => x.Venta)
+            .WithMany(x => x.Items).HasForeignKey(x => x.VentaId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<StockRemera>().HasIndex(x => new { x.Color, x.Corte, x.Talle }).IsUnique();
         modelBuilder.Entity<StockCambio>().HasIndex(x => new { x.Color, x.Corte, x.Talle }).IsUnique();
         modelBuilder.Entity<PagoNubeCuota>().HasIndex(x => x.OrderNumber).IsUnique();
@@ -74,7 +86,8 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
         foreach (var property in modelBuilder.Model.GetEntityTypes().SelectMany(x => x.GetProperties())
             .Where(p => p.ClrType == typeof(decimal) || p.ClrType == typeof(decimal?)))
         {
-            property.SetPrecision(18);
+            property.SetPrecision(property.DeclaringType.ClrType == typeof(Venta)
+                || property.DeclaringType.ClrType == typeof(VentaItem) ? 14 : 18);
             property.SetScale(2);
         }
     }
