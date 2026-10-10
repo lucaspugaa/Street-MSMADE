@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Generador de mockups</title>
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header>
+    <p class="eyebrow">STREET · HERRAMIENTA LOCAL</p>
+    <h1>Generador de mockups</h1>
+    <p>Elegí tus imágenes, ajustá el fondo y compará el resultado.</p>
+  </header>
+  <main>
+    <form id="settings">
+      <fieldset id="controls" disabled>
+        <legend>Ajustes</legend>
+        <section>
+          <h2>1. Cargá las imágenes</h2>
+          <label id="drop-zone" class="drop-zone" for="images">
+            <strong>Arrastrá tus fotos acá</strong>
+            <span>o elegí varios archivos · PNG, JPG o WebP</span>
+          </label>
+          <input id="images" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+          <p class="hint">Una foto por archivo, con fondo liso.</p>
+        </section>
+        <section>
+          <h2>2. Elegí el fondo</h2>
+          <label for="background">Imagen de fondo (opcional)</label>
+          <input id="background" type="file" accept="image/png,image/jpeg,image/webp">
+          <div id="background-preview" hidden>
+            <img id="background-image" alt="Vista previa del fondo elegido">
+            <button id="clear-background" type="button">Quitar imagen de fondo</button>
+          </div>
+          <div id="color-settings">
+            <label for="background-mode">Tipo de fondo</label>
+            <select id="background-mode">
+              <option value="color">Color liso</option>
+              <option value="gradient">Degradado</option>
+            </select>
+            <label id="solid-label" class="color-field">Color <input id="solid-color" type="color"></label>
+            <div id="gradient-colors" hidden>
+              <label class="color-field">Centro <input id="center-color" type="color" value="#3a3a3a"></label>
+              <label class="color-field">Borde <input id="edge-color" type="color" value="#141414"></label>
+            </div>
+          </div>
+        </section>
+        <section>
+          <h2>3. Ajustá el resultado</h2>
+          <div id="numeric-controls" class="fields"></div>
+          <label class="check"><input id="sombra_original" type="checkbox"> Conservar sombra original</label>
+          <label class="check"><input id="quitar_huecos" type="checkbox"> Quitar huecos del color del fondo</label>
+          <label class="check"><input id="shadow-enabled" type="checkbox"> Agregar sombra</label>
+          <fieldset id="shadow-controls"><legend>Sombra agregada</legend><div id="shadow-fields" class="fields"></div></fieldset>
+        </section>
+        <button id="generate" class="primary" type="submit">Generar</button>
+        <p class="hint">Los cambios se aplican cuando tocás Generar o Regenerar.</p>
+      </fieldset>
+    </form>
+    <section class="results" aria-labelledby="results-title">
+      <div class="results-bar">
+        <div><h2 id="results-title">Tus imágenes</h2><p id="count">Todavía no cargaste imágenes.</p></div>
+        <button id="download-all" type="button" disabled>Descargar todas</button>
+      </div>
+      <p id="message" role="status" aria-live="polite">Cargando ajustes…</p>
+      <div id="empty" class="empty"><h3>El original y tu mockup, juntos.</h3><p>Cargá imágenes y tocá Generar para verlos acá.</p></div>
+      <div id="grid" class="grid"></div>
+    </section>
+  </main>
+  <template id="card-template">
+    <article class="card">
+      <h3 class="file-name"></h3>
+      <p class="status" role="status" aria-live="polite">Pendiente</p>
+      <div class="comparison">
+        <figure><figcaption>Original</figcaption><img class="original" alt=""></figure>
+        <figure><figcaption>Resultado</figcaption><div class="result-slot"><span>Sin generar</span></div></figure>
+      </div>
+      <div class="card-actions">
+        <button class="regenerate" type="button">Regenerar</button>
+        <a class="download" hidden>Descargar WebP</a>
+      </div>
+    </article>
+  </template>
+</body>
+</html>

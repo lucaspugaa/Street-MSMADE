@@ -1,0 +1,96 @@
+import path from 'node:path';
+import { readFile, readdir, stat, mkdir, writeFile } from 'node:fs/promises';
+import { generate, merge } from './lib/mockup.mjs';
+import { validateImage, validateOptions } from './lib/validation.mjs';
+
+const supported = /\.(png|jpe?g|webp)$/i;
+
+async function main() {
+  const inputs = [];
+  const flags = {};
+  const args = process.argv.slice(2);
+  for (let i = 0; i < args.length; i++) {
+    const arg = args[i];
+    if (arg === '--') {
+      inputs.push(...args.slice(i + 1));
+      break;
+    }
+    if (arg.startsWith('--')) {
+      if (!['--fondo', '--color', '--salida', '--opciones'].includes(arg)
+          || !args[i + 1] || args[i + 1].startsWith('--') || Object.hasOwn(flags, arg)) {
+        throw new Error(`Revisá la opción ${arg} y su valor.`);
+      }
+      flags[arg] = args[++i];
+    } else {
+      inputs.push(arg);
+    }
+  }
+
+  if (!inputs.length || (flags['--fondo'] && flags['--color'])) {
+    throw new Error('Usá: node cli.mjs <carpeta-o-archivos...> [--fondo fondo.jpg | --color "#1c1c1c"] [--salida salida/] [--opciones opciones.json]');
+  }
+
+  let options = {};
+  if (flags['--opciones']) {
+    options = validateOptions(JSON.parse(await readFile(flags['--opciones'], 'utf8')));
+  }
+  if (flags['--color']) {
+    validateOptions({ fondo: flags['--color'] });
+    options = merge(options, { fondo: flags['--color'] });
+  }
+  if (flags['--fondo']) {
+    options.fondo = await validateImage(await readFile(flags['--fondo']));
+  }
+
+  const outputDir = path.resolve(flags['--salida'] ?? 'salida');
+  await mkdir(outputDir, { recursive: true });
+  const files = new Set();
+  let errors = 0;
+  for (const input of inputs) {
+    try {
+      const absolute = path.resolve(input);
+      if ((await stat(absolute)).isDirectory()) {
+        const entries = await readdir(absolute, { withFileTypes: true });
+        for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+          if (entry.isFile() && supported.test(entry.name)) {
+            files.add(path.join(absolute, entry.name));
+          }
+        }
+      } else {
+        files.add(absolute);
+      }
+    } catch (error) {
+      errors++;
+      console.error(`ERROR ${input}: ${error.message}`);
+    }
+  }
+
+  let successes = 0;
+  for (const file of files) {
+    try {
+      if (!supported.test(file)) {
+        throw new Error('Elegí un archivo PNG, JPG, JPEG o WebP.');
+      }
+      const bytes = await validateImage(await readFile(file));
+      const result = await generate(bytes, options);
+      const name = `${path.basename(file, path.extname(file))}-mock.webp`;
+      await writeFile(path.join(outputDir, name), result);
+      successes++;
+      console.log(`OK ${file} → ${path.join(outputDir, name)}`);
+    } catch (error) {
+      errors++;
+      console.error(`ERROR ${file}: ${error.message}`);
+    }
+  }
+
+  console.log(`Resumen: ${successes} OK, ${errors} error(es).`);
+  if (!files.size && !errors) {
+    console.log('No se encontraron imágenes PNG, JPG o WebP en las carpetas indicadas.');
+  }
+  process.exitCode = errors ? 1 : 0;
+}
+
+main().catch(error => {
+  console.error(`ERROR: ${error.message}`);
+  process.exitCode = 1;
+});

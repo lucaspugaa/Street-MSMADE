@@ -1,0 +1,349 @@
+import sharp from 'sharp';
+
+export const LIMITS = {
+  ancho: [32, 4096, true],
+  alto: [32, 4096, true],
+  escala: [0.01, 1],
+  posicion_vertical: [0, 1],
+  tolerancia: [0, 255],
+  recortar_borde: [0, 20, true],
+  rellenar_bordes: [0, 40, true],
+  suavizar_contorno: [0, 20],
+  borde_suave: [0, 100],
+};
+
+const SHADOW_LIMITS = {
+  opacidad: [0, 1],
+  desenfoque: [0, 200],
+  x: [-4096, 4096],
+  y: [-4096, 4096],
+};
+const COLOR = /^#[\da-f]{6}$/i;
+const FORMATS = new Set(['png', 'jpeg', 'webp']);
+
+export function isObject(value) {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+function number(value, key, [min, max, integer]) {
+  if (typeof value !== 'number' || !Number.isFinite(value)
+      || value < min || value > max || (integer && !Number.isInteger(value))) {
+    throw new Error(`${key}: usá un número ${integer ? 'entero ' : ''}entre ${min} y ${max}.`);
+  }
+}
+
+export function validateOptions(options) {
+  if (!isObject(options)) {
+    throw new Error('opciones tiene que ser un objeto.');
+  }
+
+  for (const [key, value] of Object.entries(options)) {
+    if (Object.hasOwn(LIMITS, key)) {
+      number(value, key, LIMITS[key]);
+    } else if (key === 'recorte') {
+      if (!['preciso', 'rapido'].includes(value)) {
+        throw new Error('recorte: usá "preciso" o "rapido".');
+      }
+    } else if (key === 'quitar_huecos' || key === 'sombra_original') {
+      if (typeof value !== 'boolean') {
+        throw new Error(`${key}: usá true o false.`);
+      }
+    } else if (key === 'sombra') {
+      if (value === false) {
+        continue;
+      }
+      if (!isObject(value)) {
+        throw new Error('sombra: usá un objeto o false.');
+      }
+      for (const [name, setting] of Object.entries(value)) {
+        if (!Object.hasOwn(SHADOW_LIMITS, name)) {
+          throw new Error(`Opción de sombra desconocida: ${name}.`);
+        }
+        number(setting, `sombra.${name}`, SHADOW_LIMITS[name]);
+      }
+    } else if (key === 'fondo') {
+      const solid = typeof value === 'string' && COLOR.test(value);
+      const gradient = isObject(value) && Object.keys(value).length === 1
+        && Array.isArray(value.degradado) && value.degradado.length === 2
+        && value.degradado.every(color => typeof color === 'string' && COLOR.test(color));
+      if (!solid && !gradient) {
+        throw new Error('fondo: usá un color #rrggbb o { "degradado": ["#rrggbb", "#rrggbb"] }.');
+      }
+    } else {
+      throw new Error(`Opción desconocida: ${key}.`);
+    }
+  }
+
+  return options;
+}
+
+export async function validateImage(bytes, expectedFormat) {
+  let metadata;
+  try {
+    metadata = await sharp(bytes, { limitInputPixels: 40_000_000 }).metadata();
+  } catch {
+    throw new Error('No se pudo leer la imagen. Elegí un PNG, JPEG o WebP válido de hasta 40 megapíxeles.');
+  }
+
+  if (!FORMATS.has(metadata.format) || (expectedFormat && metadata.format !== expectedFormat)
+      || (metadata.pages ?? 1) !== 1 || !metadata.width || !metadata.height
+      || metadata.width * metadata.height > 40_000_000) {
+    throw new Error('Elegí una sola imagen PNG, JPEG o WebP, sin animación y de hasta 40 megapíxeles.');
+  }
+
+  return bytes;
+}
+
+export async function decodeImage(dataURL) {
+  if (typeof dataURL !== 'string') {
+    throw new Error('La imagen tiene que ser un dataURL.');
+  }
+  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataURL);
+  if (!match || match[2].length % 4 !== 0) {
+    throw new Error('Usá un dataURL base64 de una imagen PNG, JPEG o WebP.');
+  }
+
+  const bytes = Buffer.from(match[2], 'base64');
+  if (bytes.toString('base64') !== match[2]) {
+    throw new Error('El contenido base64 de la imagen no es válido.');
+  }
+  return validateImage(bytes, match[1]);
+}
+import http from 'node:http';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { readFile, realpath, stat } from 'node:fs/promises';
+import { DEFAULTS, generate } from './lib/mockup.mjs';
+import { decodeImage, isObject, validateOptions } from './lib/validation.mjs';
+
+const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
+const maxBody = 25 * 1024 * 1024;
+const port = Number(process.env.PORT ?? 4173);
+const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
+
+function json(response, status, value) {
+  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
+  response.end(JSON.stringify(value));
+}
+
+async function readJSON(request) {
+  if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') {
+    throw new Error('Enviá el cuerpo como application/json.');
+  }
+  if (Number(request.headers['content-length']) > maxBody) {
+    request.resume();
+    throw new Error('El pedido supera el límite de 25 MB.');
+  }
+
+  const chunks = [];
+  let length = 0;
+  await new Promise((resolve, reject) => {
+    request.on('data', chunk => {
+      length += chunk.length;
+      if (length > maxBody) {
+        chunks.length = 0;
+        reject(new Error('El pedido supera el límite de 25 MB.'));
+      } else {
+        chunks.push(chunk);
+      }
+    });
+    request.on('end', resolve);
+    request.on('error', reject);
+    request.on('aborted', () => reject(new Error('Se interrumpió el pedido.')));
+  });
+
+  try {
+    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  } catch {
+    throw new Error('El JSON no es válido.');
+  }
+}
+
+function inside(root, target) {
+  const relative = path.relative(root, target);
+  return relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+const server = http.createServer(async (request, response) => {
+  response.setHeader('X-Content-Type-Options', 'nosniff');
+  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data:; object-src 'none'; base-uri 'none'");
+
+  let pathname;
+  try {
+    pathname = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname);
+  } catch {
+    json(response, 400, { error: 'La URL no es válida.' });
+    return;
+  }
+
+  if (request.method === 'GET' && pathname === '/api/opciones') {
+    json(response, 200, DEFAULTS);
+    return;
+  }
+
+  if (request.method === 'POST' && pathname === '/api/generar') {
+    let image;
+    let options;
+    try {
+      const body = await readJSON(request);
+      if (!isObject(body) || !Object.hasOwn(body, 'imagen')
+          || (body.fondo !== null && typeof body.fondo !== 'string')
+          || Object.keys(body).some(key => !['imagen', 'fondo', 'opciones'].includes(key))) {
+        throw new Error('Enviá { imagen, fondo: dataURL o null, opciones: {} }.');
+      }
+      options = { ...validateOptions(body.opciones) };
+      image = await decodeImage(body.imagen);
+      if (body.fondo !== null) {
+        options.fondo = await decodeImage(body.fondo);
+      }
+    } catch (error) {
+      json(response, 400, { error: error.message });
+      return;
+    }
+
+    try {
+      const result = await generate(image, options);
+      response.writeHead(200, { 'Content-Type': 'image/webp' });
+      response.end(result);
+    } catch (error) {
+      json(response, 422, { error: error.message });
+    }
+    return;
+  }
+
+  if (!['GET', 'HEAD'].includes(request.method) || pathname.startsWith('/api/')) {
+    json(response, 404, { error: 'No se encontró esa ruta.' });
+    return;
+  }
+
+  try {
+    const target = path.resolve(publicDir, `.${pathname === '/' ? '/index.html' : pathname}`);
+    if (pathname.includes('\\') || pathname.includes('\0') || !inside(publicDir, target)) {
+      json(response, 400, { error: 'La ruta no es válida.' });
+      return;
+    }
+    const [root, resolved] = await Promise.all([realpath(publicDir), realpath(target)]);
+    if (!inside(root, resolved) || !(await stat(resolved)).isFile()) {
+      json(response, 404, { error: 'No se encontró ese archivo.' });
+      return;
+    }
+    const content = await readFile(resolved);
+    response.writeHead(200, { 'Content-Type': mime[path.extname(resolved)] ?? 'application/octet-stream' });
+    response.end(request.method === 'HEAD' ? undefined : content);
+  } catch {
+    json(response, 404, { error: 'No se encontró ese archivo.' });
+  }
+});
+
+if (!Number.isInteger(port) || port < 1 || port > 65535) {
+  console.error('PORT tiene que ser un entero entre 1 y 65535.');
+  process.exitCode = 1;
+} else {
+  server.on('error', error => {
+    console.error(`No se pudo iniciar el servidor: ${error.message}`);
+    process.exitCode = 1;
+  });
+  server.listen(port, '127.0.0.1', () => {
+    console.log(`Abrí http://127.0.0.1:${port}`);
+  });
+}
+
+| Opción | Para qué sirve y rango permitido |
+| --- | --- |
+| `fondo` | Color `#rrggbb` o degradado `[centro, borde]`. La pantalla y `--fondo` también aceptan una imagen. |
+| `ancho`, `alto` | Tamaño de salida en píxeles, enteros entre 32 y 4096. |
+| `escala` | Tamaño relativo de la prenda, entre 0.01 y 1. |
+| `posicion_vertical` | Ubicación vertical: 0 arriba, 0.5 centro, 1 abajo. |
+| `recorte` | `"preciso"` (modelo local) o `"rapido"` (solo color). |
+| `tolerancia` | Cuánta diferencia de color se considera fondo, entre 0 y 255. Bajala si se pierde parte de la prenda. |
+| `recortar_borde` | Píxeles que se quitan del contorno para limpiar restos, entero entre 0 y 20. |
+| `rellenar_bordes` | Tapa mordidas angostas del contorno en zonas muy iluminadas de la prenda, entero entre 0 y 40. Valor inicial: 8. |
+| `suavizar_contorno` | Alisa los dientes del contorno; más alto = borde más parejo pero menos detalle, entre 0 y 20. Valor inicial: 3. |
+| `borde_suave` | Suavizado del contorno, entre 0 y 100; 0 lo desactiva. |
+| `sombra_original` | Convierte la sombra gris bajo el ruedo y las mangas en sombra real sobre el fondo nuevo (los costados no se tocan, para no morder la prenda). |
+| `quitar_huecos` | `true` quita zonas cerradas del color del fondo; `false` las conserva. |
+| `sombra` | `false` la desactiva; un objeto permite ajustar la sombra agregada. |
+| `sombra.opacidad` | Intensidad entre 0 y 1. |
+| `sombra.desenfoque` | Suavizado entre 0 y 200; 0 lo desactiva. |
+| `sombra.x`, `sombra.y` | Desplazamiento horizontal y vertical en píxeles, entre -4096 y 4096. |
+
+## Límites conocidos
+
+
+ImageGenerator\public\app.js:8:  ['recortar_borde', 'Recortar borde (px)', 0, 20, 1],
+ImageGenerator\public\app.js:9:  ['rellenar_bordes', 'Rellenar mordidas (px)', 0, 40, 1],
+ImageGenerator\public\app.js:10:  ['suavizar_contorno', 'Suavizar contorno (px)', 0, 20, 0.5],
+ImageGenerator\public\index.html:55:            <option value="preciso">Preciso (modelo local, unos segundos por 
+foto)</option>
+// src/utils.ts
+import ndarray2 from "ndarray";
+function tensorResizeBilinear(imageTensor, newWidth, newHeight) {
+  const [srcHeight, srcWidth, srcChannels] = imageTensor.shape;
+  const scaleX = srcWidth / newWidth;
+  const scaleY = srcHeight / newHeight;
+  const resizedImageData = ndarray2(
+    new Uint8Array(srcChannels * newWidth * newHeight),
+    [newHeight, newWidth, srcChannels]
+  );
+  for (let y = 0; y < newHeight; y++) {
+    for (let x = 0; x < newWidth; x++) {
+      const srcX = x * scaleX;
+      const srcY = y * scaleY;
+      const x1 = Math.max(Math.floor(srcX), 0);
+      const x2 = Math.min(Math.ceil(srcX), srcWidth - 1);
+      const y1 = Math.max(Math.floor(srcY), 0);
+      const y2 = Math.min(Math.ceil(srcY), srcHeight - 1);
+      const dx = srcX - x1;
+      const dy = srcY - y1;
+      for (let c = 0; c < srcChannels; c++) {
+        const p1 = imageTensor.get(y1, x1, c);
+        const p2 = imageTensor.get(y1, x2, c);
+        const p3 = imageTensor.get(y2, x1, c);
+        const p4 = imageTensor.get(y2, x2, c);
+        const interpolatedValue = (1 - dx) * (1 - dy) * p1 + dx * (1 - dy) * p2 + (1 - dx) * dy * p3 + dx * dy * p4;
+        resizedImageData.set(y, x, c, Math.round(interpolatedValue));
+      }
+    }
+  }
+  return resizedImageData;
+}
+function tensorHWCtoBCHW(imageTensor, mean = [128, 128, 128], std = [256, 256, 256]) {
+  var imageBufferData = imageTensor.data;
+  const [srcHeight, srcWidth, srcChannels] = imageTensor.shape;
+  const stride = srcHeight * srcWidth;
+  const float32Data = new Float32Array(3 * stride);
+  for (let i = 0, j = 0; i < imageBufferData.length; i += 4, j += 1) {
+    float32Data[j] = (imageBufferData[i] - mean[0]) / std[0];
+    float32Data[j + stride] = (imageBufferData[i + 1] - mean[1]) / std[1];
+    float32Data[j + stride + stride] = (imageBufferData[i + 2] - mean[2]) / std[2];
+  }
+  return ndarray2(float32Data, [1, 3, srcHeight, srcWidth]);
+}
+async function imageSourceToImageData(image, _) {
+  if (typeof image === "string") {
+    image = ensureAbsoluteURI(image, `file://${process.cwd()}/`);
+  }
+  if (image instanceof URL) {
+    image = await (await loadFromURI(image)).blob();
+  }
+  if (image instanceof ArrayBuffer || ArrayBuffer.isView(image)) {
+    image = new Blob([image]);
+  }
+  if (image instanceof Blob) {
+    image = await imageDecode(image);
+  }
+  return image;
+}
+function convertFloat32ToUint8(float32Array) {
+  const uint8Array = new Uint8Array(float32Array.data.length);
+  for (let i = 0; i < float32Array.data.length; i++) {
+    uint8Array[i] = float32Array.data[i] * 255;
+  }
+  return ndarray2(uint8Array, float32Array.shape);
+}
+
+// src/onnx.ts
+D:\Program Files\Node\node.exe
+
+

@@ -1,0 +1,299 @@
+
+ImageGenerator\README.md:16:### Recorte: preciso o rápido
+ImageGenerator\README.md:18:- **Preciso** (por defecto): usa un modelo de recorte que corre en tu computadora, sin 
+internet ni costo. No redibuja nada: solo decide qué píxeles son prenda, y los colores salen de tu foto. Resuelve los 
+bordes iluminados y las sombras que el modo rápido confunde. Tarda unos 3–5 segundos por foto; la primera vez, un poco 
+más.
+ImageGenerator\README.md:60:| `recorte` | `"preciso"` (modelo local) o `"rapido"` (solo color). |
+ImageGenerator\README.md:61:| `tolerancia` | Cuánta diferencia de color se considera fondo, entre 0 y 255. Bajala si 
+se pierde parte de la prenda. |
+ImageGenerator\README.md:62:| `recortar_borde` | Píxeles que se quitan del contorno para limpiar restos, entero entre 
+0 y 20. |
+ImageGenerator\README.md:63:| `rellenar_bordes` | Tapa mordidas angostas del contorno en zonas muy iluminadas de la 
+prenda, entero entre 0 y 40. Valor inicial: 8. |
+ImageGenerator\README.md:64:| `suavizar_contorno` | Alisa los dientes del contorno; más alto = borde más parejo pero 
+menos detalle, entre 0 y 20. Valor inicial: 3. |
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:138:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:139:}
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:140:async function loadAsBlob(key, config) 
+{
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:141:  const resourceUri = 
+ensureAbsoluteURI("./resources.json", config.publicPath);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:142:  const resourceResponse = await 
+loadFromURI(resourceUri);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:143:  if (!resourceResponse.ok) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:144:    throw new Error(
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:145:      `Resource metadata not found. 
+Ensure that the config.publicPath is configured correctly.`
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:146:    );
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:147:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:148:  const resourceMap = await 
+resourceResponse.json();
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:149:  const entry = resourceMap[key];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:150:  if (!entry) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:151:    throw new Error(
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:152:      `Resource ${key} not found. 
+Ensure that the config.publicPath is configured correctly.`
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:153:    );
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:154:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:155:  const chunks = entry.chunks;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:156:  let downloadedSize = 0;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:157:  const responses = chunks.map(async 
+(chunk) => {
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:158:    const url = 
+ensureAbsoluteURI(chunk.hash, config.publicPath);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:159:    const chunkSize = chunk.offsets[1] 
+- chunk.offsets[0];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:160:    const response = await 
+loadFromURI(url, {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:161:      headers: { "Content-Type": 
+entry.mime }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:162:    });
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:163:    const blob = await response.blob();
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:164:    if (chunkSize !== blob.size) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:252:// src/onnx.ts
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:253:import ndarray3 from "ndarray";
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:254:import * as ort from 
+"onnxruntime-node";
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:255:async function 
+createOnnxSession(model, config) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:256:  if (config.debug) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:257:    ort.env.debug = true;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:258:    ort.env.logLevel = "verbose";
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:259:    console.debug("ort.env.wasm:", 
+ort.env.wasm);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:260:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:261:  const ort_config = {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:262:    graphOptimizationLevel: "all",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:263:    executionMode: "parallel"
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:264:  };
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:265:  const session = await 
+ort.InferenceSession.create(model, ort_config).catch(
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:266:    (e) => {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:267:      throw new Error(
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:268:        `Failed to create session: 
+${e}. Please check if the publicPath is set correctly.`
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:269:      );
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:270:    }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:271:  );
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:272:  return session;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:273:}
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:274:async function runOnnxSession(session, 
+inputs, outputs) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:275:  const feeds = {};
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:276:  for (const [key, tensor] of inputs) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:277:    feeds[key] = new ort.Tensor(
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:278:      "float32",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:279:      new Float32Array(tensor.data),
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:280:      tensor.shape
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:281:    );
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:282:  }
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:283:  const outputData = await 
+session.run(feeds, {});
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:284:  const outputKVPairs = [];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:285:  for (const key of outputs) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:286:    const output = outputData[key];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:287:    const shape = output.dims;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:288:    const data = output.data;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:289:    const tensor = ndarray3(data, 
+shape);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:355:    lint: "npx prettier --write .",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:356:    "publish:latest": "npm run build 
+&& npm publish --tag latest --access public",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:357:    "publish:next": "npm run build && 
+npm publish --tag next --access public",
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:358:    "package:pack": "npm run build && 
+npm pack . --pack-destination ../../releases"
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:359:  },
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:360:  dependencies: {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:361:    "onnxruntime-node": "~1.17.0",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:362:    sharp: "~0.32.4",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:363:    "@types/lodash": "~4.14.195",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:364:    "@types/node": "~20.3.1",
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:394:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:395:}
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:396:var ConfigSchema = z.object({
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:397:  publicPath: 
+z.string().optional().describe("The public path to the wasm files and the onnx 
+model.").default(`file://${path.resolve(`node_modules/${package_default.name}/dist/`)}/`).transform((val) => {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:398:    return 
+val.replace("${PACKAGE_NAME}", package_default.name).replace("${PACKAGE_VERSION}", package_default.version);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:399:  }).refine((val) => isURI(val), {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:400:    message: "String must be a valid 
+uri"
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:401:  }),
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:402:  debug: 
+z.boolean().default(false).describe("Whether to enable debug logging."),
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:403:  proxyToWorker: 
+z.boolean().default(true).describe("Whether to proxy inference to a web worker."),
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:429:
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:430:// src/inference.ts
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:431:import ndarray4 from "ndarray";
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:432:async function initInference(config) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:433:  config = validateConfig(config);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:434:  if (config.debug)
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:435:    console.debug("Loading model...");
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:436:  const model = config.model;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:437:  const blob = await 
+loadAsBlob(`/models/${model}`, config);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:438:  const arrayBuffer = await 
+blob.arrayBuffer();
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:439:  const session = await 
+createOnnxSession(arrayBuffer, config);
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:440:  return { config, session };
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:441:}
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:442:async function 
+runInference(imageTensor, config, session) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:443:  if (config.progress)
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:444:    
+config.progress("compute:inference", 0, 1);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:445:  const resolution = 1024;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:446:  const [srcHeight, srcWidth, 
+srcChannels] = imageTensor.shape;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:447:  let tensorImage = 
+tensorResizeBilinear(imageTensor, resolution, resolution);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:448:  const inputTensor = 
+tensorHWCtoBCHW(tensorImage);
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:449:  const predictionsDict = await 
+runOnnxSession(
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:450:    session,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:451:    [["input", inputTensor]],
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:452:    ["output"]
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:453:  );
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:454:  let alphamask = 
+ndarray4(predictionsDict[0].data, [resolution, resolution, 1]);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:455:  let alphamaskU8 = 
+convertFloat32ToUint8(alphamask);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:456:  alphamaskU8 = 
+tensorResizeBilinear(alphamaskU8, srcWidth, srcHeight);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:460:}
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:461:
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:462:// src/index.ts
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:463:var src_default = removeBackground;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:464:var { memoize } = lodash;
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:465:var init = memoize(initInference, 
+(config) => JSON.stringify(config));
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:466:async function removeBackground(image, 
+configuration) {
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:467:  const { config, session } = await 
+init(configuration);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:468:  const imageTensor = await 
+imageSourceToImageData(image, config);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:469:  const [width, height, channels] = 
+imageTensor.shape;
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:470:  const alphamask = await 
+runInference(imageTensor, config, session);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:471:  const stride = width * height;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:472:  const outImageTensor = imageTensor;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:473:  for (let i = 0; i < stride; i += 1) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:474:    outImageTensor.data[4 * i + 3] = 
+alphamask.data[i];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:475:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:476:  const outImage = await imageEncode(
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:481:  return outImage;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:482:}
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:483:async function removeForeground(image, 
+configuration) {
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:484:  const { config, session } = await 
+init(configuration);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:485:  const imageTensor = await 
+imageSourceToImageData(image, config);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:486:  const [width, height, channels] = 
+imageTensor.shape;
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:487:  const alphamask = await 
+runInference(imageTensor, config, session);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:488:  const stride = width * height;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:489:  const outImageTensor = imageTensor;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:490:  for (let i = 0; i < stride; i += 1) {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:491:    outImageTensor.data[4 * i + 3] = 
+255 - alphamask.data[i];
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:492:  }
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:493:  const outImage = await imageEncode(
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:498:  return outImage;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:499:}
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:500:async function 
+segmentForeground(image, configuration) {
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:501:  const { config, session } = await 
+init(configuration);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:502:  const imageTensor = await 
+imageSourceToImageData(image, config);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:503:  const [height, width, channels] = 
+imageTensor.shape;
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:504:  const alphamask = await 
+runInference(imageTensor, config, session);
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:505:  const stride = width * height;
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:506:  if (config.output.format === 
+"image/x-alpha8") {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:507:    const outImage = await imageEncode(
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:508:      alphamask,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:509:      config.output.quality,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:510:      config.output.format
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:554:export {
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:555:  applySegmentationMask,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:556:  src_default as default,
+> ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:557:  removeBackground,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:558:  removeForeground,
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:559:  segmentForeground
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:560:};
+  ImageGenerator\node_modules\@imgly\background-removal-node\dist\index.mjs:561://# sourceMappingURL=index.mjs.map
+014c9e0229363137e92b85ed3c6f56b1386c279cdd9af2d7f1960ed8428b5e94
+01f6efcc8a01c727d99073ceede8e64c654fa3c4612b006e69e22dc663236943
+024e3d8beaf517d25496b73e36b0e0498110652753273e0dd8b591ad7c1c9e2f
+0ad4ebb86cfdd847901427181b7a7804dba93d868c3cd5f11a294acf36c9413f
+0c8c5c24237304482ccc70a50008b73c8ef53e4656068da32b635607cca0c8c9
+10d02652d10fbc47bf93732ff9e8ad53eefbd3bd89ab3c1fbc15ddd740bea672
+145d8355f50b7847de5d04815124790867fe1752a0013bdf6ce28882b5e0a2fc
+1b8eaad4cd019b76e7eba964a38711a0bdeafbd10b6208c1107403a64dbd902a
+230f667e0332dc09ef08aacbf1992c40ce112192f95dfc14231a3ef515f9a2c7
+3315eb3c14ca3ff5c03c80fac58f486a14264dd0bb9c168c096f2bd2531ba438
+34dd3ad760f7e31b5e9144b8c387b8ecd6dc43116248c93c56dd7051ab525e3b
+3f31511c3c16a29cf81b32379f51ead2bd082677b48b1dcc11a66beeb37cc729
+3f5638267419916c9d4d906ff25f721d3d2e034851ea01566f0d2d6f943550b8
+4c44c8b64af9f044623ceace7cc55e0bc348394f7ff63629d46118c0a03c9c54
+529f1df7d027b0315090ba15d42ef32998cac2efd6783c62f6b11cedf4c548f3
+5faec25d2338ae8ca2c7bff72e954cebd40a04c5f34c4b6bb8ca6720fae40996
+6cfd013f552a05e9fc81156e6d6de593668e0247a3970feae22e285c16d13e62
+724543b36c7b5eddfbd7f55cb5a7c1676b2089c277611850c257efa42212d8a2
+7b1dd767c5c1c0156b8d13bb34d4c1d11e014723b10cddc25c93e89a28e7cd96
+897d4d8a3f9f8c07f439300a5d81c8be4b0fcecf19ca6d77929b1750fedd8306
+8a85c22e472bed10198298a3d57480a5a90946dba88bddecf8b0bf0eafc06e70
+8b2e3d773d7084c5cfac1c04d69d3586e4b8914a840d2b582dfde4940d698957
+9582c0375aed822c5577a814766c4afc6c096f4ccd3b0d08af6a1794987206a1
+9927e74b3a0638d4cf5701e78e66d77476a4ba68c75831f1c8ea9117ec7f8809
+a5b8c519c832bc46b2ae5a9887fac1e3d5cc76a04846d8c3544875c7f2b40960
+b34a3e9350ad77140964b6a2e1e32cd9738acd9d01e5899b96be71901a22ef47
+b9861d932a549be455fc8ebd8ce5d413049515bfdd3edd55e136dbe05dd34ef5
+cbcda0a0c830ba51928e7935d9d3cfe1c4dc258bf117f2c76d047113ab8f9f8c
+codecs.d.ts
+codecs.d.ts.map
+e01a157b677e0e17815cd738dcda7e6daa268898d006b52b5d3604c439e6c96e
+e7ca5cc3e0afd65581642a05ac91eb8ea4d0deb868df94b8981c910212526476
+f070b4c4f512cfe8dd6936c3cb9a616f132894867d3d33304d83599eb6b55636
+f9290547b2e34555536647c1e2ca456348170eef1aee05d8fd522f5a051f260c
+fe1b9f06af9d2147016884f4eb683d4dc540244a7453c3b742ae527725df2eec
+index.cjs
+index.cjs.map
+index.d.ts
+index.d.ts.map
+index.mjs
+index.mjs.map
+inference.d.ts
+inference.d.ts.map
+onnx.d.ts
+onnx.d.ts.map
+resource.d.ts
+resource.d.ts.map
+resources.json
+schema.d.ts
+schema.d.ts.map
+url.d.ts
+url.d.ts.map
+utils.d.ts
+utils.d.ts.map
+IMAGES-BACKGROUND
+IMAGES-RAW
+lib
+node_modules
+public
+
+

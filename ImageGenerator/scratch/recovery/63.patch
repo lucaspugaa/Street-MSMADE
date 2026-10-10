@@ -1,0 +1,523 @@
+*** Begin Patch
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/public/index.html
++<!doctype html>
++<html lang="es-AR">
++<head>
++  <meta charset="utf-8">
++  <meta name="viewport" content="width=device-width, initial-scale=1">
++  <title>Generador de mockups</title>
++  <link rel="stylesheet" href="/styles.css">
++  <script type="module" src="/app.js"></script>
++</head>
++<body>
++  <header>
++    <p class="eyebrow">STREET · HERRAMIENTA LOCAL</p>
++    <h1>Generador de mockups</h1>
++    <p>Elegí tus imágenes, ajustá el fondo y compará el resultado.</p>
++  </header>
++  <main>
++    <form id="settings">
++      <fieldset id="controls" disabled>
++        <legend>Ajustes</legend>
++        <section>
++          <h2>1. Cargá las imágenes</h2>
++          <label id="drop-zone" class="drop-zone" for="images">
++            <strong>Arrastrá tus fotos acá</strong>
++            <span>o elegí varios archivos · PNG, JPG o WebP</span>
++          </label>
++          <input id="images" type="file" accept="image/png,image/jpeg,image/webp" multiple>
++          <p class="hint">Una foto por archivo, con fondo liso.</p>
++        </section>
++        <section>
++          <h2>2. Elegí el fondo</h2>
++          <label for="background">Imagen de fondo (opcional)</label>
++          <input id="background" type="file" accept="image/png,image/jpeg,image/webp">
++          <div id="background-preview" hidden>
++            <img id="background-image" alt="Vista previa del fondo elegido">
++            <button id="clear-background" type="button">Quitar imagen de fondo</button>
++          </div>
++          <div id="color-settings">
++            <label for="background-mode">Tipo de fondo</label>
++            <select id="background-mode">
++              <option value="color">Color liso</option>
++              <option value="gradient">Degradado</option>
++            </select>
++            <label id="solid-label" class="color-field">Color <input id="solid-color" type="color"></label>
++            <div id="gradient-colors" hidden>
++              <label class="color-field">Centro <input id="center-color" type="color" value="#3a3a3a"></label>
++              <label class="color-field">Borde <input id="edge-color" type="color" value="#141414"></label>
++            </div>
++          </div>
++        </section>
++        <section>
++          <h2>3. Ajustá el resultado</h2>
++          <div id="numeric-controls" class="fields"></div>
++          <label class="check"><input id="sombra_original" type="checkbox"> Conservar sombra original</label>
++          <label class="check"><input id="quitar_huecos" type="checkbox"> Quitar huecos del color del fondo</label>
++          <label class="check"><input id="shadow-enabled" type="checkbox"> Agregar sombra</label>
++          <fieldset id="shadow-controls"><legend>Sombra agregada</legend><div id="shadow-fields" class="fields"></div></fieldset>
++        </section>
++        <button id="generate" class="primary" type="submit">Generar</button>
++        <p class="hint">Los cambios se aplican cuando tocás Generar o Regenerar.</p>
++      </fieldset>
++    </form>
++    <section class="results" aria-labelledby="results-title">
++      <div class="results-bar">
++        <div><h2 id="results-title">Tus imágenes</h2><p id="count">Todavía no cargaste imágenes.</p></div>
++        <button id="download-all" type="button" disabled>Descargar todas</button>
++      </div>
++      <p id="message" role="status" aria-live="polite">Cargando ajustes…</p>
++      <div id="empty" class="empty"><h3>El original y tu mockup, juntos.</h3><p>Cargá imágenes y tocá Generar para verlos acá.</p></div>
++      <div id="grid" class="grid"></div>
++    </section>
++  </main>
++  <template id="card-template">
++    <article class="card">
++      <h3 class="file-name"></h3>
++      <p class="status" role="status" aria-live="polite">Pendiente</p>
++      <div class="comparison">
++        <figure><figcaption>Original</figcaption><img class="original" alt=""></figure>
++        <figure><figcaption>Resultado</figcaption><div class="result-slot"><span>Sin generar</span></div></figure>
++      </div>
++      <div class="card-actions">
++        <button class="regenerate" type="button">Regenerar</button>
++        <a class="download" hidden>Descargar WebP</a>
++      </div>
++    </article>
++  </template>
++</body>
++</html>
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/public/app.js
++const $ = id => document.getElementById(id);
++const numericFields = [
++  ['ancho', 'Ancho (px)', 32, 4096, 1],
++  ['alto', 'Alto (px)', 32, 4096, 1],
++  ['escala', 'Escala', 0.01, 1, 0.01],
++  ['posicion_vertical', 'Posición vertical', 0, 1, 0.01],
++  ['tolerancia', 'Tolerancia', 0, 255, 0.1],
++  ['recortar_borde', 'Recortar borde (px)', 0, 20, 1],
++  ['borde_suave', 'Borde suave (px)', 0, 100, 0.1],
++];
++const shadowFields = [
++  ['opacidad', 'Opacidad', 0, 1, 0.01],
++  ['desenfoque', 'Desenfoque (px)', 0, 200, 0.1],
++  ['x', 'Desplazamiento X (px)', -4096, 4096, 1],
++  ['y', 'Desplazamiento Y (px)', -4096, 4096, 1],
++];
++let cards = [];
++let busy = false;
++let ready = false;
++let backgroundURL = null;
++
++function createFields(fields, container, defaults, prefix = '') {
++  for (const [key, title, min, max, step] of fields) {
++    const label = document.createElement('label');
++    label.textContent = title;
++    const input = document.createElement('input');
++    Object.assign(input, { type: 'number', id: `${prefix}${key}`, min, max, step, required: true });
++    input.value = defaults[key];
++    label.append(input);
++    container.append(label);
++  }
++}
++
++function updateButtons() {
++  $('controls').disabled = busy || !ready;
++  $('shadow-controls').disabled = !$('shadow-enabled').checked;
++  $('generate').disabled = !cards.length || busy || !ready;
++  $('download-all').disabled = busy || !cards.some(card => card.resultURL);
++  for (const card of cards) {
++    card.element.querySelector('.regenerate').disabled = busy || !ready;
++    const download = card.element.querySelector('.download');
++    download.hidden = busy || !card.resultURL;
++  }
++  $('count').textContent = cards.length
++    ? `${cards.length} imagen(es) · ${cards.filter(card => card.resultURL).length} resultado(s)`
++    : 'Todavía no cargaste imágenes.';
++  $('empty').hidden = cards.length > 0;
++}
++
++function clearResult(card) {
++  if (card.resultURL) {
++    URL.revokeObjectURL(card.resultURL);
++    card.resultURL = null;
++  }
++  card.element.querySelector('.download').removeAttribute('href');
++  const slot = card.element.querySelector('.result-slot');
++  const text = document.createElement('span');
++  text.textContent = 'Sin generar';
++  slot.replaceChildren(text);
++}
++
++function selectImages(files) {
++  if (busy || !ready) {
++    return;
++  }
++  for (const card of cards) {
++    URL.revokeObjectURL(card.originalURL);
++    clearResult(card);
++  }
++  $('grid').replaceChildren();
++  cards = Array.from(files, file => {
++    const element = $('card-template').content.firstElementChild.cloneNode(true);
++    const originalURL = URL.createObjectURL(file);
++    const card = { file, element, originalURL, resultURL: null };
++    element.querySelector('.file-name').textContent = file.name;
++    const original = element.querySelector('.original');
++    original.src = originalURL;
++    original.alt = `Original de ${file.name}`;
++    element.querySelector('.regenerate').addEventListener('click', () => run([card]));
++    $('grid').append(element);
++    return card;
++  });
++  $('message').textContent = cards.length ? 'Ajustá las opciones y tocá Generar.' : '';
++  updateButtons();
++}
++
++function dataURL(file) {
++  return new Promise((resolve, reject) => {
++    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
++      reject(new Error('Elegí una imagen PNG, JPEG o WebP.'));
++      return;
++    }
++    if (file.size > 18 * 1024 * 1024) {
++      reject(new Error('La imagen es demasiado grande. El pedido completo tiene un límite de 25 MB.'));
++      return;
++    }
++    const reader = new FileReader();
++    reader.onload = () => resolve(reader.result);
++    reader.onerror = () => reject(new Error('No se pudo leer el archivo. Volvé a elegirlo.'));
++    reader.readAsDataURL(file);
++  });
++}
++
++function readOptions() {
++  const options = {};
++  for (const [key] of numericFields) {
++    options[key] = Number($(key).value);
++  }
++  options.quitar_huecos = $('quitar_huecos').checked;
++  options.sombra_original = $('sombra_original').checked;
++  options.sombra = false;
++  if ($('shadow-enabled').checked) {
++    options.sombra = {};
++    for (const [key] of shadowFields) {
++      options.sombra[key] = Number($(`shadow-${key}`).value);
++    }
++  }
++  options.fondo = $('background-mode').value === 'color'
++    ? $('solid-color').value
++    : { degradado: [$('center-color').value, $('edge-color').value] };
++  return options;
++}
++
++async function run(selected) {
++  if (busy || !ready || !$('settings').reportValidity()) {
++    return;
++  }
++  const options = readOptions();
++  const backgroundFile = $('background').files[0];
++  busy = true;
++  updateButtons();
++  try {
++    const fondo = backgroundFile ? await dataURL(backgroundFile) : null;
++    let completed = 0;
++    for (const card of selected) {
++      clearResult(card);
++      const status = card.element.querySelector('.status');
++      status.textContent = 'Procesando…';
++      status.classList.remove('error');
++      $('message').textContent = `Procesando ${completed + 1} de ${selected.length}…`;
++      try {
++        const imagen = await dataURL(card.file);
++        const body = JSON.stringify({ imagen, fondo, opciones: options });
++        if (new Blob([body]).size > 25 * 1024 * 1024) {
++          throw new Error('La foto y el fondo juntos superan los 25 MB del pedido. Elegí archivos más chicos.');
++        }
++        const response = await fetch('/api/generar', {
++          method: 'POST', headers: { 'Content-Type': 'application/json' }, body,
++        });
++        if (!response.ok) {
++          const problem = await response.json();
++          throw new Error(problem.error ?? 'No se pudo generar el mockup.');
++        }
++        card.resultURL = URL.createObjectURL(await response.blob());
++        const image = document.createElement('img');
++        image.src = card.resultURL;
++        image.alt = `Mockup de ${card.file.name}`;
++        card.element.querySelector('.result-slot').replaceChildren(image);
++        const download = card.element.querySelector('.download');
++        download.href = card.resultURL;
++        download.download = `${card.file.name.replace(/\.[^.]+$/, '')}-mock.webp`;
++        status.textContent = 'Listo';
++      } catch (error) {
++        status.textContent = `Error: ${error.message}`;
++        status.classList.add('error');
++      }
++      completed++;
++      updateButtons();
++    }
++    $('message').textContent = 'Terminó el procesamiento. Podés descargar los resultados o ajustar y regenerar.';
++  } catch (error) {
++    $('message').textContent = `Error en el fondo: ${error.message}`;
++  } finally {
++    busy = false;
++    updateButtons();
++  }
++}
++
++function showBackground() {
++  if (backgroundURL) {
++    URL.revokeObjectURL(backgroundURL);
++    backgroundURL = null;
++  }
++  const file = $('background').files[0];
++  $('background-preview').hidden = !file;
++  $('color-settings').hidden = Boolean(file);
++  $('background-image').removeAttribute('src');
++  if (file) {
++    backgroundURL = URL.createObjectURL(file);
++    $('background-image').src = backgroundURL;
++  }
++}
++
++$('images').addEventListener('change', event => selectImages(event.target.files));
++$('background').addEventListener('change', showBackground);
++$('clear-background').addEventListener('click', () => {
++  $('background').value = '';
++  showBackground();
++});
++$('background-mode').addEventListener('change', () => {
++  $('solid-label').hidden = $('background-mode').value !== 'color';
++  $('gradient-colors').hidden = $('background-mode').value !== 'gradient';
++});
++$('shadow-enabled').addEventListener('change', updateButtons);
++$('settings').addEventListener('submit', event => {
++  event.preventDefault();
++  run(cards);
++});
++for (const name of ['dragenter', 'dragover']) {
++  $('drop-zone').addEventListener(name, event => {
++    event.preventDefault();
++    if (!busy && ready) {
++      $('drop-zone').classList.add('dragging');
++    }
++  });
++}
++$('drop-zone').addEventListener('dragleave', () => $('drop-zone').classList.remove('dragging'));
++$('drop-zone').addEventListener('drop', event => {
++  event.preventDefault();
++  $('drop-zone').classList.remove('dragging');
++  selectImages(event.dataTransfer.files);
++});
++$('download-all').addEventListener('click', async () => {
++  if (busy) {
++    return;
++  }
++  const downloads = cards.filter(card => card.resultURL);
++  busy = true;
++  updateButtons();
++  try {
++    for (const card of downloads) {
++      card.element.querySelector('.download').click();
++      await new Promise(resolve => setTimeout(resolve, 500));
++    }
++    $('message').textContent = 'Se solicitaron las descargas. Si tu navegador lo pide, permití descargar varios archivos.';
++  } finally {
++    busy = false;
++    updateButtons();
++  }
++});
++window.addEventListener('pagehide', () => {
++  for (const card of cards) {
++    URL.revokeObjectURL(card.originalURL);
++    if (card.resultURL) {
++      URL.revokeObjectURL(card.resultURL);
++    }
++  }
++  if (backgroundURL) {
++    URL.revokeObjectURL(backgroundURL);
++  }
++});
++
++try {
++  const response = await fetch('/api/opciones');
++  if (!response.ok) {
++    throw new Error('No se pudieron cargar los ajustes.');
++  }
++  const defaults = await response.json();
++  createFields(numericFields, $('numeric-controls'), defaults);
++  createFields(shadowFields, $('shadow-fields'), defaults.sombra || {}, 'shadow-');
++  $('sombra_original').checked = defaults.sombra_original;
++  $('quitar_huecos').checked = defaults.quitar_huecos;
++  $('shadow-enabled').checked = defaults.sombra !== false;
++  if (typeof defaults.fondo === 'string') {
++    $('solid-color').value = defaults.fondo;
++  } else {
++    $('background-mode').value = 'gradient';
++    [$('center-color').value, $('edge-color').value] = defaults.fondo.degradado;
++    $('background-mode').dispatchEvent(new Event('change'));
++  }
++  ready = true;
++  $('message').textContent = '';
++  updateButtons();
++} catch (error) {
++  $('message').textContent = `${error.message} Recargá la página con el servidor encendido.`;
++}
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/public/styles.css
++:root {
++  color-scheme: light dark;
++  --background: #f3f4f1;
++  --surface: #ffffff;
++  --text: #232824;
++  --muted: #59625b;
++  --line: #d7ddd8;
++  --accent: #246044;
++  --accent-text: #ffffff;
++  --error: #a32929;
++}
++* { box-sizing: border-box; }
++[hidden] { display: none !important; }
++body { margin: 0; background: var(--background); color: var(--text); font: 15px/1.5 system-ui, sans-serif; }
++header { max-width: 1440px; margin: auto; padding: 34px 32px 24px; }
++h1 { margin: 4px 0 8px; font-size: clamp(26px, 4vw, 36px); letter-spacing: -.03em; }
++h2 { margin: 0 0 14px; font-size: 17px; }
++h3 { margin: 0; font-size: 16px; }
++p { margin: 0; color: var(--muted); }
++.eyebrow { font-size: 11px; font-weight: 700; letter-spacing: .12em; }
++main { display: grid; grid-template-columns: 330px minmax(0, 1fr); gap: 28px; max-width: 1440px; margin: auto; padding: 0 32px 40px; }
++form { align-self: start; padding: 22px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; }
++fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
++#controls > legend { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
++form section + section { margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--line); }
++label { display: block; font-size: 13px; font-weight: 600; }
++input, select, button, .download { font: inherit; }
++input[type="file"] { width: 100%; font-size: 12px; margin: 8px 0; }
++input[type="number"], select { width: 100%; padding: 8px 10px; margin-top: 5px; border: 1px solid var(--line); border-radius: 6px; background: var(--background); color: var(--text); }
++input[type="checkbox"] { accent-color: var(--accent); width: 17px; height: 17px; }
++input[type="color"] { width: 56px; height: 34px; padding: 2px; border: 1px solid var(--line); border-radius: 5px; background: var(--surface); }
++.color-field { display: flex; align-items: center; justify-content: space-between; margin-top: 12px; }
++.fields { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
++.check { display: flex; align-items: center; gap: 8px; margin: 10px 0; }
++#shadow-controls { margin-top: 14px; }
++#shadow-controls legend { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
++#shadow-controls:disabled { opacity: .5; }
++.drop-zone { display: grid; gap: 5px; padding: 22px 12px; border: 1px dashed var(--muted); border-radius: 8px; text-align: center; cursor: pointer; }
++.drop-zone span { font-size: 12px; color: var(--muted); font-weight: 400; }
++.dragging { outline: 3px solid var(--accent); background: var(--background); }
++.hint { font-size: 12px; margin-top: 8px; }
++button, .download { display: inline-block; padding: 9px 14px; border: 1px solid var(--line); border-radius: 7px; background: var(--surface); color: var(--text); cursor: pointer; font-size: 13px; font-weight: 600; text-decoration: none; }
++button:hover, .download:hover { border-color: var(--accent); }
++button:disabled { opacity: .45; cursor: default; }
++:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
++.primary { width: 100%; background: var(--accent); color: var(--accent-text); border-color: var(--accent); margin-top: 12px; }
++.results-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 6px 0 20px; }
++.results-bar h2 { margin-bottom: 3px; }
++.results-bar p, #message { font-size: 13px; }
++#message:not(:empty) { margin-bottom: 16px; }
++.empty { padding: 80px 24px; text-align: center; border: 1px dashed var(--line); border-radius: 12px; }
++.empty p { margin-top: 8px; }
++.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
++.card { min-width: 0; padding: 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
++.file-name { overflow-wrap: anywhere; }
++.status { font-size: 12px; margin: 5px 0 14px; }
++.error { color: var(--error); }
++.comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
++figure { margin: 0; min-width: 0; }
++figcaption { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
++.comparison img, .result-slot { display: flex; align-items: center; justify-content: center; width: 100%; height: 220px; object-fit: contain; background: var(--background); border-radius: 6px; }
++.result-slot span { font-size: 12px; color: var(--muted); }
++.card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
++#background-image { width: 100%; height: 100px; object-fit: cover; border-radius: 6px; margin: 8px 0; }
++@media (max-width: 1100px) {
++  .grid { grid-template-columns: minmax(0, 1fr); }
++}
++@media (max-width: 720px) {
++  header { padding: 24px 16px 20px; }
++  main { grid-template-columns: minmax(0, 1fr); padding: 0 16px 28px; gap: 24px; }
++  form { padding: 18px; }
++  .comparison img, .result-slot { height: 200px; }
++  .results-bar { flex-wrap: wrap; }
++  .empty { padding: 40px 20px; }
++}
++@media (prefers-color-scheme: dark) {
++  :root {
++    --background: #181d1a;
++    --surface: #222a25;
++    --text: #edf1ed;
++    --muted: #acb8ae;
++    --line: #3e4c42;
++    --accent: #95d5af;
++    --accent-text: #14291d;
++    --error: #ffa5a5;
++  }
++}
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/README.md
++# Generador de mockups
++
++Usá fotos de prendas con fondo liso para verlas sobre otro fondo. Todo se procesa en tu computadora.
++
++## Para empezar
++
++Necesitás Windows y Node.js **24.15 o más nuevo**. Abrí una terminal dentro de `ImageGenerator/` y ejecutá:
++
++```powershell
++npm install
++npm start
++```
++
++Abrí **http://127.0.0.1:4173**. Cargá varias fotos o arrastralas al recuadro. Elegí una imagen de fondo, un color o un degradado y tocá **Generar**. Vas a ver cada original junto a su resultado. Para aplicar cambios, tocá Generar otra vez o Regenerar en una tarjeta. Descargá cada WebP o usá Descargar todas (permití varias descargas si tu navegador lo pide).
++
++El servidor escucha únicamente en tu computadora. Para cambiar el puerto, ejecutá `$env:PORT=4174` antes de `npm start`. Para cerrarlo, presioná Ctrl+C en la terminal.
++
++## Usarlo desde la terminal
++
++```powershell
++node cli.mjs "mis fotos/"
++node cli.mjs foto.png otra.jpg --color "#1c1c1c" --salida "resultados/"
++node cli.mjs "mis fotos/" --fondo fondo.jpg --opciones opciones.json
++npm run generar -- foto.png
++```
++
++La CLI procesa los PNG, JPG/JPEG y WebP de cada carpeta indicada, sin entrar en subcarpetas. Guarda `<nombre>-mock.webp` en `salida/` por defecto. Informa OK o error por archivo y sigue con los demás; devuelve un código de salida 1 si hubo errores. Archivos con el mismo nombre base comparten el destino y se reemplazan. Elegí `--fondo` o `--color`, no ambos; tienen prioridad sobre el fondo del JSON.
++
++Podés crear `opciones.json` con solamente los ajustes que querés cambiar, por ejemplo:
++
++```json
++{
++  "fondo": { "degradado": ["#3a3a3a", "#141414"] },
++  "ancho": 1200,
++  "alto": 1500,
++  "escala": 0.78,
++  "sombra": false
++}
++```
++
++## Qué hace cada opción
++
++Los valores iniciales vienen del generador; la pantalla los carga al abrirse.
++
++| Opción | Para qué sirve y rango permitido |
++| --- | --- |
++| `fondo` | Color `#rrggbb` o degradado `[centro, borde]`. La pantalla y `--fondo` también aceptan una imagen. |
++| `ancho`, `alto` | Tamaño de salida en píxeles, enteros entre 32 y 4096. |
++| `escala` | Tamaño relativo de la prenda, entre 0.01 y 1. |
++| `posicion_vertical` | Ubicación vertical: 0 arriba, 0.5 centro, 1 abajo. |
++| `tolerancia` | Cuánta diferencia de color se considera fondo, entre 0 y 255. Bajala si se pierde parte de la prenda. |
++| `recortar_borde` | Píxeles que se quitan del contorno para limpiar restos, entero entre 0 y 20. |
++| `borde_suave` | Suavizado del contorno, entre 0 y 100; 0 lo desactiva. |
++| `sombra_original` | `true` conserva la sombra de la foto; `false` la desactiva. |
++| `quitar_huecos` | `true` quita zonas cerradas del color del fondo; `false` las conserva. |
++| `sombra` | `false` la desactiva; un objeto permite ajustar la sombra agregada. |
++| `sombra.opacidad` | Intensidad entre 0 y 1. |
++| `sombra.desenfoque` | Suavizado entre 0 y 200; 0 lo desactiva. |
++| `sombra.x`, `sombra.y` | Desplazamiento horizontal y vertical en píxeles, entre -4096 y 4096. |
++
++## Límites conocidos
++
++- Los collages y las fotos sin fondo liso dan error. Las prendas blancas sobre fondo blanco pueden recortarse mal.
++- Se acepta una imagen por pedido, PNG/JPEG/WebP sin animación, hasta 40 megapíxeles. La pantalla las envía de a una.
++- Cada pedido admite hasta 25 MB de JSON, incluyendo la foto y el fondo en base64 (ocupan más que los archivos originales).
++- El fondo de imagen se ajusta para cubrir la salida; puede recortarse en los bordes.
++- Cambiar un ajuste no vuelve a generar automáticamente. Las descargas múltiples son individuales, sin ZIP.
+*** End Patch

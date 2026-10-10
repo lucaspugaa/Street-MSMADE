@@ -1,0 +1,9 @@
+sharp 0.35.5 resolved D:\Proyectos\Street-MSMADE\ImageGenerator\node_modules\sharp\dist\index.cjs
+same sharp true
+erode channels 1 length 25 white 9
+dilate channels 1 length 25 white 0
+without extract 3
+precise fill/smooth ignored true
+trim changes output true
+missing package error falta el modelo de recorte preciso: ejecutá npm install en ImageGenerator, o usá el recorte rápido
+fragmentation 160000 RangeError Maximum call stack size exceeded     at cutout (file:///D:/Proyectos/Street-MSMADE/ImageGenerator/lib/mockup.mjs:275:26)

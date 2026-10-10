@@ -1,0 +1,22 @@
+{
+  "name": "image-generator",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "generar": "node cli.mjs",
+    "descargar": "node descargar.mjs"
+  },
+  "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "@imgly/background-removal-node": {
+      "sharp": "$sharp"
+    }
+  }
+}

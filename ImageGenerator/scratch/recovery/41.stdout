@@ -1,0 +1,523 @@
+Existing graph: False
+   1: // Recorta la prenda de un mockup con fondo liso y la compone sobre un fondo nuevo.
+   2: // Copia del núcleo de Tienda Street/scripts/mocks/generar.mjs (npm run mocks:generar).
+   3: import sharp from 'sharp';
+   4: // Ojo: en sharp, erode() agranda las zonas blancas de una máscara y dilate() las achica
+   5: // (la morfología de libvips toma el negro como figura). Acá: erode = agrandar, dilate = achicar.
+   6: import { readFile } from 'node:fs/promises';
+   7: import { createRequire } from 'node:module';
+   8: import { dirname, join } from 'node:path';
+   9: import { pathToFileURL } from 'node:url';
+  10: 
+  11: // Modelo local de recorte (modo "preciso"): se carga recién cuando se usa. No redibuja la imagen,
+  12: // solo decide qué píxeles son prenda; los colores salen de la foto original.
+  13: let removeBackground;
+  14: async function modelMask(pngBytes) {
+  15:   const name = '@imgly/background-removal-node';
+  16:   if (!removeBackground) {
+  17:     try {
+  18:       ({ removeBackground } = await import(name));
+  19:     } catch {
+  20:       throw new Error('falta el modelo de recorte preciso: ejecutá npm install en ImageGenerator, o usá el recorte rápido');
+  21:     }
+  22:   }
+  23:   const dist = dirname(createRequire(import.meta.url).resolve(name));
+  24:   const blob = await removeBackground(new Blob([pngBytes], { type: 'image/png' }), {
+  25:     publicPath: `${pathToFileURL(join(dist, '/')).href}`,
+  26:     model: 'medium',
+  27:     output: { format: 'image/png' },
+  28:   });
+  29:   return sharp(Buffer.from(await blob.arrayBuffer())).ensureAlpha().extractChannel(3).raw().toBuffer({ resolveWithObject: true });
+  30: }
+  31: 
+  32: export const DEFAULTS = {
+  33:   fondo: '#1c1c1c',
+  34:   ancho: 1200,
+  35:   alto: 1500,
+  36:   escala: 0.78,
+  37:   posicion_vertical: 0.5,
+  38:   recorte: 'preciso',
+  39:   tolerancia: 8,
+  40:   recortar_borde: 1,
+  41:   rellenar_bordes: 8,
+  42:   suavizar_contorno: 3,
+  43:   borde_suave: 0.6,
+  44:   quitar_huecos: false,
+  45:   sombra_original: true,
+  46:   sombra: { opacidad: 0.45, desenfoque: 22, x: 0, y: 16 },
+  47: };
+  48: 
+  49: export function merge(...layers) {
+  50:   const result = { ...DEFAULTS, sombra: { ...DEFAULTS.sombra } };
+  51:   for (const layer of layers.filter(Boolean)) {
+  52:     for (const [key, value] of Object.entries(layer)) {
+  53:       result[key] = key === 'sombra' && value ? { ...result.sombra, ...value } : value;
+  54:     }
+  55:   }
+  56:   return result;
+  57: }
+  58: 
+  59: 
+  60: export async function cutout(bytes, { recorte, tolerancia, recortar_borde, rellenar_bordes, suavizar_contorno, borde_suave, quitar_huecos, sombra_original }) {
+  61:   const { data, info } = await sharp(bytes).rotate().ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  62:   const { width, height } = info;
+  63:   const original = Buffer.from(data);
+  64:   const total = width * height;
+  65:   const border = [];
+  66:   for (let x = 0; x < width; x++) {
+  67:     border.push(x, (height - 1) * width + x);
+  68:   }
+  69:   for (let y = 1; y < height - 1; y++) {
+  70:     border.push(y * width, y * width + width - 1);
+  71:   }
+  72: 
+  73:   const alpha = new Uint8Array(total);
+  74:   const transparentBorder = border.filter(i => data[i * 4 + 3] < 250).length;
+  75:   if (transparentBorder > border.length / 2) {
+  76:     // PNG que ya viene sin fondo.
+  77:     for (let i = 0; i < total; i++) {
+  78:       alpha[i] = data[i * 4 + 3];
+  79:     }
+  80:   } else if (recorte === 'preciso') {
+  81:     const median = channel => {
+  82:       const values = border.map(i => data[i * 4 + channel]).sort((x, y) => x - y);
+  83:       return values[values.length >> 1];
+  84:     };
+  85:     const bg = [median(0), median(1), median(2)];
+  86:     // Con fondo claro, el modelo recibe una copia con más contraste: una remera crema sobre blanco
+  87:     // casi no se distingue y el modelo se quedaría solo con el estampado. Es solo para la máscara.
+  88:     let input = sharp(data, { raw: { width, height, channels: 4 } }).removeAlpha();
+  89:     if ((bg[0] + bg[1] + bg[2]) / 3 > 200) {
+  90:       input = input.linear(4, -3 * 255);
+  91:     }
+  92:     const { data: mask, info: maskInfo } = await modelMask(await input.png().toBuffer());
+  93:     if (maskInfo.width !== width || maskInfo.height !== height) {
+  94:       throw new Error('el modelo devolvió una máscara de otro tamaño');
+  95:     }
+  96:     // Silueta: lo que el modelo marca con confianza (≥ 50 %) es prenda, incluidos los huecos que deja
+  97:     // adentro (con un estampado grande a veces duda en el cuerpo de la remera). En la franja dudosa
+  98:     // (contorno con poca confianza) decide el color: lo que es igual al fondo viejo se va.
+  99:     const flood = threshold => {
+ 100:       const outside = new Uint8Array(total);
+ 101:       const queue = new Int32Array(total);
+ 102:       let tail = 0;
+ 103:       for (const i of border) {
+ 104:         if (mask[i] < threshold && !outside[i]) {
+ 105:           outside[i] = 1;
+ 106:           queue[tail++] = i;
+ 107:         }
+ 108:       }
+ 109:       for (let head = 0; head < tail; head++) {
+ 110:         const i = queue[head];
+ 111:         const x = i % width;
+ 112:         for (const next of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+ 113:           if (next >= 0 && next < total && !outside[next] && mask[next] < threshold) {
+ 114:             outside[next] = 1;
+ 115:             queue[tail++] = next;
+ 116:           }
+ 117:         }
+ 118:       }
+ 119:       return outside;
+ 120:     };
+ 121:     const far = flood(8);
+ 122:     const solid = flood(128);
+ 123:     // Interior según el color (fondo liso inundado desde los bordes, alejado 10 px del contorno):
+ 124:     // es confiable lejos del borde y cubre las zonas donde el modelo duda.
+ 125:     const colorFg = Buffer.alloc(total, 255);
+ 126:     {
+ 127:       const queue = new Int32Array(total);
+ 128:       let tail = 0;
+ 129:       const flat = i => Math.max(Math.abs(data[i * 4] - bg[0]), Math.abs(data[i * 4 + 1] - bg[1]), Math.abs(data[i * 4 + 2] - bg[2])) <= tolerancia;
+ 130:       for (const i of border) {
+ 131:         if (colorFg[i] && flat(i)) {
+ 132:           colorFg[i] = 0;
+ 133:           queue[tail++] = i;
+ 134:         }
+ 135:       }
+ 136:       for (let head = 0; head < tail; head++) {
+ 137:         const i = queue[head];
+ 138:         const x = i % width;
+ 139:         for (const next of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+ 140:           if (next >= 0 && next < total && colorFg[next] && flat(next)) {
+ 141:             colorFg[next] = 0;
+ 142:             queue[tail++] = next;
+ 143:           }
+ 144:         }
+ 145:       }
+ 146:     }
+ 147:     const colorCore = await sharp(colorFg, { raw: { width, height, channels: 1 } }).dilate(10).extractChannel(0).raw().toBuffer();
+ 148:     for (let i = 0; i < total; i++) {
+ 149:       const distance = Math.max(Math.abs(data[i * 4] - bg[0]), Math.abs(data[i * 4 + 1] - bg[1]), Math.abs(data[i * 4 + 2] - bg[2]));
+ 150:       const coverage = !solid[i] || (colorCore[i] && !far[i]) ? 1 : far[i] ? 0
+ 151:         : Math.min(1, Math.max(0, (distance - tolerancia) / Math.max(tolerancia * 2, 16)));
+ 152:       alpha[i] = Math.round(coverage * 255);
+ 153:       if (coverage > 0.25 && coverage < 0.98) {
+ 154:         // Borde semitransparente: se quita el tinte del fondo viejo.
+ 155:         for (let c = 0; c < 3; c++) {
+ 156:           const value = bg[c] + (data[i * 4 + c] - bg[c]) / coverage;
+ 157:           data[i * 4 + c] = Math.min(255, Math.max(0, Math.round(value)));
+ 158:         }
+ 159:       }
+ 160:     }
+ 161:   } else {
+ 162:     const median = channel => {
+ 163:       const values = border.map(i => data[i * 4 + channel]).sort((a, b) => a - b);
+ 164:       return values[values.length >> 1];
+ 165:     };
+ 166:     const bg = [median(0), median(1), median(2)];
+ 167:     const distance = i => Math.max(
+ 168:       Math.abs(data[i * 4] - bg[0]), Math.abs(data[i * 4 + 1] - bg[1]), Math.abs(data[i * 4 + 2] - bg[2]));
+ 169:     // Cada lado de la foto tiene que ser mayormente fondo liso; si no, es una foto o un collage.
+ 170:     const near = i => distance(i) <= Math.max(tolerancia * 2, 20);
+ 171:     const sides = [
+ 172:       Array.from({ length: width }, (_, x) => x),
+ 173:       Array.from({ length: width }, (_, x) => (height - 1) * width + x),
+ 174:       Array.from({ length: height }, (_, y) => y * width),
+ 175:       Array.from({ length: height }, (_, y) => y * width + width - 1),
+ 176:     ];
+ 177:     if (sides.some(side => side.filter(near).length < side.length * 0.5)) {
+ 178:       throw new Error('la imagen no tiene un fondo liso (¿foto o collage?). Probá con otra foto o subí la tolerancia');
+ 179:     }
+ 180:     const isBackground = new Uint8Array(total);
+ 181:     const queue = new Int32Array(total);
+ 182:     const isFlat = i => distance(i) <= tolerancia;
+ 183:     // Marca en `region` la zona conectada desde las semillas; deja sus píxeles en queue[0..tamaño].
+ 184:     const fill = (seeds, accept, region) => {
+ 185:       let head = 0;
+ 186:       let tail = 0;
+ 187:       for (const seed of seeds) {
+ 188:         if (!region[seed] && accept(seed)) {
+ 189:           region[seed] = 1;
+ 190:           queue[tail++] = seed;
+ 191:         }
+ 192:       }
+ 193:       while (head < tail) {
+ 194:         const i = queue[head++];
+ 195:         const x = i % width;
+ 196:         for (const next of [x > 0 ? i - 1 : -1, x < width - 1 ? i + 1 : -1, i - width, i + width]) {
+ 197:           if (next >= 0 && next < total && !region[next] && accept(next)) {
+ 198:             region[next] = 1;
+ 199:             queue[tail++] = next;
+ 200:           }
+ 201:         }
+ 202:       }
+ 203:       return tail;
+ 204:     };
+ 205:     fill(border, isFlat, isBackground);
+ 206: 
+ 207:     const seen = new Uint8Array(total);
+ 208:     if (quitar_huecos) {
+ 209:       // Zonas cerradas del color del fondo (entre brazo y cuerpo, por ejemplo).
+ 210:       const minimum = total * (typeof quitar_huecos === 'number' ? quitar_huecos : 0.002);
+ 211:       for (let i = 0; i < total; i++) {
+ 212:         if (!isBackground[i] && !seen[i] && isFlat(i)) {
+ 213:           const size = fill([i], j => !isBackground[j] && isFlat(j), seen);
+ 214:           if (size >= minimum) {
+ 215:             for (let j = 0; j < size; j++) {
+ 216:               isBackground[queue[j]] = 1;
+ 217:             }
+ 218:           }
+ 219:         }
+ 220:       }
+ 221:       seen.fill(0);
+ 222:     }
+ 223: 
+ 224:     // Sombra de la foto original: el mismo fondo, solo más oscuro. Se vuelve sombra negra
+ 225:     // semitransparente en lugar de quedar como un filete claro alrededor de la prenda.
+ 226:     const shadowAlpha = new Uint8Array(total);
+ 227:     if (sombra_original) {
+ 228:       const darkening = i => {
+ 229:         const k = [0, 1, 2].map(c => data[i * 4 + c] / Math.max(bg[c], 1));
+ 230:         const average = (k[0] + k[1] + k[2]) / 3;
+ 231:         return Math.max(...k) - Math.min(...k) <= 0.025 && average < 1 && average >= 0.82 ? 1 - average : -1;
+ 232:       };
+ 233:       const reach = new Uint8Array(total);
+ 234:       const size = fill(border, j => isBackground[j] || darkening(j) >= 0, reach);
+ 235:       const candidate = Buffer.alloc(total);
+ 236:       for (let j = 0; j < size; j++) {
+ 237:         const i = queue[j];
+ 238:         if (!isBackground[i]) {
+ 239:           candidate[i] = 255;
+ 240:           isBackground[i] = 1;
+ 241:         }
+ 242:       }
+ 243:       // Solo cuentan como sombra las franjas horizontales (bajo el ruedo y las mangas). En los costados
+ 244:       // el filo iluminado de la prenda se confunde con sombra: si se oscurece parece mordido.
+ 245:       const horizontal = new Uint8Array(total);
+ 246:       for (let y = 0; y < height; y++) {
+ 247:         let start = 0;
+ 248:         for (let x = 0; x <= width; x++) {
+ 249:           const inside = x < width && candidate[y * width + x];
+ 250:           if (!inside) {
+ 251:             if (x - start >= 24) {
+ 252:               horizontal.fill(1, y * width + start, y * width + x);
+ 253:             }
+ 254:             start = x + 1;
+ 255:           }
+ 256:         }
+ 257:       }
+ 258:       for (let i = 0; i < total; i++) {
+ 259:         if (candidate[i] && horizontal[i]) {
+ 260:           shadowAlpha[i] = Math.round(darkening(i) * 255);
+ 261:         } else if (candidate[i]) {
+ 262:           isBackground[i] = 0;
+ 263:         }
+ 264:       }
+ 265:     }
+ 266: 
+ 267:     // Quita restos sueltos (textos como "1 of 3", manchas): conserva solo las piezas grandes.
+ 268:     const pieces = [];
+ 269:     for (let i = 0; i < total; i++) {
+ 270:       if (!isBackground[i] && !seen[i]) {
+ 271:         const size = fill([i], j => !isBackground[j], seen);
+ 272:         pieces.push({ pixels: queue.slice(0, size), size });
+ 273:       }
+ 274:     }
+ 275:     const largest = Math.max(0, ...pieces.map(piece => piece.size));
+ 276:     for (const piece of pieces) {
+ 277:       if (piece.size < largest * 0.03) {
+ 278:         for (const i of piece.pixels) {
+ 279:           isBackground[i] = 1;
+ 280:         }
+ 281:       }
+ 282:     }
+ 283: 
+ 284:     if (rellenar_bordes > 0) {
+ 285:       // Rellena las "mordidas" del contorno: en las zonas muy iluminadas la tela es casi del color
+ 286:       // del fondo y el recorte se mete adentro. Un cierre morfológico (dilatar + erosionar) tapa los
+ 287:       // entrantes angostos y devuelve a esos píxeles su color original de la foto.
+ 288:       const radius = Math.round(rellenar_bordes);
+ 289:       // Margen alrededor para que la prenda no "se pegue" al borde de la foto al dilatar.
+ 290:       const pad = radius * 2;
+ 291:       const paddedWidth = width + pad * 2;
+ 292:       const paddedHeight = height + pad * 2;
+ 293:       const garment = Buffer.alloc(paddedWidth * paddedHeight);
+ 294:       for (let i = 0; i < total; i++) {
+ 295:         if (!isBackground[i]) {
+ 296:           const x = i % width;
+ 297:           garment[(((i - x) / width) + pad) * paddedWidth + x + pad] = 255;
+ 298:         }
+ 299:       }
+ 300:       const raw = { raw: { width: paddedWidth, height: paddedHeight, channels: 1 } };
+ 301:       const dilated = await sharp(garment, raw).erode(radius).extractChannel(0).raw().toBuffer();
+ 302:       const closed = await sharp(dilated, raw).dilate(radius).extractChannel(0).raw().toBuffer();
+ 303:       for (let i = 0; i < total; i++) {
+ 304:         const x = i % width;
+ 305:         if (closed[(((i - x) / width) + pad) * paddedWidth + x + pad] > 127 && isBackground[i]) {
+ 306:           isBackground[i] = 0;
+ 307:           shadowAlpha[i] = 0;
+ 308:           data[i * 4] = original[i * 4];
+ 309:           data[i * 4 + 1] = original[i * 4 + 1];
+ 310:           data[i * 4 + 2] = original[i * 4 + 2];
+ 311:         }
+ 312:       }
+ 313:     }
+ 314: 
+ 315:     if (suavizar_contorno > 0) {
+ 316:       // Alisa el contorno: los dientes (píxeles sueltos que el recorte se comió o dejó de más)
+ 317:       // se resuelven por mayoría en un entorno. Lo que vuelve a la prenda recupera su color original.
+ 318:       const garment = Buffer.alloc(total);
+ 319:       for (let i = 0; i < total; i++) {
+ 320:         garment[i] = isBackground[i] ? 0 : 255;
+ 321:       }
+ 322:       const smooth = await sharp(garment, { raw: { width, height, channels: 1 } })
+ 323:         .blur(Math.max(0.3, suavizar_contorno)).extractChannel(0).raw().toBuffer();
+ 324:       for (let i = 0; i < total; i++) {
+ 325:         if (smooth[i] >= 128 && isBackground[i]) {
+ 326:           isBackground[i] = 0;
+ 327:           shadowAlpha[i] = 0;
+ 328:           data[i * 4] = original[i * 4];
+ 329:           data[i * 4 + 1] = original[i * 4 + 1];
+ 330:           data[i * 4 + 2] = original[i * 4 + 2];
+ 331:         } else if (smooth[i] < 128 && !isBackground[i]) {
+ 332:           isBackground[i] = 1;
+ 333:         }
+ 334:       }
+ 335:     }
+ 336: 
+ 337:     // Capas del contorno: 1 = toca el fondo, 2 = toca la capa 1. Ahí los píxeles mezclan prenda y fondo.
+ 338:     const layer = new Uint8Array(total);
+ 339:     const touches = (i, test) => {
+ 340:       const x = i % width;
+ 341:       return (x > 0 && test(i - 1)) || (x < width - 1 && test(i + 1))
+ 342:         || (i >= width && test(i - width)) || (i + width < total && test(i + width));
+ 343:     };
+ 344:     for (let i = 0; i < total; i++) {
+ 345:       if (!isBackground[i] && touches(i, j => isBackground[j])) {
+ 346:         layer[i] = 1;
+ 347:       }
+ 348:     }
+ 349:     for (let i = 0; i < total; i++) {
+ 350:       if (!isBackground[i] && !layer[i] && touches(i, j => layer[j] === 1)) {
+ 351:         layer[i] = 2;
+ 352:       }
+ 353:     }
+ 354: 
+ 355:     for (let i = 0; i < total; i++) {
+ 356:       if (isBackground[i]) {
+ 357:         continue;
+ 358:       }
+ 359:       alpha[i] = 255;
+ 360:       if (!layer[i]) {
+ 361:         continue;
+ 362:       }
+ 363:       // Color de la prenda: el píxel interior más cercano.
+ 364:       const x = i % width;
+ 365:       const y = (i - x) / width;
+ 366:       let inner = -1;
+ 367:       for (let radius = 1; radius <= 4 && inner < 0; radius++) {
+ 368:         for (let dy = -radius; dy <= radius && inner < 0; dy++) {
+ 369:           for (let dx = -radius; dx <= radius; dx++) {
+ 370:             const nx = x + dx;
+ 371:             const ny = y + dy;
+ 372:             const j = ny * width + nx;
+ 373:             if (nx >= 0 && nx < width && ny >= 0 && ny < height && !isBackground[j] && !layer[j]) {
+ 374:               inner = j;
+ 375:               break;
+ 376:             }
+ 377:           }
+ 378:         }
+ 379:       }
+ 380:       if (inner < 0) {
+ 381:         continue;
+ 382:       }
+ 383:       // Cuánto de la prenda hay en el píxel (proyección entre fondo y prenda), y su color sin el fondo viejo.
+ 384:       let dot = 0;
+ 385:       let length = 0;
+ 386:       for (let c = 0; c < 3; c++) {
+ 387:         const towards = data[inner * 4 + c] - bg[c];
+ 388:         dot += (data[i * 4 + c] - bg[c]) * towards;
+ 389:         length += towards * towards;
+ 390:       }
+ 391:       if (length < 400) {
+ 392:         continue;
+ 393:       }
+ 394:       const coverage = Math.min(1, Math.max(0.05, dot / length));
+ 395:       alpha[i] = Math.round(coverage * 255);
+ 396:       for (let c = 0; c < 3; c++) {
+ 397:         const value = bg[c] + (data[i * 4 + c] - bg[c]) / coverage;
+ 398:         data[i * 4 + c] = Math.min(255, Math.max(0, Math.round(value)));
+ 399:       }
+ 400:     }
+ 401:     for (let i = 0; i < total; i++) {
+ 402:       if (shadowAlpha[i]) {
+ 403:         alpha[i] = shadowAlpha[i];
+ 404:         data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = 0;
+ 405:       }
+ 406:     }
+ 407:   }
+ 408: 
+ 409:   const single = buffer => sharp(Buffer.from(buffer), { raw: { width, height, channels: 1 } });
+ 410:   let base = alpha;
+ 411:   if (recortar_borde > 0) {
+ 412:     // Come unos píxeles del contorno: saca el filete claro de las sombras de la foto original.
+ 413:     base = await single(alpha).dilate(Math.round(recortar_borde)).extractChannel(0).raw().toBuffer();
+ 414:   }
+ 415:   let mask = base;
+ 416:   if (borde_suave > 0) {
+ 417:     mask = await single(base).blur(Math.max(0.3, borde_suave)).extractChannel(0).raw().toBuffer();
+ 418:   }
+ 419:   let left = width;
+ 420:   let top = height;
+ 421:   let right = -1;
+ 422:   let bottom = -1;
+ 423:   for (let i = 0; i < total; i++) {
+ 424:     // Solo suaviza hacia adentro: nunca recupera píxeles del fondo viejo.
+ 425:     data[i * 4 + 3] = Math.min(mask[i], base[i]);
+ 426:     if (data[i * 4 + 3] > 8) {
+ 427:       const x = i % width;
+ 428:       const y = (i - x) / width;
+ 429:       left = Math.min(left, x);
+ 430:       right = Math.max(right, x);
+ 431:       top = Math.min(top, y);
+ 432:       bottom = Math.max(bottom, y);
+ 433:     }
+ 434:   }
+ 435:   if (right < 0) {
+ 436:     throw new Error('no se encontró la prenda: probá con menos tolerancia');
+ 437:   }
+ 438:   return sharp(data, { raw: { width, height, channels: 4 } })
+ 439:     .extract({ left, top, width: right - left + 1, height: bottom - top + 1 }).png().toBuffer();
+ 440: }
+ 441: 
+ 442: async function background({ fondo, ancho, alto }) {
+ 443:   if (typeof fondo === 'string' && fondo.startsWith('#')) {
+ 444:     return sharp({ create: { width: ancho, height: alto, channels: 4, background: fondo } }).png().toBuffer();
+ 445:   }
+ 446:   if (fondo?.degradado && fondo.degradado.every(color => /^#[0-9a-f]{3,8}$/i.test(color))) {
+ 447:     const [center, edge] = fondo.degradado;
+ 448:     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${ancho}" height="${alto}">
+ 449:       <defs><radialGradient id="g" cx="50%" cy="45%" r="75%"><stop offset="0" stop-color="${center}"/><stop offset="1" stop-color="${edge}"/></radialGradient></defs>
+ 450:       <rect width="100%" height="100%" fill="url(#g)"/></svg>`;
+ 451:     return sharp(Buffer.from(svg)).png().toBuffer();
+ 452:   }
+ 453:   if (Buffer.isBuffer(fondo) || typeof fondo === 'string') {
+ 454:     // Imagen de fondo: bytes o ruta de archivo.
+ 455:     const bytes = Buffer.isBuffer(fondo) ? fondo : await readFile(fondo);
+ 456:     return sharp(bytes).rotate().resize(ancho, alto, { fit: 'cover' }).png().toBuffer();
+ 457:   }
+ 458:   throw new Error('fondo inválido: usá un color (#1c1c1c), una imagen o {"degradado": ["#3a3a3a", "#141414"]}');
+ 459: }
+ 460: 
+ 461: export async function compose(garmentPng, style) {
+ 462:   const { ancho, alto, escala, posicion_vertical, sombra } = style;
+ 463:   const garment = await sharp(garmentPng)
+ 464:     .resize({ width: Math.round(ancho * escala), height: Math.round(alto * escala), fit: 'inside' }).png().toBuffer();
+ 465:   const { width, height } = await sharp(garment).metadata();
+ 466:   const left = Math.round((ancho - width) / 2);
+ 467:   const top = Math.max(0, Math.min(alto - height, Math.round(alto * posicion_vertical - height / 2)));
+ 468:   const layers = [];
+ 469: 
+ 470:   if (sombra && sombra.opacidad > 0) {
+ 471:     const shapeAlpha = await sharp(garment).extractChannel(3).raw().toBuffer();
+ 472:     const shadow = Buffer.alloc(ancho * alto * 4);
+ 473:     for (let y = 0; y < height; y++) {
+ 474:       const ty = top + y + Math.round(sombra.y);
+ 475:       if (ty < 0 || ty >= alto) {
+ 476:         continue;
+ 477:       }
+ 478:       for (let x = 0; x < width; x++) {
+ 479:         const tx = left + x + Math.round(sombra.x);
+ 480:         if (tx >= 0 && tx < ancho) {
+ 481:           shadow[(ty * ancho + tx) * 4 + 3] = Math.round(shapeAlpha[y * width + x] * sombra.opacidad);
+ 482:         }
+ 483:       }
+ 484:     }
+ 485:     let layer = sharp(shadow, { raw: { width: ancho, height: alto, channels: 4 } });
+ 486:     if (sombra.desenfoque > 0) {
+ 487:       layer = layer.blur(Math.max(0.3, sombra.desenfoque / 2));
+ 488:     }
+ 489:     layers.push({ input: await layer.png().toBuffer(), left: 0, top: 0 });
+ 490:   }
+ 491:   layers.push({ input: garment, left, top });
+ 492:   return sharp(await background(style)).composite(layers).webp({ quality: 90, effort: 5 }).toBuffer();
+ 493: }
+ 494: 
+ 495: 
+ 496: // Imagen de mockup (bytes) → WebP con el fondo y las opciones indicadas.
+ 497: export async function generate(imageBytes, options = {}) {
+ 498:   const style = merge(options);
+ 499:   return compose(await cutout(imageBytes, style), style);
+ 500: }
+{
+  "name": "image-generator",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.15"
+  },
+  "scripts": {
+    "start": "node server.mjs",
+    "generar": "node cli.mjs",
+    "descargar": "node descargar.mjs"
+  },
+  "dependencies": {
+    "@imgly/background-removal-node": "^1.4.5",
+    "sharp": "^0.35.5"
+  },
+  "overrides": {
+    "@imgly/background-removal-node": {
+      "sharp": "$sharp"
+    }
+  }
+}

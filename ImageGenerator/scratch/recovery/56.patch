@@ -1,0 +1,355 @@
+*** Begin Patch
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/lib/validation.mjs
++import sharp from 'sharp';
++
++export const LIMITS = {
++  ancho: [32, 4096, true],
++  alto: [32, 4096, true],
++  escala: [0.01, 1],
++  posicion_vertical: [0, 1],
++  tolerancia: [0, 255],
++  recortar_borde: [0, 20, true],
++  borde_suave: [0, 100],
++};
++
++const SHADOW_LIMITS = {
++  opacidad: [0, 1],
++  desenfoque: [0, 200],
++  x: [-4096, 4096],
++  y: [-4096, 4096],
++};
++const COLOR = /^#[\da-f]{6}$/i;
++const FORMATS = new Set(['png', 'jpeg', 'webp']);
++
++export function isObject(value) {
++  return value !== null && typeof value === 'object' && !Array.isArray(value);
++}
++
++function number(value, key, [min, max, integer]) {
++  if (typeof value !== 'number' || !Number.isFinite(value)
++      || value < min || value > max || (integer && !Number.isInteger(value))) {
++    throw new Error(`${key}: usá un número ${integer ? 'entero ' : ''}entre ${min} y ${max}.`);
++  }
++}
++
++export function validateOptions(options) {
++  if (!isObject(options)) {
++    throw new Error('opciones tiene que ser un objeto.');
++  }
++
++  for (const [key, value] of Object.entries(options)) {
++    if (Object.hasOwn(LIMITS, key)) {
++      number(value, key, LIMITS[key]);
++    } else if (key === 'quitar_huecos' || key === 'sombra_original') {
++      if (typeof value !== 'boolean') {
++        throw new Error(`${key}: usá true o false.`);
++      }
++    } else if (key === 'sombra') {
++      if (value === false) {
++        continue;
++      }
++      if (!isObject(value)) {
++        throw new Error('sombra: usá un objeto o false.');
++      }
++      for (const [name, setting] of Object.entries(value)) {
++        if (!Object.hasOwn(SHADOW_LIMITS, name)) {
++          throw new Error(`Opción de sombra desconocida: ${name}.`);
++        }
++        number(setting, `sombra.${name}`, SHADOW_LIMITS[name]);
++      }
++    } else if (key === 'fondo') {
++      const solid = typeof value === 'string' && COLOR.test(value);
++      const gradient = isObject(value) && Object.keys(value).length === 1
++        && Array.isArray(value.degradado) && value.degradado.length === 2
++        && value.degradado.every(color => typeof color === 'string' && COLOR.test(color));
++      if (!solid && !gradient) {
++        throw new Error('fondo: usá un color #rrggbb o { "degradado": ["#rrggbb", "#rrggbb"] }.');
++      }
++    } else {
++      throw new Error(`Opción desconocida: ${key}.`);
++    }
++  }
++
++  return options;
++}
++
++export async function validateImage(bytes, expectedFormat) {
++  let metadata;
++  try {
++    metadata = await sharp(bytes, { limitInputPixels: 40_000_000 }).metadata();
++  } catch {
++    throw new Error('No se pudo leer la imagen. Elegí un PNG, JPEG o WebP válido de hasta 40 megapíxeles.');
++  }
++
++  if (!FORMATS.has(metadata.format) || (expectedFormat && metadata.format !== expectedFormat)
++      || (metadata.pages ?? 1) !== 1 || !metadata.width || !metadata.height
++      || metadata.width * metadata.height > 40_000_000) {
++    throw new Error('Elegí una sola imagen PNG, JPEG o WebP, sin animación y de hasta 40 megapíxeles.');
++  }
++
++  return bytes;
++}
++
++export async function decodeImage(dataURL) {
++  if (typeof dataURL !== 'string') {
++    throw new Error('La imagen tiene que ser un dataURL.');
++  }
++  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataURL);
++  if (!match || match[2].length % 4 !== 0) {
++    throw new Error('Usá un dataURL base64 de una imagen PNG, JPEG o WebP.');
++  }
++
++  const bytes = Buffer.from(match[2], 'base64');
++  if (bytes.toString('base64') !== match[2]) {
++    throw new Error('El contenido base64 de la imagen no es válido.');
++  }
++  return validateImage(bytes, match[1]);
++}
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/server.mjs
++import http from 'node:http';
++import path from 'node:path';
++import { fileURLToPath } from 'node:url';
++import { readFile, realpath, stat } from 'node:fs/promises';
++import { DEFAULTS, generate } from './lib/mockup.mjs';
++import { decodeImage, isObject, validateOptions } from './lib/validation.mjs';
++
++const publicDir = fileURLToPath(new URL('./public/', import.meta.url));
++const maxBody = 25 * 1024 * 1024;
++const port = Number(process.env.PORT ?? 4173);
++const mime = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8' };
++
++function json(response, status, value) {
++  response.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' });
++  response.end(JSON.stringify(value));
++}
++
++async function readJSON(request) {
++  if (request.headers['content-type']?.split(';')[0].trim() !== 'application/json') {
++    throw new Error('Enviá el cuerpo como application/json.');
++  }
++  if (Number(request.headers['content-length']) > maxBody) {
++    request.resume();
++    throw new Error('El pedido supera el límite de 25 MB.');
++  }
++
++  const chunks = [];
++  let length = 0;
++  await new Promise((resolve, reject) => {
++    request.on('data', chunk => {
++      length += chunk.length;
++      if (length > maxBody) {
++        chunks.length = 0;
++        reject(new Error('El pedido supera el límite de 25 MB.'));
++      } else {
++        chunks.push(chunk);
++      }
++    });
++    request.on('end', resolve);
++    request.on('error', reject);
++    request.on('aborted', () => reject(new Error('Se interrumpió el pedido.')));
++  });
++
++  try {
++    return JSON.parse(Buffer.concat(chunks).toString('utf8'));
++  } catch {
++    throw new Error('El JSON no es válido.');
++  }
++}
++
++function inside(root, target) {
++  const relative = path.relative(root, target);
++  return relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
++}
++
++const server = http.createServer(async (request, response) => {
++  response.setHeader('X-Content-Type-Options', 'nosniff');
++  response.setHeader('Cache-Control', 'no-store');
++  response.setHeader('Content-Security-Policy', "default-src 'self'; img-src 'self' blob: data:; object-src 'none'; base-uri 'none'");
++
++  let pathname;
++  try {
++    pathname = decodeURIComponent(new URL(request.url, 'http://127.0.0.1').pathname);
++  } catch {
++    json(response, 400, { error: 'La URL no es válida.' });
++    return;
++  }
++
++  if (request.method === 'GET' && pathname === '/api/opciones') {
++    json(response, 200, DEFAULTS);
++    return;
++  }
++
++  if (request.method === 'POST' && pathname === '/api/generar') {
++    let image;
++    let options;
++    try {
++      const body = await readJSON(request);
++      if (!isObject(body) || !Object.hasOwn(body, 'imagen')
++          || (body.fondo !== null && typeof body.fondo !== 'string')
++          || Object.keys(body).some(key => !['imagen', 'fondo', 'opciones'].includes(key))) {
++        throw new Error('Enviá { imagen, fondo: dataURL o null, opciones: {} }.');
++      }
++      options = { ...validateOptions(body.opciones) };
++      image = await decodeImage(body.imagen);
++      if (body.fondo !== null) {
++        options.fondo = await decodeImage(body.fondo);
++      }
++    } catch (error) {
++      json(response, 400, { error: error.message });
++      return;
++    }
++
++    try {
++      const result = await generate(image, options);
++      response.writeHead(200, { 'Content-Type': 'image/webp' });
++      response.end(result);
++    } catch (error) {
++      json(response, 422, { error: error.message });
++    }
++    return;
++  }
++
++  if (!['GET', 'HEAD'].includes(request.method) || pathname.startsWith('/api/')) {
++    json(response, 404, { error: 'No se encontró esa ruta.' });
++    return;
++  }
++
++  try {
++    const target = path.resolve(publicDir, `.${pathname === '/' ? '/index.html' : pathname}`);
++    if (pathname.includes('\\') || pathname.includes('\0') || !inside(publicDir, target)) {
++      json(response, 400, { error: 'La ruta no es válida.' });
++      return;
++    }
++    const [root, resolved] = await Promise.all([realpath(publicDir), realpath(target)]);
++    if (!inside(root, resolved) || !(await stat(resolved)).isFile()) {
++      json(response, 404, { error: 'No se encontró ese archivo.' });
++      return;
++    }
++    const content = await readFile(resolved);
++    response.writeHead(200, { 'Content-Type': mime[path.extname(resolved)] ?? 'application/octet-stream' });
++    response.end(request.method === 'HEAD' ? undefined : content);
++  } catch {
++    json(response, 404, { error: 'No se encontró ese archivo.' });
++  }
++});
++
++if (!Number.isInteger(port) || port < 1 || port > 65535) {
++  console.error('PORT tiene que ser un entero entre 1 y 65535.');
++  process.exitCode = 1;
++} else {
++  server.on('error', error => {
++    console.error(`No se pudo iniciar el servidor: ${error.message}`);
++    process.exitCode = 1;
++  });
++  server.listen(port, '127.0.0.1', () => {
++    console.log(`Abrí http://127.0.0.1:${port}`);
++  });
++}
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/cli.mjs
++import path from 'node:path';
++import { readFile, readdir, stat, mkdir, writeFile } from 'node:fs/promises';
++import { generate, merge } from './lib/mockup.mjs';
++import { validateImage, validateOptions } from './lib/validation.mjs';
++
++const supported = /\.(png|jpe?g|webp)$/i;
++
++async function main() {
++  const inputs = [];
++  const flags = {};
++  const args = process.argv.slice(2);
++  for (let i = 0; i < args.length; i++) {
++    const arg = args[i];
++    if (arg === '--') {
++      inputs.push(...args.slice(i + 1));
++      break;
++    }
++    if (arg.startsWith('--')) {
++      if (!['--fondo', '--color', '--salida', '--opciones'].includes(arg)
++          || !args[i + 1] || args[i + 1].startsWith('--') || Object.hasOwn(flags, arg)) {
++        throw new Error(`Revisá la opción ${arg} y su valor.`);
++      }
++      flags[arg] = args[++i];
++    } else {
++      inputs.push(arg);
++    }
++  }
++
++  if (!inputs.length || (flags['--fondo'] && flags['--color'])) {
++    throw new Error('Usá: node cli.mjs <carpeta-o-archivos...> [--fondo fondo.jpg | --color "#1c1c1c"] [--salida salida/] [--opciones opciones.json]');
++  }
++
++  let options = {};
++  if (flags['--opciones']) {
++    options = validateOptions(JSON.parse(await readFile(flags['--opciones'], 'utf8')));
++  }
++  if (flags['--color']) {
++    validateOptions({ fondo: flags['--color'] });
++    options = merge(options, { fondo: flags['--color'] });
++  }
++  if (flags['--fondo']) {
++    options.fondo = await validateImage(await readFile(flags['--fondo']));
++  }
++
++  const outputDir = path.resolve(flags['--salida'] ?? 'salida');
++  await mkdir(outputDir, { recursive: true });
++  const files = new Set();
++  let errors = 0;
++  for (const input of inputs) {
++    try {
++      const absolute = path.resolve(input);
++      if ((await stat(absolute)).isDirectory()) {
++        const entries = await readdir(absolute, { withFileTypes: true });
++        for (const entry of entries.sort((a, b) => a.name.localeCompare(b.name))) {
++          if (entry.isFile() && supported.test(entry.name)) {
++            files.add(path.join(absolute, entry.name));
++          }
++        }
++      } else {
++        files.add(absolute);
++      }
++    } catch (error) {
++      errors++;
++      console.error(`ERROR ${input}: ${error.message}`);
++    }
++  }
++
++  let successes = 0;
++  for (const file of files) {
++    try {
++      if (!supported.test(file)) {
++        throw new Error('Elegí un archivo PNG, JPG, JPEG o WebP.');
++      }
++      const bytes = await validateImage(await readFile(file));
++      const result = await generate(bytes, options);
++      const name = `${path.basename(file, path.extname(file))}-mock.webp`;
++      await writeFile(path.join(outputDir, name), result);
++      successes++;
++      console.log(`OK ${file} → ${path.join(outputDir, name)}`);
++    } catch (error) {
++      errors++;
++      console.error(`ERROR ${file}: ${error.message}`);
++    }
++  }
++
++  console.log(`Resumen: ${successes} OK, ${errors} error(es).`);
++  if (!files.size && !errors) {
++    console.log('No se encontraron imágenes PNG, JPG o WebP en las carpetas indicadas.');
++  }
++  process.exitCode = errors ? 1 : 0;
++}
++
++main().catch(error => {
++  console.error(`ERROR: ${error.message}`);
++  process.exitCode = 1;
++});
+*** Update File: D:/Proyectos/Street-MSMADE/ImageGenerator/package.json
+@@
+   "engines": { "node": ">=24.15" },
++  "scripts": {
++    "start": "node server.mjs",
++    "generar": "node cli.mjs"
++  },
+*** Add File: D:/Proyectos/Street-MSMADE/ImageGenerator/.gitignore
++node_modules/
++salida/
+*** End Patch
