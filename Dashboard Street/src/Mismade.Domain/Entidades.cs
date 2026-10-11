@@ -23,6 +23,27 @@ public class StockVariantMap : Entidad
     public long TiendanubeVariantId { get; set; }
 }
 
+/// <summary>Pool por color y talle de buzos o pantalones (todo Oversize).</summary>
+public class StockPrenda : Entidad
+{
+    public const string Buzo = "Buzo";
+    public const string Pantalon = "Pantalon";
+
+    public string Tipo { get; set; } = "";
+    public string Color { get; set; } = "";
+    public string Talle { get; set; } = "";
+    public int Stock { get; set; }
+}
+
+/// <summary>Variante de conjunto: su stock efectivo es el mínimo entre buzo y pantalón del mismo color/talle.</summary>
+public class StockConjuntoVariant : Entidad
+{
+    public string Color { get; set; } = "";
+    public string Talle { get; set; } = "";
+    public long TiendanubeProductId { get; set; }
+    public long TiendanubeVariantId { get; set; }
+}
+
 public class StockVariantMapExclusion : Entidad
 {
     public long ProductId { get; set; }
@@ -92,6 +113,11 @@ public class CrisLedger : Entidad
     public TipoMovimientoCris Tipo { get; set; }
     public decimal Monto { get; set; }
     public string? Nota { get; set; }
+    // Solo en devoluciones: la prenda que vuelve a Cris.
+    public string? Color { get; set; }
+    public string? Corte { get; set; }
+    public string? Talle { get; set; }
+    public int? Cantidad { get; set; }
 }
 
 public class CambioPrenda : Entidad
@@ -176,7 +202,13 @@ public class MonthlyHistory : Entidad
     public int PedidosCount { get; set; }
     public decimal Facturado { get; set; }
     public decimal MargenReal { get; set; }
+    public decimal Comision { get; set; }
+    public decimal Envio { get; set; }
+    public decimal CostoMercaderia { get; set; }
+    public decimal AdsStreet { get; set; }
+    public decimal AdsKumo { get; set; }
     public bool Closed { get; set; }
+    public string? Nota { get; set; }
 }
 
 public class SyncWatermark : Entidad

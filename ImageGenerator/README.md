@@ -15,6 +15,16 @@ Abrí **http://127.0.0.1:4173**. Cargá varias fotos o arrastralas al recuadro. 
 
 El servidor escucha únicamente en tu computadora. Para cambiar el puerto, ejecutá `$env:PORT=4174` antes de `npm start`. Para cerrarlo, presioná Ctrl+C en la terminal.
 
+## Carpeta destino
+
+En la vista, editá **Carpeta destino** con una ruta absoluta (por ejemplo, `D:\Proyectos\Street-MSMADE\ImageGenerator\salida`). Al generar, el servidor crea la carpeta si hace falta, recuerda la ruta en `config.json` y guarda cada WebP allí. También conserva la vista previa y las descargas del navegador. Si un nombre ya existe, agrega un sufijo numérico sin sobrescribirlo.
+
+La configuración es local y está en `.gitignore`. `GET /api/config` devuelve la ruta; `POST /api/config` recibe `{ "destino": "ruta absoluta" }`. El pedido de generación admite `destino` y `nombre` además de los campos originales; devuelve el WebP y la ruta guardada en `X-Saved-Path` (codificada como URI).
+
+## Recorte
+
+El selector permite usar **preciso** (modelo local, valor inicial) o **rápido** (color). Se recuperaron también los ajustes de rellenar mordidas y suavizar contorno. En el modo rápido el fondo se estima localmente desde los cuatro bordes, y la expansión de la sombra frena ante saltos de color para conservar el filo de las prendas crema. Los ajustes de rellenar mordidas y suavizar contorno actúan en el modo rápido.
+
 ## Usarlo desde la terminal
 
 ```powershell

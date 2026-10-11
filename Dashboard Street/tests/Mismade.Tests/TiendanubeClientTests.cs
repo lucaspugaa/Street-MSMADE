@@ -235,6 +235,32 @@ public sealed class TiendanubeClientTests
         Assert.Equal(2, calls);
     }
 
+    [Fact]
+    public async Task UpdatedOrdersWithoutResultsReturnEmpty()
+    {
+        using var http = new HttpClient(new FakeHttpHandler((_, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = new StringContent("""{"code":404,"message":"Not Found","description":"Last page is 0"}""")
+            })));
+
+        Assert.Empty(await Client(http).GetOrdersUpdatedSinceAsync(DateTimeOffset.Parse("2026-10-01T00:00:00Z"), default));
+    }
+
+    [Fact]
+    public async Task OtherNotFoundIncludesTiendanubeDescription()
+    {
+        using var http = new HttpClient(new FakeHttpHandler((_, _) => Task.FromResult(
+            new HttpResponseMessage(HttpStatusCode.NotFound)
+            {
+                Content = new StringContent("""{"code":404,"message":"Not Found","description":"Store not found"}""")
+            })));
+
+        var error = await Assert.ThrowsAsync<HttpRequestException>(() =>
+            Client(http).GetOrdersUpdatedSinceAsync(DateTimeOffset.Parse("2026-10-01T00:00:00Z"), default));
+        Assert.Contains("Store not found", error.Message);
+    }
+
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
@@ -244,7 +270,7 @@ public sealed class TiendanubeClientTests
         using var http = new HttpClient(new FakeHttpHandler((request, _) =>
         {
             calls++;
-            Assert.Contains("updated_at_min=2026-10-01T00%3A00%3A00", request.RequestUri!.Query);
+            Assert.Contains("updated_at_min=2026-10-01T00:00:00Z", Uri.UnescapeDataString(request.RequestUri!.Query));
             Assert.Contains("status=any", request.RequestUri.Query);
             Assert.DoesNotContain("payment_status=paid", request.RequestUri.Query);
             Assert.Contains("payment_status=any", request.RequestUri.Query);
@@ -271,6 +297,24 @@ public sealed class TiendanubeClientTests
                     """,
                 _ => "[]"
             });
+            if (calls > 2)
+            {
+                // Tiendanube responde 404 al pedir una página después de la última.
+                response = new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent("""{"code":404,"message":"Not Found","description":"Last page is 2"}""")
+                };
+            }
+
+            if (calls > 2)
+            {
+                // Tiendanube responde 404 al pedir una página después de la última.
+                response = new HttpResponseMessage(HttpStatusCode.NotFound)
+                {
+                    Content = new StringContent("""{"code":404,"message":"Not Found","description":"Last page is 2"}""")
+                };
+            }
+
             if (useLink)
             {
                 response.Headers.TryAddWithoutValidation("Link", calls == 1
