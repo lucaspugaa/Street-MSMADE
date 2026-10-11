@@ -72,14 +72,98 @@ else
     }
 }
 
+@if (prendas.Count > 0)
+{
+    <div class="legend" aria-label="Referencias de buzos, pantalones y conjuntos">
+        <span><i style="background: var(--ok)"></i>4 o más</span>
+        <span><i style="background: var(--warn)"></i>De 2 a 3</span>
+        <span><i style="background: var(--bad)"></i>1 o menos</span>
+    </div>
+
+    @foreach (var (tipo, titulo) in SeccionesPrendas)
+    {
+        var filas = FilasPrendas(tipo);
+        <section class="card">
+            <div class="card-head">
+                <h2>@titulo</h2>
+                <span class="muted num">@filas.Sum(r => r.Stock) unidades</span>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th scope="col">Color</th>
+                            @foreach (var talle in TallesPrendas)
+                            {
+                                <th scope="col" class="c">@talle</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var color in filas.Select(r => r.Color).Distinct().OrderBy(c => c))
+                        {
+                            <tr>
+                                <th scope="row">@color</th>
+                                @foreach (var talle in TallesPrendas)
+                                {
+                                    var item = filas.FirstOrDefault(r => r.Color == color && r.Talle == talle);
+                                    <td class="c">
+                                        @if (item is null)
+                                        {
+                                            <span class="qty none">—</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="qty @SemaforoPrendas(item.Stock)">@item.Stock</span>
+                                        }
+                                    </td>
+                                }
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    }
+}
+
 @code {
     private static readonly string[] Orden = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
     private List<StockRemera> remeras = [];
+    private List<StockPrenda> prendas = [];
+    private static readonly string[] TallesPrendas = ["S", "M", "L", "XL"];
+    private static readonly (string Tipo, string Titulo)[] SeccionesPrendas =
+    [
+        (StockPrenda.Buzo, "Buzos"),
+        (StockPrenda.Pantalon, "Pantalones / Joggings"),
+        (StockPrenda.Conjunto, "Conjuntos")
+    ];
+
+    private List<StockPrenda> FilasPrendas(string tipo)
+    {
+        if (tipo != StockPrenda.Conjunto)
+        {
+            return prendas.Where(p => p.Tipo == tipo).ToList();
+        }
+
+        return prendas.Where(p => p.Tipo == StockPrenda.Buzo)
+            .Join(prendas.Where(p => p.Tipo == StockPrenda.Pantalon),
+                b => PoolKeys.Prenda(StockPrenda.Conjunto, b.Color, b.Talle),
+                p => PoolKeys.Prenda(StockPrenda.Conjunto, p.Color, p.Talle),
+                (b, p) => new StockPrenda
+                {
+                    Tipo = StockPrenda.Conjunto, Color = b.Color, Talle = b.Talle,
+                    Stock = Math.Min(b.Stock, p.Stock)
+                }).ToList();
+    }
+
+    private static string SemaforoPrendas(int stock) => stock <= 1 ? "bad" : stock <= 3 ? "warn" : "ok";
 
     protected override async Task OnInitializedAsync()
     {
         await using var db = await Db.CreateDbContextAsync();
         remeras = await db.StockRemeras.AsNoTracking().ToListAsync();
+        prendas = await db.StockPrendas.AsNoTracking().ToListAsync();
     }
 
     // Regla de negocio del semáforo: rojo < 10, amarillo 10-20, verde > 20.

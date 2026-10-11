@@ -45,11 +45,12 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Ventas de Tiendanube en la base | Funcionando; Finanzas muestra facturación bruta de hoy, mes y año |
 | Sync de stock de remeras (pedidos → pool → Tiendanube) | Hecho, **con desacople** (11/10); corre en modo sombra |
 | Pool manual Buzo Negro XXL Regular | Hecho, corre en modo sombra |
+| Sync de stock de buzos, pantalones y conjuntos | Hecho (Tarea 3, 11/10); modo sombra, sin desacople; conjuntos derivados de ambos componentes |
 | Modo sombra | Desplegado (PR #9) y verificado en pantalla |
 | Importador del export del artifact (`tools/Mismade.Importer`) | Hecho; Tarea 1 completa: múltiples exports, colecciones faltantes, bloqueo de modo sombra y reemplazo transaccional |
 | Reglas puras de comisión, envío absorbido y costo de prenda (`Domain/Reglas.cs`) | Escritas con tests, **no conectadas** al job |
 | Meta Ads (sync de insights) | Código hecho; **faltan el token y los IDs en Render** |
-| Página Stock | Muestra remeras desde Neon |
+| Página Stock | Muestra remeras, buzos, pantalones y conjuntos desde Neon; semáforos propios |
 | Páginas Campañas y Clientes | Solo texto fijo, sin datos |
 | Margen real, historial mensual, formularios de carga | No hechos (`TODO 2, 3, 6, 8` en `SyncJob.cs`) |
 
@@ -120,7 +121,12 @@ Reglas exactas (sección 3.7 de reglas-artifact.md):
   en 0 y no se envía; carga que lo sube a 4 → se reactiva y publica 4; pool en 4 que vende 1 → queda en
   3, se desacopla, publica 0.
 
-### Tarea 3 — Sync de buzos, pantalones y conjuntos
+### Tarea 3 — Sync de buzos, pantalones y conjuntos — HECHA 11/10
+Implementada la familia `prendas`, con watermark propio y conjuntos derivados, sin desacople.
+La página Stock incluye las tres secciones con totales y semáforo ≤1 / 2-3 / ≥4.
+Validada localmente: build con 0 warnings y 218 tests en verde, incluido `export-mismade-3`
+(24 pools de buzos/pantalones + 12 conjuntos, sin variant_ids solapados entre familias).
+`StockSyncStep` mantiene el modo sombra; sin deploy ni escrituras en Tiendanube.
 Reglas (sección 3.11):
 - Pools por color/talle (todo Oversize), con variantes propias y watermark propio.
 - Una venta de **conjunto** descuenta 1 del buzo **y** 1 del pantalón del mismo color/talle. El artifact

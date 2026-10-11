@@ -20,9 +20,25 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
             familias.Add(remeras);
         }
 
+        var prendas = await CargarPrendasAsync(db, ct);
+        if (prendas is not null)
+        {
+            familias.Add(prendas);
+        }
+
         foreach (var pool in await db.StockManualPools.AsNoTracking().OrderBy(p => p.Nombre).ToListAsync(ct))
         {
             familias.Add(await CargarManualAsync(db, pool, ct));
+        }
+
+        var repetidas = familias
+            .SelectMany(f => f.Estado.Variantes.Select(v => (f.Clave, v.VariantId)))
+            .GroupBy(v => v.VariantId)
+            .Where(g => g.Select(v => v.Clave).Distinct().Count() > 1)
+            .Select(g => g.Key).Order().ToList();
+        if (repetidas.Count > 0)
+        {
+            throw new InvalidOperationException("variant_ids repetidos entre familias: " + string.Join(", ", repetidas));
         }
 
         return familias;
@@ -36,9 +52,12 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
             await using var tx = await db.Database.BeginTransactionAsync(ct);
             try
             {
-                var plan = clave == RemerasClave
-                    ? await AplicarRemerasAsync(db, planificar, ct)
-                    : await AplicarManualAsync(db, clave, planificar, ct);
+                var plan = clave switch
+                {
+                    RemerasClave => await AplicarRemerasAsync(db, planificar, ct),
+                    PrendasClave => await AplicarPrendasAsync(db, planificar, ct),
+                    _ => await AplicarManualAsync(db, clave, planificar, ct)
+                };
                 await db.SaveChangesAsync(ct);
                 await tx.CommitAsync(ct);
                 return plan;
@@ -71,11 +90,11 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
     public async Task InicializarWatermarkAsync(string clave, long orderNumber, CancellationToken ct)
     {
         await using var db = await factory.CreateDbContextAsync(ct);
-        if (clave == RemerasClave)
+        if (clave == RemerasClave || clave == PrendasClave)
         {
-            if (!await db.SyncWatermarks.AnyAsync(w => w.Clave == RemerasClave, ct))
+            if (!await db.SyncWatermarks.AnyAsync(w => w.Clave == clave, ct))
             {
-                db.SyncWatermarks.Add(new SyncWatermark { Clave = RemerasClave, LastOrderNumberSynced = orderNumber });
+                db.SyncWatermarks.Add(new SyncWatermark { Clave = clave, LastOrderNumberSynced = orderNumber });
             }
         }
         else
@@ -189,6 +208,74 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
             await UltimoEnviadoAsync(db, ct),
             watermark,
             await db.StockDesacoples.AsNoTracking().ToDictionaryAsync(d => d.PoolKey, d => d.StockAtDecouple, ct));
+    }
+
+    // ---------- buzos, pantalones y conjuntos ----------
+
+    private static async Task<FamiliaStock?> CargarPrendasAsync(MismadeDbContext db, CancellationToken ct)
+    {
+        var prendas = await db.StockPrendas.AsNoTracking().ToListAsync(ct);
+        if (prendas.Count == 0)
+        {
+            return null;
+        }
+
+        var watermark = await db.SyncWatermarks.AsNoTracking().SingleOrDefaultAsync(w => w.Clave == PrendasClave, ct);
+        var estado = await EstadoPrendasAsync(db, prendas, watermark?.LastOrderNumberSynced ?? 0, ct);
+        return new FamiliaStock(PrendasClave, estado, watermark is not null);
+    }
+
+    private static async Task<EstadoSync> EstadoPrendasAsync(MismadeDbContext db, List<StockPrenda> prendas,
+        long watermark, CancellationToken ct)
+    {
+        var claves = prendas.ToDictionary(p => p.Id, p => PoolKeys.Prenda(p.Tipo, p.Color, p.Talle));
+        var stock = prendas.ToDictionary(p => claves[p.Id], p => p.Stock);
+        var variantes = (await db.StockPrendaVariants.AsNoTracking().ToListAsync(ct))
+            .Where(v => claves.ContainsKey(v.StockPrendaId))
+            .Select(v => new VariantePool(claves[v.StockPrendaId], v.TiendanubeProductId, v.TiendanubeVariantId))
+            .ToList();
+        var variantesConjuntos = await db.StockConjuntoVariants.AsNoTracking().ToListAsync(ct);
+        variantes.AddRange(variantesConjuntos.Select(v => new VariantePool(
+            PoolKeys.Prenda(StockPrenda.Conjunto, v.Color, v.Talle), v.TiendanubeProductId, v.TiendanubeVariantId)));
+        var conjuntos = variantesConjuntos.Select(v => new ComponenteConjunto(
+                PoolKeys.Prenda(StockPrenda.Conjunto, v.Color, v.Talle),
+                PoolKeys.Prenda(StockPrenda.Buzo, v.Color, v.Talle),
+                PoolKeys.Prenda(StockPrenda.Pantalon, v.Color, v.Talle)))
+            .Distinct().Where(c => stock.ContainsKey(c.PoolBuzo) && stock.ContainsKey(c.PoolPantalon)).ToList();
+        foreach (var conjunto in conjuntos)
+        {
+            stock[conjunto.PoolConjunto] = Math.Min(stock[conjunto.PoolBuzo], stock[conjunto.PoolPantalon]);
+        }
+
+        return new EstadoSync(stock, variantes, await ExcluidasAsync(db, ct),
+            await UltimoEnviadoAsync(db, ct), watermark, Conjuntos: conjuntos);
+    }
+
+    private static async Task<PlanSync> AplicarPrendasAsync(MismadeDbContext db,
+        Func<EstadoSync, PlanSync> planificar, CancellationToken ct)
+    {
+        var prendas = await db.StockPrendas.ToListAsync(ct);
+        var watermark = await db.SyncWatermarks.SingleAsync(w => w.Clave == PrendasClave, ct);
+        var plan = planificar(await EstadoPrendasAsync(db, prendas, watermark.LastOrderNumberSynced, ct));
+        var ahora = DateTimeOffset.UtcNow;
+        foreach (var prenda in prendas)
+        {
+            if ((prenda.Tipo == StockPrenda.Buzo || prenda.Tipo == StockPrenda.Pantalon)
+                && plan.StockNuevo.TryGetValue(PoolKeys.Prenda(prenda.Tipo, prenda.Color, prenda.Talle), out var nuevo)
+                && nuevo != prenda.Stock)
+            {
+                prenda.Stock = nuevo;
+                prenda.UpdatedAt = ahora;
+            }
+        }
+
+        if (plan.WatermarkNuevo > watermark.LastOrderNumberSynced)
+        {
+            watermark.LastOrderNumberSynced = plan.WatermarkNuevo;
+            watermark.UpdatedAt = ahora;
+        }
+
+        return plan;
     }
 
     // ---------- pools manuales ----------

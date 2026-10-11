@@ -7,6 +7,8 @@ public sealed record LineaVendida(long ProductId, long VariantId, int Cantidad);
 
 public sealed record PedidoPagado(long Number, IReadOnlyList<LineaVendida> Lineas);
 
+public sealed record ComponenteConjunto(string PoolConjunto, string PoolBuzo, string PoolPantalon);
+
 public sealed record EstadoSync(
     IReadOnlyDictionary<string, int> Stock,
     IReadOnlyList<VariantePool> Variantes,
@@ -14,7 +16,8 @@ public sealed record EstadoSync(
     IReadOnlyDictionary<string, int> UltimoEnviado,
     long Watermark,
     /// <summary>Pools desacoplados y su stock_at_decouple. Null = la familia no usa desacople (solo remeras lo usan).</summary>
-    IReadOnlyDictionary<string, int>? Desacoples = null);
+    IReadOnlyDictionary<string, int>? Desacoples = null,
+    IReadOnlyList<ComponenteConjunto>? Conjuntos = null);
 
 public sealed record EnvioStock(string PoolKey, long ProductId, long VariantId, int Stock);
 
@@ -55,6 +58,10 @@ public static class StockSync
     public static PlanSync Planificar(EstadoSync estado, IEnumerable<PedidoPagado> pedidos)
     {
         var stock = new Dictionary<string, int>(estado.Stock);
+        var conjuntos = (estado.Conjuntos ?? [])
+            .Where(c => stock.ContainsKey(c.PoolBuzo) && stock.ContainsKey(c.PoolPantalon))
+            .ToDictionary(c => c.PoolConjunto);
+        RecalcularConjuntos(stock, conjuntos.Values);
         var poolPorVariante = new Dictionary<long, string>();
         foreach (var v in estado.Variantes)
         {
@@ -86,7 +93,15 @@ public static class StockSync
                 continue;
             }
 
-            vendido[pool] = vendido.GetValueOrDefault(pool) + linea.Cantidad;
+            if (conjuntos.TryGetValue(pool, out var conjunto))
+            {
+                vendido[conjunto.PoolBuzo] = vendido.GetValueOrDefault(conjunto.PoolBuzo) + linea.Cantidad;
+                vendido[conjunto.PoolPantalon] = vendido.GetValueOrDefault(conjunto.PoolPantalon) + linea.Cantidad;
+            }
+            else
+            {
+                vendido[pool] = vendido.GetValueOrDefault(pool) + linea.Cantidad;
+            }
         }
 
         var alertas = new List<AlertaStock>();
@@ -106,6 +121,8 @@ public static class StockSync
 
             stock[pool] = despues;
         }
+
+        RecalcularConjuntos(stock, conjuntos.Values);
 
         var (publicado, cambios) = Desacoplar(stock, estado.Desacoples);
 
@@ -129,6 +146,15 @@ public static class StockSync
 
         return new PlanSync(stock, watermark, nuevos.Count, aEnviar, envios,
             alertas.OrderBy(a => a.PoolKey, StringComparer.Ordinal).ToList(), lineasSinPool, publicado, cambios);
+    }
+
+    private static void RecalcularConjuntos(Dictionary<string, int> stock,
+        IEnumerable<ComponenteConjunto> conjuntos)
+    {
+        foreach (var conjunto in conjuntos)
+        {
+            stock[conjunto.PoolConjunto] = Math.Min(stock[conjunto.PoolBuzo], stock[conjunto.PoolPantalon]);
+        }
     }
 
     /// <summary>

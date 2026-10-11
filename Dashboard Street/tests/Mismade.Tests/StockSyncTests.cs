@@ -26,6 +26,74 @@ public sealed class StockSyncTests
     private static PedidoPagado Pedido(long number, params (long variant, int qty)[] lineas) =>
         new(number, lineas.Select(l => new LineaVendida(0, l.variant, l.qty)).ToList());
 
+    private static EstadoSync Prendas(int buzo = 4, int pantalon = 6) => new(
+        new Dictionary<string, int> { ["buzo:crema_l"] = buzo, ["pantalon:crema_l"] = pantalon },
+        [new("buzo:crema_l", 1, 11), new("pantalon:crema_l", 2, 22), new("conjunto:crema_l", 3, 33)],
+        new HashSet<long>(),
+        new Dictionary<string, int>
+        {
+            ["buzo:crema_l"] = buzo, ["pantalon:crema_l"] = pantalon, ["conjunto:crema_l"] = Math.Min(buzo, pantalon)
+        },
+        1000, Conjuntos: [new("conjunto:crema_l", "buzo:crema_l", "pantalon:crema_l")]);
+
+    [Fact]
+    public void VentaConjuntoDescuentaAmbosComponentesYPublicaMinimo()
+    {
+        var plan = StockSync.Planificar(Prendas(), [Pedido(1001, (33, 2))]);
+        Assert.Equal(2, plan.StockNuevo["buzo:crema_l"]);
+        Assert.Equal(4, plan.StockNuevo["pantalon:crema_l"]);
+        Assert.Equal(2, plan.StockNuevo["conjunto:crema_l"]);
+        Assert.Equal(2, Assert.Single(plan.Envios, e => e.VariantId == 33).Stock);
+        Assert.Empty(plan.CambiosDesacople);
+    }
+
+    [Fact]
+    public void ConjuntoPublicaMinimoAunqueNoHayaVentas()
+    {
+        var estado = Prendas(6, 2) with { UltimoEnviado = new Dictionary<string, int>() };
+        var plan = StockSync.Planificar(estado, []);
+        Assert.Equal(2, Assert.Single(plan.Envios, e => e.VariantId == 33).Stock);
+    }
+
+    [Fact]
+    public void BuzoEnUnaUnidadNoSeDesacopla()
+    {
+        var plan = StockSync.Planificar(Prendas(2), [Pedido(1001, (11, 1))]);
+        Assert.Equal(1, Assert.Single(plan.Envios, e => e.VariantId == 11).Stock);
+        Assert.Equal(1, Assert.Single(plan.Envios, e => e.VariantId == 33).Stock);
+        Assert.Empty(plan.CambiosDesacople);
+    }
+
+    [Fact]
+    public void VentaBuzoMinimoTambienEnviaConjunto()
+    {
+        var plan = StockSync.Planificar(Prendas(), [Pedido(1001, (11, 1))]);
+        Assert.Equal(["buzo:crema_l", "conjunto:crema_l"], plan.PoolsAEnviar);
+        Assert.Equal(3, plan.Publicado["conjunto:crema_l"]);
+        Assert.Equal(6, plan.StockNuevo["pantalon:crema_l"]);
+    }
+
+    [Fact]
+    public void SobreventaConjuntoDejaAmbosEnCeroYAlertaSoloComponentes()
+    {
+        var plan = StockSync.Planificar(Prendas(1, 2), [Pedido(1001, (33, 3))]);
+        Assert.All(plan.StockNuevo.Values, stock => Assert.Equal(0, stock));
+        Assert.Equal([
+            new AlertaStock("buzo:crema_l", TipoAlertaStock.Sobreventa, 2),
+            new AlertaStock("pantalon:crema_l", TipoAlertaStock.Sobreventa, 1)
+        ], plan.Alertas);
+    }
+
+    [Fact]
+    public void ConjuntoSinComponenteSeIgnora()
+    {
+        var estado = Prendas() with { Stock = new Dictionary<string, int> { ["buzo:crema_l"] = 4 } };
+        var plan = StockSync.Planificar(estado, [Pedido(1001, (33, 1))]);
+        Assert.Equal(4, plan.StockNuevo["buzo:crema_l"]);
+        Assert.False(plan.StockNuevo.ContainsKey("conjunto:crema_l"));
+        Assert.Equal(1, plan.LineasSinPool);
+    }
+
     [Fact]
     public void VentaDescuentaDelPoolYEnviaATodasSusVariantes()
     {

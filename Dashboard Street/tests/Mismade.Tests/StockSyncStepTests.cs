@@ -168,11 +168,41 @@ public sealed class StockSyncStepTests
         Assert.Contains(detalle.Notas, n => n.StartsWith("Modo sombra: 1 combinación", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public async Task PrendasEnModoSombraDescuentaConjuntoSinEnviarNiMarcar()
+    {
+        var familia = new FamiliaStock("prendas", new EstadoSync(
+            new Dictionary<string, int> { ["buzo:crema_l"] = 2, ["pantalon:crema_l"] = 4 },
+            [new("buzo:crema_l", 1, 11), new("pantalon:crema_l", 2, 22), new("conjunto:crema_l", 3, 33)],
+            new HashSet<long>(),
+            new Dictionary<string, int>
+            {
+                ["buzo:crema_l"] = 2, ["pantalon:crema_l"] = 4, ["conjunto:crema_l"] = 2
+            },
+            1000, Conjuntos: [new("conjunto:crema_l", "buzo:crema_l", "pantalon:crema_l")]), true);
+        var store = new FakeStore(familia);
+        var tn = new FakeTiendanube { Pedidos = [Pedido(1001, (33, 1))] };
+        var detalle = new SyncDetalle();
+
+        Assert.Null(await new StockSyncStep(store, tn, new FakeCredenciales(), Sombra).RunAsync(detalle, default));
+
+        Assert.Equal(1, store.Aplicados);
+        Assert.Equal(1001, store.UltimoPlan!.WatermarkNuevo);
+        Assert.Equal(1, store.UltimoPlan.StockNuevo["buzo:crema_l"]);
+        Assert.Equal(3, store.UltimoPlan.StockNuevo["pantalon:crema_l"]);
+        Assert.Equal(1, store.UltimoPlan.StockNuevo["conjunto:crema_l"]);
+        Assert.Empty(tn.Envios);
+        Assert.Empty(store.Marcados);
+        Assert.True(detalle.ModoSombra);
+        Assert.Equal(["buzo:crema_l", "conjunto:crema_l", "pantalon:crema_l"], detalle.PoolsSimulados);
+    }
+
     private sealed record FakeConfiguracion(bool EnviarATiendanube) : IStockConfiguration;
 
     private sealed class FakeStore(params FamiliaStock[] familias) : IStockSyncStore
     {
         public int Aplicados { get; private set; }
+        public PlanSync? UltimoPlan { get; private set; }
         public List<(string Pool, int Stock)> Marcados { get; } = [];
         public List<(string Clave, long Number)> Inicializados { get; } = [];
 
@@ -182,7 +212,8 @@ public sealed class StockSyncStepTests
         public Task<PlanSync> AplicarAsync(string clave, Func<EstadoSync, PlanSync> planificar, CancellationToken ct)
         {
             Aplicados++;
-            return Task.FromResult(planificar(familias.Single(f => f.Clave == clave).Estado));
+            UltimoPlan = planificar(familias.Single(f => f.Clave == clave).Estado);
+            return Task.FromResult(UltimoPlan);
         }
 
         public Task MarcarEnviadoAsync(string poolKey, int stock, CancellationToken ct)
