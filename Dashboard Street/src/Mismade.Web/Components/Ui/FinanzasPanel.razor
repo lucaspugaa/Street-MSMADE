@@ -1,0 +1,156 @@
+@inject FinanzasConsulta Consulta
+@inject MargenConsulta Margenes
+@inject IFinanzasMargenService Servicio
+
+<PageTitle>Finanzas · MISMADE</PageTitle>
+<header class="page-head">
+    <span class="eyebrow">Street</span>
+    <h1>Finanzas</h1>
+    <p>Ingresos y margen por fecha de pago en hora argentina. Hoy muestra los datos disponibles hasta ahora.</p>
+</header>
+
+@if (error is not null)
+{
+    <div class="note" role="alert">@error</div>
+}
+@if (mensaje is not null)
+{
+    <div class="note" role="status">@mensaje</div>
+}
+
+<div class="grid">
+    @foreach (var periodo in periodos)
+    {
+        var margen = periodo.Margen;
+        <section class="card">
+            <div class="card-head"><h2>@periodo.Titulo</h2><span class="muted">@margen.Pedidos pedidos</span></div>
+            <dl class="facts">
+                <div><dt>Ingresos</dt><dd class="num">@Dinero(margen.Ingresos)</dd></div>
+                <div><dt>Margen</dt><dd class="num">@Dinero(margen.Margen)</dd></div>
+                <div><dt>% sobre ingresos</dt><dd class="num">@(margen.Ingresos == 0 ? "—" : (margen.Margen / margen.Ingresos).ToString("P1", Cultura))</dd></div>
+            </dl>
+            <dl class="facts">
+                <div><dt>Comisión</dt><dd class="num">@Dinero(margen.Comision)</dd></div>
+                <div><dt>Envío absorbido</dt><dd class="num">@Dinero(margen.Envio)</dd></div>
+                <div><dt>Costo de mercadería</dt><dd class="num">@Dinero(margen.Costo)</dd></div>
+                @if (periodo.TieneDatosMetaStreet)
+                {
+                    <div><dt>Ads de Street</dt><dd class="num">@Dinero(margen.AdsStreet)</dd></div>
+                }
+                else
+                {
+                    <div><dt>Ads de Street: sin datos de Meta</dt><dd>—</dd></div>
+                }
+            </dl>
+            <div class="muted fin-ajustes">
+                <div>Ventas en negro (neto) <span class="num">@Dinero(margen.VentasNegroNeto)</span></div>
+                <div>Pérdida de mercadería <span class="num">@Dinero(margen.Perdidas)</span></div>
+                <div>Ventas de prendas de cambio <span class="num">@Dinero(margen.VentasCambio)</span></div>
+            </div>
+            @if (margen.Avisos.Count > 0)
+            {
+                <ul class="fin-avisos">
+                    @foreach (var aviso in margen.Avisos)
+                    {
+                        <li>@aviso</li>
+                    }
+                </ul>
+            }
+        </section>
+    }
+</div>
+
+<section class="card">
+    <div class="card-head"><h2>Confirmación pendiente — Pago Nube</h2><span class="muted">@pendientes.Count pendientes</span></div>
+    @if (pendientes.Count == 0)
+    {
+        <p class="muted">No hay pedidos pendientes de confirmación.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Pedido</th><th>Fecha de pago</th><th>Total</th><th>Confirmación</th></tr></thead>
+                <tbody>
+                    @foreach (var pedido in pendientes)
+                    {
+                        <tr>
+                            <th scope="row">#@pedido.OrderNumber</th>
+                            <td>@pedido.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td class="num">@Dinero(pedido.Total)</td>
+                            <td>
+                                <div class="fin-actions">
+                                    <button class="btn" type="button" disabled="@ocupado" @onclick="() => ConfirmarAsync(pedido.OrderNumber, EstadoPagoNube.Cuotas)">Fue en cuotas</button>
+                                    <button class="btn secondary" type="button" disabled="@ocupado" @onclick="() => ConfirmarAsync(pedido.OrderNumber, EstadoPagoNube.Simple)">Sin cuotas</button>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@if (resumen is { TieneVentas: true })
+{
+    <h2>Facturación bruta · fecha de creación</h2>
+    <p class="muted">Pedidos pagos sin cancelaciones, con el criterio del reporte de Tiendanube.</p>
+    <div class="grid">
+        @foreach (var periodo in new[] { ("Hoy", resumen.Hoy), ("Este mes", resumen.Mes), ("Este año", resumen.Anio) })
+        {
+            <section class="card">
+                <h3>@periodo.Item1</h3>
+                <dl class="facts">
+                    <div><dt>Facturado</dt><dd class="num">@Dinero(periodo.Item2.Facturado)</dd></div>
+                    <div><dt>Pedidos</dt><dd class="num">@periodo.Item2.Pedidos</dd></div>
+                </dl>
+            </section>
+        }
+    </div>
+}
+
+@code {
+    private static readonly System.Globalization.CultureInfo Cultura = new("es-AR");
+    private IReadOnlyList<PeriodoFinanzas> periodos = [];
+    private IReadOnlyList<PagoNubeCuota> pendientes = [];
+    private FinanzasResumen? resumen;
+    private bool ocupado;
+    private string? error;
+    private string? mensaje;
+    private static string Dinero(decimal valor) => valor.ToString("C", Cultura);
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        periodos = await Margenes.ConsultarAsync();
+        pendientes = await Servicio.PendientesAsync();
+        resumen = await Consulta.ConsultarAsync(CancellationToken.None);
+    }
+
+    private async Task ConfirmarAsync(long number, EstadoPagoNube estado)
+    {
+        if (ocupado)
+        {
+            return;
+        }
+
+        ocupado = true;
+        error = mensaje = null;
+        try
+        {
+            await Servicio.ConfirmarPagoNubeAsync(number, estado);
+            mensaje = $"Pedido #{number}: confirmado {(estado == EstadoPagoNube.Cuotas ? "en cuotas" : "sin cuotas")}.";
+            await CargarAsync();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DbUpdateException)
+        {
+            error = ex is DbUpdateException ? "No se pudo guardar la confirmación. Reintentá." : ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+}

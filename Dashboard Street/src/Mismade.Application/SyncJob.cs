@@ -4,7 +4,7 @@ using Mismade.Domain;
 namespace Mismade.Application;
 
 public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNotifier notifier,
-    IStockSyncStep stock, IMetaSyncStep meta, IVentasSyncStep ventas)
+    IStockSyncStep stock, IMetaSyncStep meta, IVentasSyncStep ventas, IFinanzasMargenService finanzas)
 {
     public async Task RunAsync(string trigger, CancellationToken ct)
     {
@@ -30,14 +30,13 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
         try
         {
             await ventas.RunAsync(detalle, ct);
+            await finanzas.CrearPendientesAsync(ct);
 
             // Pasos 1, 4 y 5: pedidos desde el watermark y sync de remeras y pools manuales.
             var errorStock = await stock.RunAsync(detalle, ct);
-            await CalcularComisionesAsync(ct);
-            await CalcularEnvioAsync(ct);
             await ProcesarVentasPerdidasCambiosAsync(ct);
             await meta.RunAsync(detalle, ct);
-            await CerrarMesAsync(ct);
+            await finanzas.CerrarMesesAsync(ct);
             await NotificarUiAsync(ct);
             await RegistrarLogAsync(ct);
             ct.ThrowIfCancellationRequested();
@@ -77,29 +76,9 @@ public sealed class SyncJob(IJobLock jobLock, IJobRunStore store, IDashboardNoti
     }
 
 
-    private static Task CalcularComisionesAsync(CancellationToken ct)
-    {
-        // TODO 2: aplicar ComisionMedioPago usando el umbral de ConfigHistorica.
-        return Task.CompletedTask;
-    }
-
-    private static Task CalcularEnvioAsync(CancellationToken ct)
-    {
-        // TODO 3: aplicar EnvioAbsorbido y su costo estimado.
-        return Task.CompletedTask;
-    }
-
-
-
     private static Task ProcesarVentasPerdidasCambiosAsync(CancellationToken ct)
     {
         // TODO 6: incorporar ventas en negro, pérdidas y cambios sin duplicar movimientos.
-        return Task.CompletedTask;
-    }
-
-    private static Task CerrarMesAsync(CancellationToken ct)
-    {
-        // TODO 8: cerrar MonthlyHistory con los datos del período.
         return Task.CompletedTask;
     }
 

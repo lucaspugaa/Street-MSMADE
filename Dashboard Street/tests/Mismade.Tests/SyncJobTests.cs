@@ -11,7 +11,7 @@ public class SyncJobTests
     {
         var store = new FakeStore();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(null), store, notifier, new FakeStock(), new FakeMeta(), new FakeVentas()).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(null), store, notifier, new FakeStock(), new FakeMeta(), new FakeVentas(), new FakeFinanzas()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Skipped, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -26,7 +26,7 @@ public class SyncJobTests
         var store = new FakeStore();
         var lease = new FakeLease();
         var notifier = new FakeNotifier();
-        await new SyncJob(new FakeLock(lease), store, notifier, new FakeStock(), new FakeMeta(), new FakeVentas()).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(lease), store, notifier, new FakeStock(), new FakeMeta(), new FakeVentas(), new FakeFinanzas()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
         Assert.NotNull(store.Run.FinishedAt);
@@ -44,7 +44,7 @@ public class SyncJobTests
         var lease = new FakeLease();
 
         await Assert.ThrowsAsync<OperationCanceledException>(() =>
-            new SyncJob(new FakeLock(lease), store, new FakeNotifier(), new FakeStock(), new FakeMeta(), new FakeVentas()).RunAsync("Test", cts.Token));
+            new SyncJob(new FakeLock(lease), store, new FakeNotifier(), new FakeStock(), new FakeMeta(), new FakeVentas(), new FakeFinanzas()).RunAsync("Test", cts.Token));
 
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.NotNull(store.Run.Error);
@@ -66,7 +66,7 @@ public class SyncJobTests
         });
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta(), new FakeVentas()).RunAsync("Test", CancellationToken.None));
+            new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta(), new FakeVentas(), new FakeFinanzas()).RunAsync("Test", CancellationToken.None));
 
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.Equal(3, store.Run.OrdersProcessed);
@@ -86,7 +86,7 @@ public class SyncJobTests
             return null;
         });
 
-        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta(), new FakeVentas()).RunAsync("Test", CancellationToken.None);
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FakeMeta(), new FakeVentas(), new FakeFinanzas()).RunAsync("Test", CancellationToken.None);
 
         Assert.Equal(EstadoJob.Succeeded, store.Run!.Status);
         Assert.Equal(2, store.Run.OrdersProcessed);
@@ -103,7 +103,7 @@ public class SyncJobTests
             detalle.PoolsEnviados.Add("a");
             return null;
         });
-        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FailedMeta(), new FakeVentas())
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, new FailedMeta(), new FakeVentas(), new FakeFinanzas())
             .RunAsync("Test", default);
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.Equal(1, store.Run.CombinationsPushed);
@@ -133,13 +133,49 @@ public class SyncJobTests
             return null;
         });
         var meta = new FakeMeta(() => metaCorrio = true);
-        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, meta, ventas)
+        await new SyncJob(new FakeLock(new FakeLease()), store, new FakeNotifier(), stock, meta, ventas, new FakeFinanzas())
             .RunAsync("Test", default);
         Assert.True(stockCorrio);
         Assert.True(metaCorrio);
         Assert.Equal(EstadoJob.Failed, store.Run!.Status);
         Assert.Contains("Falló ventas", store.Run.Error);
         Assert.Equal(esperado, store.Run.OrdersProcessed);
+    }
+
+    [Fact]
+    public async Task FinanzasCreaPendientesDespuesDeVentasYCierraDespuesDeMeta()
+    {
+        var pasos = new List<string>();
+        var ventas = new FakeVentas(_ => pasos.Add("ventas"));
+        var meta = new FakeMeta(() => pasos.Add("meta"));
+        var finanzas = new FakeFinanzas(pasos);
+        await new SyncJob(new FakeLock(new FakeLease()), new FakeStore(), new FakeNotifier(),
+            new FakeStock(), meta, ventas, finanzas).RunAsync("Test", default);
+        Assert.Equal(["ventas", "pending", "meta", "cierre"], pasos);
+    }
+
+    private sealed class FakeFinanzas(List<string>? pasos = null) : IFinanzasMargenService
+    {
+        public Task CrearPendientesAsync(CancellationToken ct = default)
+        {
+            pasos?.Add("pending");
+            return Task.CompletedTask;
+        }
+
+        public Task CerrarMesesAsync(CancellationToken ct = default)
+        {
+            pasos?.Add("cierre");
+            return Task.CompletedTask;
+        }
+
+        public Task<MargenPeriodo> ConsultarAsync(DateOnly desde, DateOnly hasta, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<bool> TieneDatosMetaStreetAsync(DateOnly desde, DateOnly hasta, CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task<IReadOnlyList<PagoNubeCuota>> PendientesAsync(CancellationToken ct = default) =>
+            throw new NotSupportedException();
+        public Task ConfirmarPagoNubeAsync(long number, EstadoPagoNube estado, CancellationToken ct = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class FakeVentas(Action<SyncDetalle>? run = null) : IVentasSyncStep

@@ -1,0 +1,4 @@
+.fin-ajustes { display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.fin-ajustes > div { display: flex; justify-content: space-between; gap: 12px; }
+.fin-avisos { margin: 0; padding-left: 20px; font-size: 13px; color: var(--warn); }
+.fin-actions { display: flex; flex-wrap: wrap; gap: 8px; }

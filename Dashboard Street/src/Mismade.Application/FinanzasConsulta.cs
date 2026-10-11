@@ -38,5 +38,4 @@ public sealed class FinanzasConsulta(IVentasStore store, TimeProvider clock)
     private static DateTimeOffset Utc(DateTime local) =>
         new(TimeZoneInfo.ConvertTimeToUtc(local, Argentina));
 
-    // TODO: comisiones, envío absorbido y margen cuando se definan sus reglas.
 }

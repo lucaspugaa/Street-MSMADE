@@ -49,6 +49,8 @@ public static class DependencyInjection
         services.AddScoped<IVentasSyncStep, VentasSyncStep>();
         services.AddScoped<IMovimientosManualesService, MovimientosManualesService>();
         services.AddScoped<FinanzasConsulta>();
+        services.AddScoped<IFinanzasMargenService, FinanzasMargenService>();
+        services.AddScoped<MargenConsulta>();
         services.AddScoped<SyncJob>();
         return services;
     }

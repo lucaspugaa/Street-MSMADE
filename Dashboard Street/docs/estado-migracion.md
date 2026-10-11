@@ -53,7 +53,7 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Página Stock | Muestra remeras, buzos, pantalones y conjuntos desde Neon; semáforos propios |
 | Páginas Campañas y Clientes | Solo texto fijo, sin datos |
 | Página Movimientos y efectos de cargas manuales | Hecho (Tarea 4, 11/10); registro y reversa transaccionales con protección de importados |
-| Margen real e historial mensual | No hechos (`TODO 2, 3, 8` en `SyncJob.cs`) |
+| Margen real, confirmación Pago Nube y cierre mensual | Cableado hecho (Tarea 5, 11/10); falta validar cifras contra el artifact |
 
 ### Datos en Neon (importados el 10/10 desde `export-mismade`)
 50 remeras + 3.481 variantes, 24 pools de buzos/pantalones, 12 variantes de conjuntos, pool manual,
@@ -156,24 +156,21 @@ No se modificaron `Reglas.cs` ni el sync de Tiendanube; sin deploy.
 - Los movimientos importados (`EfectoStock = null`) no se pueden borrar desde la UI ni el servicio,
   porque no se conoce cuánto stock descontaron. Pago, compra y saldo inicial con Cris sí se pueden borrar siempre.
 
-### Tarea 5 — Margen real e historial (`TODO 2, 3, 8` y `FinanzasConsulta`)
-- Por pedido de Tiendanube: ingreso − comisión − envío absorbido − costo de mercadería; por período:
-  − ads de Street + ajustes de ventas en negro, pérdidas y ventas de prendas de cambio.
-- **Discrepancias a corregir en `Reglas.cs` frente a la especificación** (verificar cada una):
-  1. **Costo de mercadería de pedidos de Tiendanube:** el artifact usa un valor combinado
-     prenda+estampado: remera $10.000, buzo/hoodie $24.500, pantalón/jogging $20.000, baby tee $6.500,
-     conjunto $44.500. `CostoPrenda` tiene la tabla "solo prenda" (Negro Regular $7.500, etc.), que el
-     artifact usa **solo** para ventas en negro y pérdidas. Hacen falta las dos tablas.
-  2. **Nombres de medio de pago:** el artifact recibe "Mercado Pago", "Pago Nube", "GOcuotas",
-     "Personalizado". `ComisionMedioPago` compara contra "mercadopago" y "pagonube" sin espacios:
-     verificar cómo llega el gateway desde Tiendanube y normalizar.
-  3. **Medio de pago desconocido:** el artifact no resta nada y deja una nota; el código tira excepción.
-  4. **Envío absorbido:** el artifact dice "total ≥ umbral"; el código usa "total > umbral".
-- Pago Nube por encima del umbral: usar el estado de `PagoNubeCuotas` (cuotas 23,03%, simple o
-  pendiente 5,48%) y crear el registro "pending" para pedidos nuevos. Falta la pantalla donde Lucas los
-  marca.
-- Cierre de mes en `MonthlyHistory` (una sola vez por mes, con los campos de ajuste trazables).
-- **Validación:** comparar ayer, últimos 7 días y mes en curso contra el artifact; deben coincidir.
+### Tarea 5 — Margen real e historial — CABLEADO HECHO 11/10
+- `FinanzasMargenService` consulta pedidos pagos por `PaidAt` en ART (fallback `CreatedAt`),
+  sin cancelados ni reembolsados. Cruza las marcas de Pago Nube y aplica `MargenCalculo` sin cambiar
+  las reglas ni fórmulas de `Margen.cs` / `Reglas.cs`.
+- Ads de Street y ajustes manuales se filtran por fechas del período; Kumo nunca se suma al margen.
+- Finanzas muestra Ayer, Hoy parcial, los últimos 7 días completos y el mes del 1 al ayer, con
+  desglose, ajustes y avisos. La ausencia de datos/configuración Meta Street se señala explícitamente.
+  Se conserva la facturación bruta por fecha de creación.
+- Después del sync de ventas se crean los Pago Nube pendientes sobre el umbral vigente, sin duplicar
+  ni modificar confirmados. La UI permite marcar cuotas / sin cuotas y guarda `MarkedAt`.
+- Después del sync de Meta se cierran los meses completos faltantes desde 2026-10, con la misma
+  consulta. El cierre es idempotente, conserva los meses importados y guarda Ads Kumo por separado.
+- Resueltos los `TODO 2, 3, 8` del job. Sin cambios de esquema ni deploy.
+- Verificación local: build sin warnings y 289 tests aprobados, incluida la importación real.
+- **Pendiente:** validar ayer, últimos 7 días y mes hasta ayer contra las cifras del artifact.
 
 ### Tarea 6 — Meta Ads y página Campañas
 - El dueño carga en Render `Meta__SystemUserToken`, `Meta__StreetAccountId`, `Meta__KumoAccountId`
