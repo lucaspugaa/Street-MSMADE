@@ -320,6 +320,9 @@ namespace Mismade.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
 
@@ -353,6 +356,9 @@ namespace Mismade.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
 
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
@@ -391,6 +397,9 @@ namespace Mismade.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
 
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
@@ -459,6 +468,9 @@ namespace Mismade.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
 
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
@@ -738,6 +750,9 @@ namespace Mismade.Infrastructure.Migrations
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
+
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");
 
@@ -786,6 +801,12 @@ namespace Mismade.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<uint>("xmin")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("xid")
+                        .HasColumnName("xmin");
 
                     b.HasKey("Id");
 
@@ -1308,6 +1329,9 @@ namespace Mismade.Infrastructure.Migrations
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("EfectoStock")
+                        .HasColumnType("text");
 
                     b.Property<DateOnly>("Fecha")
                         .HasColumnType("date");

@@ -375,3 +375,16 @@ th.c, td.c { text-align: center; }
 @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
 }
+
+/* Formularios de movimientos: mismos controles y colores del panel. */
+.field select, .field textarea {
+    font: inherit;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid var(--line);
+    background: var(--surface-2);
+    color: var(--ink);
+    min-width: 0;
+}
+.field select:focus, .field textarea:focus { outline: 2px solid var(--accent); border-color: transparent; }
+.mov-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; }

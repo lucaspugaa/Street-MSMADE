@@ -1,0 +1,77 @@
+<div class="mov-fields">
+    @if (MostrarTipo)
+    {
+        <label class="field">Tipo de prenda
+            <select @bind="Item.Tipo" required>
+                <option value="remera">Remera</option>
+                <option value="buzo">Buzo</option>
+                <option value="pantalon">Pantalón</option>
+            </select>
+        </label>
+    }
+    <label class="field">Color
+        <select @bind="Item.Color" @bind:after="AjustarCorte" required>
+            @foreach (var color in Stock.Select(r => r.Color).Distinct().Order())
+            {
+                <option value="@color">@color</option>
+            }
+        </select>
+    </label>
+    <label class="field">Corte
+        <select @bind="Item.Corte" @bind:after="AjustarTalle" required>
+            @foreach (var corte in Cortes)
+            {
+                <option value="@corte">@corte</option>
+            }
+        </select>
+    </label>
+    <label class="field">Talle
+        <select @bind="Item.Talle" required>
+            @foreach (var talle in Talles)
+            {
+                <option value="@talle">@talle</option>
+            }
+        </select>
+    </label>
+    <label class="field">Cantidad
+        <input type="number" min="1" step="1" @bind="Item.Cantidad" required />
+    </label>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public PrendaMovimiento Item { get; set; } = null!;
+    [Parameter, EditorRequired] public IReadOnlyList<StockRemera> Stock { get; set; } = [];
+    [Parameter] public bool MostrarTipo { get; set; }
+    private IEnumerable<string> Cortes => Stock.Where(r => r.Color == Item.Color).Select(r => r.Corte).Distinct().Order();
+    private IEnumerable<string> Talles => Stock.Where(r => r.Color == Item.Color && r.Corte == Item.Corte)
+        .Select(r => r.Talle).Distinct().OrderBy(t => Array.IndexOf(Orden, t));
+    private static readonly string[] Orden = ["XS", "S", "M", "L", "XL", "XXL", "XXXL"];
+
+    protected override void OnParametersSet()
+    {
+        if (!Stock.Any(r => r.Color == Item.Color))
+        {
+            Item.Color = Stock.Select(r => r.Color).Order().FirstOrDefault() ?? "";
+        }
+
+        AjustarCorte();
+    }
+
+    private void AjustarCorte()
+    {
+        if (!Cortes.Contains(Item.Corte))
+        {
+            Item.Corte = Cortes.FirstOrDefault() ?? "";
+        }
+
+        AjustarTalle();
+    }
+
+    private void AjustarTalle()
+    {
+        if (!Talles.Contains(Item.Talle))
+        {
+            Item.Talle = Talles.FirstOrDefault() ?? "";
+        }
+    }
+}

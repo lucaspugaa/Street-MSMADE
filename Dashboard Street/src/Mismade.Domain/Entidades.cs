@@ -76,8 +76,17 @@ public class StockManualPoolWatermark : Entidad
     public long LastOrderNumberSynced { get; set; }
 }
 
-public class VentaNegro : Entidad
+public interface IMovimientoConStock
 {
+    DateOnly Fecha { get; set; }
+    string? EfectoStock { get; set; }
+}
+
+public class VentaNegro : Entidad, IMovimientoConStock
+{
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public string? Nota { get; set; }
     public decimal TotalAmount { get; set; }
@@ -95,8 +104,11 @@ public class VentaNegroItem : Entidad
     public int Cantidad { get; set; }
 }
 
-public class PerdidaMercaderia : Entidad
+public class PerdidaMercaderia : Entidad, IMovimientoConStock
 {
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public int Cantidad { get; set; }
     public string Color { get; set; } = "";
@@ -108,8 +120,11 @@ public class PerdidaMercaderia : Entidad
 
 public enum TipoMovimientoCris { Pago, Devolucion, Compra, SaldoInicial }
 
-public class CrisLedger : Entidad
+public class CrisLedger : Entidad, IMovimientoConStock
 {
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public TipoMovimientoCris Tipo { get; set; }
     public decimal Monto { get; set; }
@@ -121,8 +136,11 @@ public class CrisLedger : Entidad
     public int? Cantidad { get; set; }
 }
 
-public class CambioPrenda : Entidad
+public class CambioPrenda : Entidad, IMovimientoConStock
 {
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public string? Nota { get; set; }
     public ICollection<CambioItemSalida> ItemsSalida { get; set; } = [];
@@ -157,8 +175,11 @@ public class StockCambio : Entidad
     public int Disponible { get; set; }
 }
 
-public class CambioStockCarga : Entidad
+public class CambioStockCarga : Entidad, IMovimientoConStock
 {
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public string Color { get; set; } = "";
     public string Corte { get; set; } = "";
@@ -167,8 +188,11 @@ public class CambioStockCarga : Entidad
     public string? Nota { get; set; }
 }
 
-public class CambioVenta : Entidad
+public class CambioVenta : Entidad, IMovimientoConStock
 {
+    /// <summary>Efectos reales en stock para revertir el movimiento; null = importado, efecto desconocido.</summary>
+    public string? EfectoStock { get; set; }
+
     public DateOnly Fecha { get; set; }
     public string Color { get; set; } = "";
     public string Corte { get; set; } = "";

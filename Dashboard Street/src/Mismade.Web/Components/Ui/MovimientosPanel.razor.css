@@ -1,0 +1,7 @@
+.mov-form { display: flex; flex-direction: column; gap: 16px; }
+fieldset.mov-form { border: 0; margin: 0; padding: 0; min-width: 0; }
+.mov-item { display: flex; flex-direction: column; gap: 10px; padding: 12px; border: 1px solid var(--line); border-radius: 8px; }
+.mov-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.mov-confirm { position: fixed; inset: 0; background: #0008; display: grid; place-items: center; padding: 20px; z-index: 100; }
+.mov-confirm .card { max-width: 540px; width: 100%; }
+.mov-actions { display: flex; gap: 12px; flex-wrap: wrap; }

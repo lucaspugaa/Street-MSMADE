@@ -82,6 +82,7 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
         modelBuilder.Entity<StockManualPoolWatermark>().HasIndex(x => x.StockManualPoolId).IsUnique();
         modelBuilder.Entity<MonthlyHistory>().Property(x => x.Mes).HasMaxLength(7);
         modelBuilder.Entity<StockRemera>().Property<uint>("xmin").IsRowVersion();
+        modelBuilder.Entity<StockCambio>().Property<uint>("xmin").IsRowVersion();
         modelBuilder.Entity<StockManualPool>().Property<uint>("xmin").IsRowVersion();
 
         modelBuilder.Entity<CambioItemSalida>().HasOne(x => x.CambioPrenda)

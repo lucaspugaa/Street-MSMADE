@@ -47,6 +47,7 @@ public static class DependencyInjection
             provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<TiendanubeOptions>>().Value);
         services.AddScoped<IVentasStore, VentasStore>();
         services.AddScoped<IVentasSyncStep, VentasSyncStep>();
+        services.AddScoped<IMovimientosManualesService, MovimientosManualesService>();
         services.AddScoped<FinanzasConsulta>();
         services.AddScoped<SyncJob>();
         return services;

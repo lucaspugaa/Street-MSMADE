@@ -1,0 +1,324 @@
+@inject IDbContextFactory<MismadeDbContext> Db
+@inject IMovimientosManualesService Servicio
+
+<PageTitle>Movimientos · MISMADE</PageTitle>
+<header class="page-head">
+    <span class="eyebrow">Street · cargas manuales</span>
+    <h1>Movimientos</h1>
+    <p>Registrá ventas, pérdidas y cambios. El stock se ajusta al guardar cada movimiento.</p>
+</header>
+
+@if (mensaje is not null)
+{
+    <div class="note" role="status">@mensaje</div>
+}
+@if (error is not null)
+{
+    <div class="note" role="alert">@error</div>
+}
+
+<section class="card">
+    <h2>Nuevo movimiento</h2>
+    <form class="mov-form" @onsubmit="GuardarAsync" @onsubmit:preventDefault>
+        <fieldset disabled="@ocupado" class="mov-form">
+            <div class="mov-fields">
+                <label class="field">Movimiento
+                    <select @bind="tipo" @bind:after="ReiniciarFormulario">
+                        @foreach (var opcion in Tipos)
+                        {
+                            <option value="@opcion.Key">@opcion.Value</option>
+                        }
+                    </select>
+                </label>
+                <label class="field">Fecha<input type="date" @bind="fecha" required /></label>
+                @if (tipo is "negro" or "cris" or "ventaCambio")
+                {
+                    <label class="field">@(tipo == "negro" ? "Total ($)" : "Monto ($)")
+                        <input type="number" min="0" step="0.01" @bind="monto" required />
+                    </label>
+                }
+                @if (tipo == "cris")
+                {
+                    <label class="field">Tipo con Cris
+                        <select @bind="tipoCris">
+                            <option value="@TipoMovimientoCris.Pago">Pago</option>
+                            <option value="@TipoMovimientoCris.Devolucion">Devolución</option>
+                            <option value="@TipoMovimientoCris.Compra">Compra</option>
+                        </select>
+                    </label>
+                }
+            </div>
+            @if (tipo == "negro")
+            {
+                <h3>Ítems vendidos</h3>
+                @foreach (var item in items)
+                {
+                    <div class="mov-item" @key="item">
+                        <PrendaMovimientoFields Item="item" Stock="stock" MostrarTipo="true" />
+                        <button type="button" class="btn secondary" @onclick="() => items.Remove(item)" disabled="@(items.Count == 1)">Quitar ítem</button>
+                    </div>
+                }
+                <button type="button" class="btn secondary" @onclick="() => items.Add(new())">Agregar ítem</button>
+            }
+            else if (tipo == "cambio")
+            {
+                <h3>Prendas que salen</h3>
+                @foreach (var item in items)
+                {
+                    <div class="mov-item" @key="item">
+                        <PrendaMovimientoFields Item="item" Stock="stock" />
+                        <button type="button" class="btn secondary" @onclick="() => items.Remove(item)" disabled="@(items.Count == 1)">Quitar prenda</button>
+                    </div>
+                }
+                <button type="button" class="btn secondary" @onclick="() => items.Add(new())">Agregar salida</button>
+                <h3>Prendas que vuelven al stock de cambios</h3>
+                @foreach (var item in recibidos)
+                {
+                    <div class="mov-item" @key="item">
+                        <PrendaMovimientoFields Item="item" Stock="stock" />
+                        <button type="button" class="btn secondary" @onclick="() => recibidos.Remove(item)" disabled="@(recibidos.Count == 1)">Quitar prenda</button>
+                    </div>
+                }
+                <button type="button" class="btn secondary" @onclick="() => recibidos.Add(new())">Agregar devolución</button>
+            }
+            else if (tipo != "cris" || tipoCris == TipoMovimientoCris.Devolucion)
+            {
+                <PrendaMovimientoFields Item="prenda" Stock="stock" />
+            }
+            @if (tipo == "perdida")
+            {
+                <label class="field">Motivo<input @bind="motivo" required /></label>
+            }
+            <label class="field">Nota<textarea @bind="nota" rows="2"></textarea></label>
+            <button type="submit" class="btn">@(ocupado ? "Guardando…" : "Guardar movimiento")</button>
+        </fieldset>
+    </form>
+</section>
+
+@foreach (var grupo in Tipos)
+{
+    <section class="card">
+        <div class="card-head"><h2>@grupo.Value</h2><span class="muted">Últimos 20</span></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Fecha</th><th>Detalle</th><th>Monto</th><th>Nota</th><th>Acciones</th></tr></thead>
+                <tbody>
+                    @foreach (var fila in filas.Where(f => f.Tipo == grupo.Key))
+                    {
+                        <tr>
+                            <td>@fila.Fecha.ToString("dd/MM/yyyy")</td>
+                            <td>@fila.Detalle</td><td class="num">@(fila.Monto?.ToString("C0"))</td><td>@fila.Nota</td>
+                            <td>
+                                @if (fila.PuedeBorrar)
+                                {
+                                    <button type="button" class="btn secondary" disabled="@ocupado" @onclick="() => pendiente = fila">Borrar</button>
+                                }
+                                else
+                                {
+                                    <span class="muted" title="@MovimientosManualesService.MensajeImportado">Importado · sin borrado</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                    @if (!filas.Any(f => f.Tipo == grupo.Key))
+                    {
+                        <tr><td colspan="5" class="muted">Todavía no hay movimientos de este tipo.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
+@if (pendiente is not null)
+{
+    <div class="mov-confirm" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+        <section class="card">
+            <h2 id="confirm-title">¿Borrar este movimiento?</h2>
+            @if (error is not null)
+            {
+                <p role="alert">@error</p>
+            }
+            <p>@pendiente.Fecha.ToString("dd/MM/yyyy") · @pendiente.Detalle</p>
+            <p>Se revertirá el efecto registrado en stock, con piso en 0.</p>
+            <div class="mov-actions">
+                <button type="button" class="btn" disabled="@ocupado" @onclick="BorrarAsync">Confirmar borrado</button>
+                <button type="button" class="btn secondary" disabled="@ocupado" @onclick="() => pendiente = null">Cancelar</button>
+            </div>
+        </section>
+    </div>
+}
+
+@code {
+    private static readonly Dictionary<string, string> Tipos = new()
+    {
+        ["negro"] = "Venta en negro", ["perdida"] = "Pérdida de mercadería", ["cris"] = "Movimiento con Cris",
+        ["cambio"] = "Cambio de prendas", ["carga"] = "Carga al stock de cambios", ["ventaCambio"] = "Venta de prenda de cambio"
+    };
+    private string tipo = "negro";
+    private DateOnly fecha = DateOnly.FromDateTime(TimeZoneInfo.ConvertTimeBySystemTimeZoneId(DateTimeOffset.UtcNow, "America/Argentina/Buenos_Aires").DateTime);
+    private decimal monto;
+    private string? nota;
+    private string motivo = "";
+    private TipoMovimientoCris tipoCris = TipoMovimientoCris.Pago;
+    private PrendaMovimiento prenda = new();
+    private List<PrendaMovimiento> items = [new()];
+    private List<PrendaMovimiento> recibidos = [new()];
+    private List<StockRemera> stock = [];
+    private List<FilaMovimiento> filas = [];
+    private FilaMovimiento? pendiente;
+    private bool ocupado;
+    private string? mensaje;
+    private string? error;
+    private sealed record FilaMovimiento(Guid Id, string Tipo, DateOnly Fecha, string Detalle, decimal? Monto, string? Nota, bool PuedeBorrar);
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private void ReiniciarFormulario()
+    {
+        monto = 0;
+        nota = null;
+        motivo = "";
+        prenda = new();
+        items = [new()];
+        recibidos = [new()];
+        tipoCris = TipoMovimientoCris.Pago;
+    }
+
+    private async Task GuardarAsync()
+    {
+        if (ocupado)
+        {
+            return;
+        }
+
+        ocupado = true;
+        mensaje = error = null;
+        try
+        {
+            var resultado = tipo switch
+            {
+                "negro" => await Servicio.RegistrarVentaNegroAsync(new VentaNegro
+                {
+                    Fecha = fecha, TotalAmount = monto, Nota = nota,
+                    Items = items.Select(i => new VentaNegroItem
+                    {
+                        Tipo = i.Tipo, Color = i.Color, Corte = i.Corte, Talle = i.Talle, Cantidad = i.Cantidad
+                    }).ToList()
+                }),
+                "perdida" => await Servicio.RegistrarPerdidaAsync(new PerdidaMercaderia
+                {
+                    Fecha = fecha, Color = prenda.Color, Corte = prenda.Corte, Talle = prenda.Talle,
+                    Cantidad = prenda.Cantidad, Motivo = motivo, Nota = nota
+                }),
+                "cris" => await Servicio.RegistrarCrisAsync(new CrisLedger
+                {
+                    Fecha = fecha, Tipo = tipoCris, Monto = monto, Nota = nota,
+                    Color = tipoCris == TipoMovimientoCris.Devolucion ? prenda.Color : null,
+                    Corte = tipoCris == TipoMovimientoCris.Devolucion ? prenda.Corte : null,
+                    Talle = tipoCris == TipoMovimientoCris.Devolucion ? prenda.Talle : null,
+                    Cantidad = tipoCris == TipoMovimientoCris.Devolucion ? prenda.Cantidad : null
+                }),
+                "cambio" => await Servicio.RegistrarCambioAsync(new CambioPrenda
+                {
+                    Fecha = fecha, Nota = nota,
+                    ItemsSalida = items.Select(i => new CambioItemSalida
+                    {
+                        Color = i.Color, Corte = i.Corte, Talle = i.Talle, Cantidad = i.Cantidad
+                    }).ToList(),
+                    ItemsRecibidos = recibidos.Select(i => new CambioItemRecibido
+                    {
+                        Color = i.Color, Corte = i.Corte, Talle = i.Talle, Cantidad = i.Cantidad
+                    }).ToList()
+                }),
+                "carga" => await Servicio.RegistrarCargaAsync(new CambioStockCarga
+                {
+                    Fecha = fecha, Color = prenda.Color, Corte = prenda.Corte, Talle = prenda.Talle,
+                    Cantidad = prenda.Cantidad, Nota = nota
+                }),
+                "ventaCambio" => await Servicio.RegistrarVentaCambioAsync(new CambioVenta
+                {
+                    Fecha = fecha, Color = prenda.Color, Corte = prenda.Corte, Talle = prenda.Talle,
+                    Cantidad = prenda.Cantidad, Monto = monto, Nota = nota
+                }),
+                _ => throw new InvalidOperationException("Tipo de movimiento desconocido.")
+            };
+            mensaje = "Movimiento guardado. " + string.Join(" ", resultado.Avisos);
+            ReiniciarFormulario();
+            await CargarAsync();
+        }
+        catch (Exception ex) when (ex is ArgumentException or InvalidOperationException or DbUpdateException)
+        {
+            error = ex is DbUpdateException ? "No se pudo guardar. Actualizá la página y reintentá." : ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    private async Task BorrarAsync()
+    {
+        if (ocupado || pendiente is null)
+        {
+            return;
+        }
+
+        ocupado = true;
+        mensaje = error = null;
+        try
+        {
+            var resultado = pendiente.Tipo switch
+            {
+                "negro" => await Servicio.BorrarVentaNegroAsync(pendiente.Id),
+                "perdida" => await Servicio.BorrarPerdidaAsync(pendiente.Id),
+                "cris" => await Servicio.BorrarCrisAsync(pendiente.Id),
+                "cambio" => await Servicio.BorrarCambioAsync(pendiente.Id),
+                "carga" => await Servicio.BorrarCargaAsync(pendiente.Id),
+                "ventaCambio" => await Servicio.BorrarVentaCambioAsync(pendiente.Id),
+                _ => throw new InvalidOperationException("Tipo de movimiento desconocido.")
+            };
+            mensaje = "Movimiento borrado. " + string.Join(" ", resultado.Avisos);
+            pendiente = null;
+            await CargarAsync();
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or DbUpdateException)
+        {
+            error = ex is DbUpdateException ? "No se pudo borrar. Actualizá la página y reintentá." : ex.Message;
+        }
+        finally
+        {
+            ocupado = false;
+        }
+    }
+
+    private static string Prenda(string color, string corte, string talle, int cantidad) => $"{cantidad} × {color} {corte} {talle}";
+
+    private async Task CargarAsync()
+    {
+        await using var db = await Db.CreateDbContextAsync();
+        stock = await db.StockRemeras.AsNoTracking().ToListAsync();
+        filas = [];
+        var ventas = await db.VentasNegro.AsNoTracking().Include(v => v.Items).OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(ventas.Select(v => new FilaMovimiento(v.Id, "negro", v.Fecha,
+            string.Join("; ", v.Items.Select(i => i.Tipo + " " + Prenda(i.Color, i.Corte, i.Talle, i.Cantidad))), v.TotalAmount, v.Nota, v.EfectoStock is not null)));
+        var perdidas = await db.PerdidasMercaderia.AsNoTracking().OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(perdidas.Select(v => new FilaMovimiento(v.Id, "perdida", v.Fecha,
+            Prenda(v.Color, v.Corte, v.Talle, v.Cantidad) + " · " + v.Motivo, null, v.Nota, v.EfectoStock is not null)));
+        var cris = await db.CrisLedger.AsNoTracking().OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(cris.Select(v => new FilaMovimiento(v.Id, "cris", v.Fecha,
+            v.Tipo.ToString() + (v.Tipo == TipoMovimientoCris.Devolucion ? " · " + Prenda(v.Color ?? "", v.Corte ?? "", v.Talle ?? "", v.Cantidad ?? 0) : ""),
+            v.Monto, v.Nota, v.EfectoStock is not null || v.Tipo != TipoMovimientoCris.Devolucion)));
+        var cambios = await db.CambiosPrenda.AsNoTracking().Include(v => v.ItemsSalida).Include(v => v.ItemsRecibidos)
+            .OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(cambios.Select(v => new FilaMovimiento(v.Id, "cambio", v.Fecha,
+            "Sale: " + string.Join("; ", v.ItemsSalida.Select(i => Prenda(i.Color, i.Corte, i.Talle, i.Cantidad)))
+            + " / Vuelve: " + string.Join("; ", v.ItemsRecibidos.Select(i => Prenda(i.Color, i.Corte, i.Talle, i.Cantidad))), null, v.Nota, v.EfectoStock is not null)));
+        var cargas = await db.CambioStockCargas.AsNoTracking().OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(cargas.Select(v => new FilaMovimiento(v.Id, "carga", v.Fecha,
+            Prenda(v.Color, v.Corte, v.Talle, v.Cantidad), null, v.Nota, v.EfectoStock is not null)));
+        var ventasCambio = await db.CambioVentas.AsNoTracking().OrderByDescending(v => v.Fecha).Take(20).ToListAsync();
+        filas.AddRange(ventasCambio.Select(v => new FilaMovimiento(v.Id, "ventaCambio", v.Fecha,
+            Prenda(v.Color, v.Corte, v.Talle, v.Cantidad), v.Monto, v.Nota, v.EfectoStock is not null)));
+    }
+}

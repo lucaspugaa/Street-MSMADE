@@ -52,7 +52,8 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Meta Ads (sync de insights) | Código hecho; **faltan el token y los IDs en Render** |
 | Página Stock | Muestra remeras, buzos, pantalones y conjuntos desde Neon; semáforos propios |
 | Páginas Campañas y Clientes | Solo texto fijo, sin datos |
-| Margen real, historial mensual, formularios de carga | No hechos (`TODO 2, 3, 6, 8` en `SyncJob.cs`) |
+| Página Movimientos y efectos de cargas manuales | Hecho (Tarea 4, 11/10); registro y reversa transaccionales con protección de importados |
+| Margen real e historial mensual | No hechos (`TODO 2, 3, 8` en `SyncJob.cs`) |
 
 ### Datos en Neon (importados el 10/10 desde `export-mismade`)
 50 remeras + 3.481 variantes, 24 pools de buzos/pantalones, 12 variantes de conjuntos, pool manual,
@@ -136,7 +137,13 @@ Reglas (sección 3.11):
 - Sin desacople ni piso preventivo: se publica el real hasta llegar a 0.
 - Tests: venta de conjunto descuenta los dos; conjunto publica el mínimo; buzo en 1 se sigue publicando 1.
 
-### Tarea 4 — Movimientos manuales (`TODO 6`) y formularios de carga
+### Tarea 4 — Movimientos manuales (`TODO 6`) y formularios de carga — HECHA 11/10
+Implementados los seis formularios en `/movimientos`, con acceso autenticado, listados y confirmación de borrado.
+`MovimientosManualesService` registra movimiento y efecto en una transacción, con piso en 0 y avisos;
+reintenta una vez ante concurrencia. El efecto real se guarda en `EfectoStock` para una reversa exacta.
+Migración `MovimientosEfectoStock` generada (incluye concurrencia de `StockCambios`), sin aplicar en Neon.
+Validación local: build sin warnings, 277 tests en verde (32 nuevos de servicio y render), incluido export real.
+No se modificaron `Reglas.cs` ni el sync de Tiendanube; sin deploy.
 - Formularios en el Blazor para: ventas en negro (remera/buzo/pantalón), pérdida de mercadería,
   movimientos con Cris (pago/devolución/compra), cambios de prendas, carga al stock de cambios y venta
   de prenda de cambio. Mismos campos que el artifact (ver el export).
@@ -145,8 +152,9 @@ Reglas (sección 3.11):
   Negro XXL Regular (pool manual); prenda que vuelve en un cambio suma a `StockCambios`; venta de prenda
   de cambio resta de `StockCambios`.
 - El diff contra el último enviado ya hace que la próxima corrida "vea" esos cambios.
-- Al borrar un movimiento, revertir su efecto en stock (definir con Lucas si hace falta; el artifact
-  permite borrar filas).
+- Al borrar un movimiento nuevo, revertir su efecto real guardado (con piso en 0 y aviso si corresponde).
+- Los movimientos importados (`EfectoStock = null`) no se pueden borrar desde la UI ni el servicio,
+  porque no se conoce cuánto stock descontaron. Pago, compra y saldo inicial con Cris sí se pueden borrar siempre.
 
 ### Tarea 5 — Margen real e historial (`TODO 2, 3, 8` y `FinanzasConsulta`)
 - Por pedido de Tiendanube: ingreso − comisión − envío absorbido − costo de mercadería; por período:
