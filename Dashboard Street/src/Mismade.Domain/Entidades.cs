@@ -28,6 +28,7 @@ public class StockPrenda : Entidad
 {
     public const string Buzo = "Buzo";
     public const string Pantalon = "Pantalon";
+    public const string Conjunto = "Conjunto";
 
     public string Tipo { get; set; } = "";
     public string Color { get; set; } = "";
@@ -285,4 +286,20 @@ public class VentasSyncEstado : Entidad
     public string Clave { get; set; } = "ventas";
     public DateTimeOffset UltimoUpdatedAt { get; set; }
     public DateTimeOffset? HistorialDesde { get; set; }
+}
+
+public class StockDesacople : Entidad
+{
+    public string PoolKey { get; set; } = "";
+    public int StockAtDecouple { get; set; }
+    public bool AutoCreated { get; set; }
+    public string Reason { get; set; } = "";
+}
+
+public class StockPrendaVariant : Entidad
+{
+    public Guid StockPrendaId { get; set; }
+    public StockPrenda StockPrenda { get; set; } = null!;
+    public long TiendanubeProductId { get; set; }
+    public long TiendanubeVariantId { get; set; }
 }

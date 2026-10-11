@@ -20,6 +20,8 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
     public DbSet<StockManualPool> StockManualPools => Set<StockManualPool>();
     public DbSet<StockVariantMap> StockVariantMaps => Set<StockVariantMap>();
     public DbSet<StockVariantMapExclusion> StockVariantMapExclusions => Set<StockVariantMapExclusion>();
+    public DbSet<StockDesacople> StockDesacoples => Set<StockDesacople>();
+    public DbSet<StockPrendaVariant> StockPrendaVariants => Set<StockPrendaVariant>();
     public DbSet<StockPrenda> StockPrendas => Set<StockPrenda>();
     public DbSet<StockConjuntoVariant> StockConjuntoVariants => Set<StockConjuntoVariant>();
     public DbSet<StockManualPoolVariant> StockManualPoolVariants => Set<StockManualPoolVariant>();
@@ -70,6 +72,11 @@ public sealed class MismadeDbContext(DbContextOptions<MismadeDbContext> options)
         modelBuilder.Entity<StockRemera>().HasIndex(x => new { x.Color, x.Corte, x.Talle }).IsUnique();
         modelBuilder.Entity<StockCambio>().HasIndex(x => new { x.Color, x.Corte, x.Talle }).IsUnique();
         modelBuilder.Entity<StockPrenda>().HasIndex(x => new { x.Tipo, x.Color, x.Talle }).IsUnique();
+        modelBuilder.Entity<StockDesacople>().HasIndex(x => x.PoolKey).IsUnique();
+        modelBuilder.Entity<StockPrendaVariant>().HasIndex(x => x.TiendanubeVariantId).IsUnique();
+        modelBuilder.Entity<StockPrendaVariant>().HasOne(x => x.StockPrenda)
+            .WithMany().HasForeignKey(x => x.StockPrendaId)
+            .OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<StockConjuntoVariant>().HasIndex(x => x.TiendanubeVariantId).IsUnique();
         modelBuilder.Entity<PagoNubeCuota>().HasIndex(x => x.OrderNumber).IsUnique();
         modelBuilder.Entity<StockManualPoolWatermark>().HasIndex(x => x.StockManualPoolId).IsUnique();

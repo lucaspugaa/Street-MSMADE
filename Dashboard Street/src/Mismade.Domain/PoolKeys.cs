@@ -8,6 +8,9 @@ public static class PoolKeys
     public static string Remera(string color, string corte, string talle) =>
         string.Join('_', new[] { color, corte, talle }.Select(Normalizar));
 
+    public static string Prenda(string tipo, string color, string talle) =>
+        tipo.ToLowerInvariant() + ":" + Normalizar(color) + "_" + Normalizar(talle);
+
     public static string Manual(string nombre) => ManualPrefix + Normalizar(nombre);
 
     /// <summary>"manual:buzo_negro_xxl_regular" → "Buzo negro xxl regular".</summary>

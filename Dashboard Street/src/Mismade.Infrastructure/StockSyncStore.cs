@@ -7,6 +7,7 @@ namespace Mismade.Infrastructure;
 public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) : IStockSyncStore
 {
     public const string RemerasClave = "remeras";
+    public const string PrendasClave = "prendas";
 
     public async Task<IReadOnlyList<FamiliaStock>> CargarAsync(CancellationToken ct)
     {

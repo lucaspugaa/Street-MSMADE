@@ -829,6 +829,40 @@ namespace Mismade.Infrastructure.Migrations
                     b.ToTable("StockConjuntoVariants");
                 });
 
+            modelBuilder.Entity("Mismade.Domain.StockDesacople", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<bool>("AutoCreated")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("PoolKey")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Reason")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("StockAtDecouple")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PoolKey")
+                        .IsUnique();
+
+                    b.ToTable("StockDesacoples");
+                });
+
             modelBuilder.Entity("Mismade.Domain.StockManualPool", b =>
                 {
                     b.Property<Guid>("Id")
@@ -950,6 +984,37 @@ namespace Mismade.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("StockPrendas");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.StockPrendaVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("StockPrendaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<long>("TiendanubeProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TiendanubeVariantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("StockPrendaId");
+
+                    b.HasIndex("TiendanubeVariantId")
+                        .IsUnique();
+
+                    b.ToTable("StockPrendaVariants");
                 });
 
             modelBuilder.Entity("Mismade.Domain.StockRemera", b =>
@@ -1429,6 +1494,17 @@ namespace Mismade.Infrastructure.Migrations
                         .IsRequired();
 
                     b.Navigation("StockManualPool");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.StockPrendaVariant", b =>
+                {
+                    b.HasOne("Mismade.Domain.StockPrenda", "StockPrenda")
+                        .WithMany()
+                        .HasForeignKey("StockPrendaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("StockPrenda");
                 });
 
             modelBuilder.Entity("Mismade.Domain.StockVariantMap", b =>

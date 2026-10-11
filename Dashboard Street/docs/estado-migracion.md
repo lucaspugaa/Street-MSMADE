@@ -46,7 +46,7 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Sync de stock de remeras (pedidos → pool → Tiendanube) | Hecho, **sin desacople**; corre en modo sombra |
 | Pool manual Buzo Negro XXL Regular | Hecho, corre en modo sombra |
 | Modo sombra | Desplegado (PR #9) y verificado en pantalla |
-| Importador del export del artifact (`tools/Mismade.Importer`) | Hecho; export del 10/10 importado en Neon |
+| Importador del export del artifact (`tools/Mismade.Importer`) | Hecho; Tarea 1 completa: múltiples exports, colecciones faltantes, bloqueo de modo sombra y reemplazo transaccional |
 | Reglas puras de comisión, envío absorbido y costo de prenda (`Domain/Reglas.cs`) | Escritas con tests, **no conectadas** al job |
 | Meta Ads (sync de insights) | Código hecho; **faltan el token y los IDs en Render** |
 | Página Stock | Muestra remeras desde Neon |
@@ -85,7 +85,9 @@ el 10/10 ni la corrección de `gris_regular_m`. Es esperable: se reimporta todo 
 Cada tarea termina con build sin warnings, tests en verde y, si cambia el comportamiento en producción,
 una verificación en pantalla después del deploy. Ninguna de las tareas 1 a 5 escribe en Tiendanube.
 
-### Tarea 1 — Importador: bloqueo de seguridad y colecciones faltantes
+### Tarea 1 — Importador: bloqueo de seguridad y colecciones faltantes (hecha)
+Validada localmente con build sin warnings y tests, incluyendo export 1 + export 2 con rollback
+y conteos contra los archivos. Migración `DesacoplesYVariantesPrendas` generada; sin deploy ni reimportación en Neon.
 - **Bloqueo:** antes de escribir, leer el último `JobRun` exitoso y abortar si su `Detalle` no tiene
   `ModoSombra = true`. Mensaje claro: "El panel no está en modo sombra; no importo".
 - **Colecciones nuevas** (del export 2), con migración:

@@ -1,25 +1,34 @@
 // Importa el export JSON del dashboard anterior (artifact) a PostgreSQL.
-// Uso: dotnet run --project tools/Mismade.Importer -- <carpeta-export> [--confirmar]
+// Uso: dotnet run --project tools/Mismade.Importer -- <carpeta1> [<carpeta2> ...] [--confirmar] [--reemplazar]
 // La cadena sale de ConnectionStrings__Default (por defecto, el Postgres local de docker-compose).
-// Sin --confirmar solo muestra a qué base apunta y qué importaría, sin escribir nada.
+// Sin --confirmar solo muestra a qué base apunta y qué importaría, con rollback de la transacci?n.
 using Microsoft.EntityFrameworkCore;
 using Mismade.Infrastructure;
 using Npgsql;
 
 if (args.Length == 0 || args[0].StartsWith("--", StringComparison.Ordinal))
 {
-    Console.Error.WriteLine("Uso: Mismade.Importer <carpeta-export> [--confirmar]");
+    Console.Error.WriteLine("Uso: Mismade.Importer <carpeta1> [<carpeta2> ...] [--confirmar] [--reemplazar]");
     return 2;
 }
 
-var carpeta = Path.GetFullPath(args[0]);
+var carpetas = args.Where(a => !a.StartsWith("--", StringComparison.Ordinal)).Select(Path.GetFullPath).ToList();
+var reemplazar = args.Contains("--reemplazar");
 var confirmar = args.Contains("--confirmar");
 var cadena = PostgresConnectionString.Normalize(
     Environment.GetEnvironmentVariable("ConnectionStrings__Default")
     ?? "Host=localhost;Database=mismade;Username=postgres;Password=dev");
 var destino = new NpgsqlConnectionStringBuilder(cadena);
 Console.WriteLine($"Base destino: {destino.Host}/{destino.Database}");
-Console.WriteLine($"Export: {carpeta}");
+foreach (var carpeta in carpetas)
+{
+    Console.WriteLine($"Export: {carpeta}");
+}
+
+if (reemplazar)
+{
+    Console.WriteLine("AVISO: --reemplazar borrará las tablas del artifact antes de importar. Sin --confirmar se hará rollback.");
+}
 
 await using var db = new MismadeDbContext(new DbContextOptionsBuilder<MismadeDbContext>().UseNpgsql(cadena).Options);
 var pendientes = (await db.Database.GetPendingMigrationsAsync()).ToList();
@@ -31,7 +40,7 @@ if (pendientes.Count > 0)
 }
 
 await using var tx = await db.Database.BeginTransactionAsync();
-var resumen = await ArtifactImporter.ImportarAsync(db, carpeta, CancellationToken.None);
+var resumen = await ArtifactImporter.ImportarAsync(db, carpetas, reemplazar, CancellationToken.None);
 foreach (var (tabla, filas) in resumen)
 {
     Console.WriteLine($"  {tabla,-30} {filas,5}");
