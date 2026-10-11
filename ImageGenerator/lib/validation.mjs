@@ -1,3 +1,4 @@
+import { detectImageFormat } from '../public/image-format.js';
 import sharp from 'sharp';
 
 export const LIMITS = {
@@ -19,7 +20,6 @@ const SHADOW_LIMITS = {
   y: [-4096, 4096],
 };
 const COLOR = /^#[\da-f]{6}$/i;
-const FORMATS = new Set(['png', 'jpeg', 'webp']);
 
 export function isObject(value) {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -77,7 +77,9 @@ export function validateOptions(options) {
   return options;
 }
 
-export async function validateImage(bytes, expectedFormat) {
+export async function validateImage(bytes) {
+  const format = detectImageFormat(bytes);
+  if (!format) throw new Error('Elegí una imagen PNG, JPEG o WebP.');
   let metadata;
   try {
     metadata = await sharp(bytes, { limitInputPixels: 40_000_000 }).metadata();
@@ -85,7 +87,7 @@ export async function validateImage(bytes, expectedFormat) {
     throw new Error('No se pudo leer la imagen. Elegí un PNG, JPEG o WebP válido de hasta 40 megapíxeles.');
   }
 
-  if (!FORMATS.has(metadata.format) || (expectedFormat && metadata.format !== expectedFormat)
+  if (metadata.format !== format
       || (metadata.pages ?? 1) !== 1 || !metadata.width || !metadata.height
       || metadata.width * metadata.height > 40_000_000) {
     throw new Error('Elegí una sola imagen PNG, JPEG o WebP, sin animación y de hasta 40 megapíxeles.');
@@ -98,14 +100,14 @@ export async function decodeImage(dataURL) {
   if (typeof dataURL !== 'string') {
     throw new Error('La imagen tiene que ser un dataURL.');
   }
-  const match = /^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataURL);
-  if (!match || match[2].length % 4 !== 0) {
+  const match = /^data:[^,]*;base64,([A-Za-z0-9+/]+={0,2})$/.exec(dataURL);
+  if (!match || match[1].length % 4 !== 0) {
     throw new Error('Usá un dataURL base64 de una imagen PNG, JPEG o WebP.');
   }
 
-  const bytes = Buffer.from(match[2], 'base64');
-  if (bytes.toString('base64') !== match[2]) {
+  const bytes = Buffer.from(match[1], 'base64');
+  if (bytes.toString('base64') !== match[1]) {
     throw new Error('El contenido base64 de la imagen no es válido.');
   }
-  return validateImage(bytes, match[1]);
+  return validateImage(bytes);
 }
