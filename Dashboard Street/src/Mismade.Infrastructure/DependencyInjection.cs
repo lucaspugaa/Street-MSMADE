@@ -18,6 +18,7 @@ public static class DependencyInjection
         services.AddDataProtection().PersistKeysToDbContext<MismadeDbContext>();
         services.Configure<TiendanubeOptions>(configuration.GetSection("Tiendanube"));
         services.Configure<MetaOptions>(configuration.GetSection("Meta"));
+        services.Configure<StockOptions>(configuration.GetSection("Stock"));
         services.AddScoped<ITiendanubeCredenciales, TiendanubeCredenciales>();
         services.AddHttpClient<TiendanubeTokenClient>().RemoveAllLoggers();
         services.AddHttpClient<ITiendanubeClient, TiendanubeClient>()
@@ -39,6 +40,8 @@ public static class DependencyInjection
         services.AddScoped<IJobRunStore, JobRunStore>();
         services.AddSingleton<IDashboardNotifier, DashboardNotifier>();
         services.AddScoped<IStockSyncStore, StockSyncStore>();
+        services.AddScoped<IStockConfiguration>(provider =>
+            provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<StockOptions>>().Value);
         services.AddScoped<IStockSyncStep, StockSyncStep>();
         services.AddScoped<IVentasConfiguration>(provider =>
             provider.GetRequiredService<Microsoft.Extensions.Options.IOptions<TiendanubeOptions>>().Value);

@@ -20,6 +20,15 @@ public interface IStockSyncStore
     Task InicializarWatermarkAsync(string clave, long orderNumber, CancellationToken ct);
 }
 
+public interface IStockConfiguration
+{
+    /// <summary>
+    /// false = modo sombra: el job calcula y guarda el stock y avanza el watermark, pero no escribe en Tiendanube.
+    /// Sirve para correr en paralelo con otro sistema que todavía es el dueño del stock de la tienda.
+    /// </summary>
+    bool EnviarATiendanube { get; }
+}
+
 public sealed record AlertaDetalle(string Pool, string Tipo, int Faltante);
 
 /// <summary>Lo que queda registrado de una corrida (JobRun.Detalle, en JSON).</summary>
@@ -30,6 +39,9 @@ public sealed class SyncDetalle
     public int LineasSinPool { get; set; }
     public List<string> PoolsEnviados { get; init; } = [];
     public List<string> PoolsFallidos { get; init; } = [];
+    /// <summary>Pools que se habrían enviado a Tiendanube si no estuviera el modo sombra.</summary>
+    public List<string> PoolsSimulados { get; init; } = [];
+    public bool ModoSombra { get; set; }
     public List<string> Notas { get; init; } = [];
     public int VentasNuevas { get; set; }
     public int VentasActualizadas { get; set; }
@@ -45,7 +57,8 @@ public interface IStockSyncStep
 
 /// <summary>Pasos 1, 4 y 5 del job: pedidos desde el watermark y sync de remeras y pools manuales.</summary>
 public sealed class StockSyncStep(
-    IStockSyncStore store, ITiendanubeClient tiendanube, ITiendanubeCredenciales credenciales) : IStockSyncStep
+    IStockSyncStore store, ITiendanubeClient tiendanube, ITiendanubeCredenciales credenciales,
+    IStockConfiguration configuracion) : IStockSyncStep
 {
     public async Task<Exception?> RunAsync(SyncDetalle detalle, CancellationToken ct)
     {
@@ -86,6 +99,7 @@ public sealed class StockSyncStep(
             .ToList();
         detalle.PedidosProcesados = pedidos.Select(p => p.Number).Distinct().Count();
 
+        detalle.ModoSombra = !configuracion.EnviarATiendanube;
         Exception? primerError = null;
         foreach (var familia in activas)
         {
@@ -95,6 +109,13 @@ public sealed class StockSyncStep(
 
             foreach (var pool in plan.PoolsAEnviar)
             {
+                if (detalle.ModoSombra)
+                {
+                    // Sin MarcarEnviado: al activar el envío, la diferencia contra lo último enviado se manda sola.
+                    detalle.PoolsSimulados.Add(pool);
+                    continue;
+                }
+
                 var envios = plan.Envios.Where(e => e.PoolKey == pool)
                     .Select(e => new VarianteTiendanube(e.ProductId, e.VariantId, e.Stock))
                     .ToList();
@@ -111,6 +132,13 @@ public sealed class StockSyncStep(
                     primerError ??= error;
                 }
             }
+        }
+
+        if (detalle.ModoSombra)
+        {
+            detalle.Notas.Add(detalle.PoolsSimulados.Count == 0
+                ? "Modo sombra: el stock se calculó pero no se envía a Tiendanube."
+                : $"Modo sombra: {detalle.PoolsSimulados.Count} combinación(es) cambiaron y no se enviaron a Tiendanube.");
         }
 
         // Kumo y otros productos fuera de los pools también vienen en los pedidos: no es error.

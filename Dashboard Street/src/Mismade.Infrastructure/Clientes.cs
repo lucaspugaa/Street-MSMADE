@@ -17,6 +17,12 @@ public sealed class TiendanubeOptions : IVentasConfiguration
     public string AccessToken { get; set; } = "";
 }
 
+public sealed class StockOptions : IStockConfiguration
+{
+    // Apagado por defecto: escribir en la tienda tiene que ser una decisión explícita.
+    public bool EnviarATiendanube { get; set; }
+}
+
 public sealed class MetaOptions : IMetaConfiguration
 {
     public string SystemUserToken { get; set; } = "";

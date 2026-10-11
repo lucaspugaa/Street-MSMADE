@@ -51,10 +51,20 @@
                     <dt>Pedidos nuevos</dt>
                     <dd class="num">@ultima.OrdersProcessed</dd>
                 </div>
-                <div>
-                    <dt>Stock actualizado en Tiendanube</dt>
-                    <dd class="num">@ultima.CombinationsPushed @(ultima.CombinationsPushed == 1 ? "combinación" : "combinaciones")</dd>
-                </div>
+                @if (detalle is { ModoSombra: true })
+                {
+                    <div>
+                        <dt>Stock en Tiendanube</dt>
+                        <dd>Modo sombra · @detalle.PoolsSimulados.Count sin enviar</dd>
+                    </div>
+                }
+                else
+                {
+                    <div>
+                        <dt>Stock actualizado en Tiendanube</dt>
+                        <dd class="num">@ultima.CombinationsPushed @(ultima.CombinationsPushed == 1 ? "combinación" : "combinaciones")</dd>
+                    </div>
+                }
             }
         </dl>
 
