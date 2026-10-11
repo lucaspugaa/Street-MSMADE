@@ -448,6 +448,15 @@ namespace Mismade.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Color")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Corte")
+                        .HasColumnType("text");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -459,6 +468,9 @@ namespace Mismade.Infrastructure.Migrations
                         .HasColumnType("numeric(18,2)");
 
                     b.Property<string>("Nota")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Talle")
                         .HasColumnType("text");
 
                     b.Property<int>("Tipo")
@@ -617,11 +629,31 @@ namespace Mismade.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<decimal>("AdsKumo")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("AdsStreet")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<bool>("Closed")
                         .HasColumnType("boolean");
 
+                    b.Property<decimal>("Comision")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("CostoMercaderia")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Envio")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
                     b.Property<decimal>("Facturado")
                         .HasPrecision(18, 2)
@@ -635,6 +667,9 @@ namespace Mismade.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(7)
                         .HasColumnType("character varying(7)");
+
+                    b.Property<string>("Nota")
+                        .HasColumnType("text");
 
                     b.Property<int>("PedidosCount")
                         .HasColumnType("integer");
@@ -760,6 +795,40 @@ namespace Mismade.Infrastructure.Migrations
                     b.ToTable("StockCambios");
                 });
 
+            modelBuilder.Entity("Mismade.Domain.StockConjuntoVariant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Talle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<long>("TiendanubeProductId")
+                        .HasColumnType("bigint");
+
+                    b.Property<long>("TiendanubeVariantId")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TiendanubeVariantId")
+                        .IsUnique();
+
+                    b.ToTable("StockConjuntoVariants");
+                });
+
             modelBuilder.Entity("Mismade.Domain.StockManualPool", b =>
                 {
                     b.Property<Guid>("Id")
@@ -846,6 +915,41 @@ namespace Mismade.Infrastructure.Migrations
                         .IsUnique();
 
                     b.ToTable("StockManualPoolWatermarks");
+                });
+
+            modelBuilder.Entity("Mismade.Domain.StockPrenda", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Color")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("Stock")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Talle")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTimeOffset>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Tipo", "Color", "Talle")
+                        .IsUnique();
+
+                    b.ToTable("StockPrendas");
                 });
 
             modelBuilder.Entity("Mismade.Domain.StockRemera", b =>
