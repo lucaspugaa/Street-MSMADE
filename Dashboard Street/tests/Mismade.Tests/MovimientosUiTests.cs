@@ -26,7 +26,7 @@ public sealed class MovimientosUiTests
             await db.Database.ExecuteSqlRawAsync(db.Database.GenerateCreateScript()
                 .Replace("\"xmin\" INTEGER NOT NULL", "\"xmin\" INTEGER NOT NULL DEFAULT 0"));
             db.StockRemeras.Add(new StockRemera { Color = "Negro", Corte = "Regular", Talle = "XXL", Stock = 4 });
-            db.VentasNegro.Add(new VentaNegro { Fecha = new DateOnly(2026, 10, 10), TotalAmount = 5000 });
+            db.VentasNegro.Add(new VentaNegro { Fecha = new DateOnly(2026, 10, 10), TotalAmount = 63000 });
             db.CrisLedger.Add(new CrisLedger { Fecha = new DateOnly(2026, 10, 10), Tipo = TipoMovimientoCris.Pago, Monto = 3000 });
             await db.SaveChangesAsync();
         }
@@ -48,6 +48,8 @@ public sealed class MovimientosUiTests
             return WebUtility.HtmlDecode(component.ToHtmlString());
         });
 
+        Assert.Contains("$ 63.000", html);
+        Assert.DoesNotContain("¤", html);
         Assert.Contains("Venta en negro", html);
         Assert.Contains("Pérdida de mercadería", html);
         Assert.Contains("Movimiento con Cris", html);

@@ -248,9 +248,8 @@
                 var (desde, hasta) = MetaSyncVentana.Calcular(true, DateTimeOffset.UtcNow);
                 var street = await MetaInsights.GastoAsync(CuentaMeta.Street, desde, hasta, CancellationToken.None);
                 var kumo = await MetaInsights.GastoAsync(CuentaMeta.Kumo, desde, hasta, CancellationToken.None);
-                var cultura = new System.Globalization.CultureInfo("es-AR");
                 metaTexto = $"OK · {HoraArt(ultimaMeta!.FinishedAt!.Value)} · Gasto últimos 7 días: "
-                    + $"Street {street.ToString("C", cultura)} · Kumo {kumo.ToString("C", cultura)}";
+                    + $"Street {Moneda.Formatear(street, 2)} · Kumo {Moneda.Formatear(kumo, 2)}";
             }
             else
             {

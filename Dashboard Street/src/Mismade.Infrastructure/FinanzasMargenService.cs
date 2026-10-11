@@ -23,13 +23,13 @@ public sealed class FinanzasMargenService(
         var inicio = FechaArgentina.InicioUtc(desde);
         var fin = FechaArgentina.InicioUtc(hasta);
         var ventas = await Pagadas(db).AsNoTracking().Include(v => v.Items)
-            .Where(v => (v.PaidAt ?? v.CreatedAt) >= inicio && (v.PaidAt ?? v.CreatedAt) < fin)
+            .Where(v => (v.CompletedAt ?? v.PaidAt ?? v.CreatedAt) >= inicio && (v.CompletedAt ?? v.PaidAt ?? v.CreatedAt) < fin)
             .ToListAsync(ct);
         var numeros = ventas.Select(v => v.Number).ToList();
         var estados = await db.PagoNubeCuotas.AsNoTracking().Where(p => numeros.Contains(p.OrderNumber))
             .ToDictionaryAsync(p => p.OrderNumber, p => p.Status, ct);
         var pedidos = ventas.Select(v => MargenCalculo.Pedido(new PedidoMargen(
-                v.Number, FechaArgentina.Dia(v.PaidAt ?? v.CreatedAt), v.Total, v.Gateway, v.ShippingOption,
+                v.Number, FechaArgentina.Dia(v.CompletedAt ?? v.PaidAt ?? v.CreatedAt), v.Total, v.Gateway, v.ShippingOption,
                 v.Items.Select(i => new ItemPedido(i.Name, i.Quantity)).ToList()),
             estados.TryGetValue(v.Number, out var estado) ? estado : null)).ToList();
         var negro = await db.VentasNegro.AsNoTracking().Include(v => v.Items)
@@ -78,10 +78,10 @@ public sealed class FinanzasMargenService(
         var hoy = FechaArgentina.Dia(clock.GetUtcNow());
         var desde = new[] { new DateOnly(hoy.Year, hoy.Month, 1), hoy.AddDays(-7) }.Min();
         var inicio = FechaArgentina.InicioUtc(desde);
-        var ventas = await Pagadas(db).AsNoTracking().Where(v => (v.PaidAt ?? v.CreatedAt) >= inicio).ToListAsync(ct);
+        var ventas = await Pagadas(db).AsNoTracking().Where(v => (v.CompletedAt ?? v.PaidAt ?? v.CreatedAt) >= inicio).ToListAsync(ct);
         foreach (var venta in ventas)
         {
-            var fecha = FechaArgentina.Dia(venta.PaidAt ?? venta.CreatedAt);
+            var fecha = FechaArgentina.Dia(venta.CompletedAt ?? venta.PaidAt ?? venta.CreatedAt);
             if (ComisionMedioPago.EsPagoNube(venta.Gateway) && venta.Total > ComisionMedioPago.UmbralCuotas(fecha)
                 && existentes.Add(venta.Number))
             {

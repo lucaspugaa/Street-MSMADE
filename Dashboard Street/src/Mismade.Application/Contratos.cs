@@ -65,7 +65,7 @@ public sealed record VentaTiendanube(
     DateTimeOffset? PaidAt, DateTimeOffset? CancelledAt, string Status, string PaymentStatus,
     decimal Total, decimal Subtotal, decimal Discount, decimal ShippingCostCustomer,
     decimal ShippingCostOwner, string? Gateway, string? ShippingOption, string? Currency,
-    long? CustomerId, string? CustomerName, string? CustomerEmail, IReadOnlyList<VentaItemTiendanube> Items);
+    long? CustomerId, string? CustomerName, string? CustomerEmail, IReadOnlyList<VentaItemTiendanube> Items, DateTimeOffset? CompletedAt = null);
 
 public sealed record VentaItemTiendanube(
     long ProductId, long VariantId, int Quantity, decimal Price, string Name, string? Sku);

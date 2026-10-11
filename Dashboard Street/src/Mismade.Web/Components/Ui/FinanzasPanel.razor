@@ -6,7 +6,7 @@
 <header class="page-head">
     <span class="eyebrow">Street</span>
     <h1>Finanzas</h1>
-    <p>Ingresos y margen por fecha de pago en hora argentina. Hoy muestra los datos disponibles hasta ahora.</p>
+    <p>Ingresos y margen por fecha de finalización en hora argentina. Hoy muestra los datos disponibles hasta ahora.</p>
 </header>
 
 @if (error is not null)
@@ -70,7 +70,7 @@
     {
         <div class="table-wrap">
             <table>
-                <thead><tr><th>Pedido</th><th>Fecha de pago</th><th>Total</th><th>Confirmación</th></tr></thead>
+                <thead><tr><th>Pedido</th><th>Fecha de finalización</th><th>Total</th><th>Confirmación</th></tr></thead>
                 <tbody>
                     @foreach (var pedido in pendientes)
                     {
@@ -94,8 +94,8 @@
 
 @if (resumen is { TieneVentas: true })
 {
-    <h2>Facturación bruta · fecha de creación</h2>
-    <p class="muted">Pedidos pagos sin cancelaciones, con el criterio del reporte de Tiendanube.</p>
+    <h2>Facturación bruta · fecha de finalización</h2>
+    <p class="muted">Pedidos pagos sin cancelaciones, por fecha de finalización (o pago/creación si falta).</p>
     <div class="grid">
         @foreach (var periodo in new[] { ("Hoy", resumen.Hoy), ("Este mes", resumen.Mes), ("Este año", resumen.Anio) })
         {
@@ -118,7 +118,7 @@
     private bool ocupado;
     private string? error;
     private string? mensaje;
-    private static string Dinero(decimal valor) => valor.ToString("C", Cultura);
+    private static string Dinero(decimal valor) => Moneda.Formatear(valor, 2);
 
     protected override Task OnInitializedAsync() => CargarAsync();
 

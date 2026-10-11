@@ -12,7 +12,7 @@ public sealed class FinanzasConsulta(IVentasStore store, TimeProvider clock)
         TimeZoneInfo.FindSystemTimeZoneById("America/Argentina/Buenos_Aires");
 
     // Criterio único de agrupación, igual a los reportes de Tiendanube.
-    public static readonly Expression<Func<Venta, DateTimeOffset>> FechaFacturacion = venta => venta.CreatedAt;
+    public static readonly Expression<Func<Venta, DateTimeOffset>> FechaFacturacion = venta => venta.CompletedAt ?? venta.PaidAt ?? venta.CreatedAt;
 
     public static Expression<Func<Venta, bool>> EnPeriodo(DateTimeOffset desde, DateTimeOffset hasta)
     {

@@ -86,7 +86,7 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
                 customer is { } c && c.TryGetProperty("id", out var id) && id.ValueKind != JsonValueKind.Null
                     ? Integer(c, "id") : null,
                 customer is { } nombre ? LocalizedText(nombre, "name") : null,
-                customer is { } email ? Text(email, "email") : null, items));
+                customer is { } email ? Text(email, "email") : null, items, Date(item, "completed_at")));
         }
 
         return ventas;
@@ -97,14 +97,32 @@ public sealed class TiendanubeClient(HttpClient http, IOptions<TiendanubeOptions
 
     private static DateTimeOffset? Date(JsonElement item, string key)
     {
-        var value = Text(item, key);
+        if (!item.TryGetProperty(key, out var element) || element.ValueKind == JsonValueKind.Null)
+        {
+            return null;
+        }
+
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var date = Text(element, "date");
+            if (string.IsNullOrEmpty(date))
+            {
+                return null;
+            }
+
+            var zone = TimeZoneInfo.FindSystemTimeZoneById(Text(element, "timezone") ?? "UTC");
+            var local = DateTime.SpecifyKind(DateTime.Parse(date, CultureInfo.InvariantCulture), DateTimeKind.Unspecified);
+            return new DateTimeOffset(TimeZoneInfo.ConvertTimeToUtc(local, zone));
+        }
+
+        var value = element.GetString();
         if (string.IsNullOrEmpty(value))
         {
             return null;
         }
 
         return DateTimeOffset.Parse(Regex.Replace(value, @"([+-]\d{2})(\d{2})$", "$1:$2"),
-            CultureInfo.InvariantCulture);
+            CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
     }
 
     private static string? LocalizedText(JsonElement item, string key)

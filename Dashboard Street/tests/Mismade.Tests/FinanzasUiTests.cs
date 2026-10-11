@@ -55,12 +55,14 @@ public sealed class FinanzasUiTests
             "Ayer", "Hoy (parcial)", "Últimos 7 días", "Este mes (1 al ayer)", "Ingresos", "Margen", "% sobre ingresos",
             "Comisión", "Envío absorbido", "Costo de mercadería", "Ventas en negro (neto)", "Pérdida de mercadería",
             "Ventas de prendas de cambio", "Confirmación pendiente — Pago Nube", "#9", "10/10/2026", "Fue en cuotas", "Sin cuotas",
-            "Pago Nube sin confirmar", "Taza", "Facturación bruta · fecha de creación"
+            "Pago Nube sin confirmar", "Taza", "Facturación bruta · fecha de finalización"
         })
         {
             Assert.Contains(texto, html);
         }
 
+        Assert.Contains("$ 200.000,00", html);
+        Assert.DoesNotContain("¤", html);
         Assert.Equal(4, html.Split("Ads de Street: sin datos de Meta").Length - 1);
     }
 }

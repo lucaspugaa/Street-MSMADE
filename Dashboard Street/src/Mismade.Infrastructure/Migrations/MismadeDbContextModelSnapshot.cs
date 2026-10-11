@@ -1205,6 +1205,9 @@ namespace Mismade.Infrastructure.Migrations
                     b.Property<DateTimeOffset?>("CancelledAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTimeOffset?>("CompletedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1401,6 +1404,9 @@ namespace Mismade.Infrastructure.Migrations
                     b.Property<string>("Clave")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<bool>("CompletedAtBackfillDone")
+                        .HasColumnType("boolean");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");

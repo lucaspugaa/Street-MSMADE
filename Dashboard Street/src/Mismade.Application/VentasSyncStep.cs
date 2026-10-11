@@ -39,12 +39,18 @@ public sealed class VentasSyncStep(
             }
 
             var estado = await store.GetEstadoAsync(ct);
-            var desde = estado is null
-                ? clock.GetUtcNow().AddDays(-configuration.HistorialVentasDias)
+            var backfill = estado is { CompletedAtBackfillDone: false };
+            var desde = estado is null || backfill
+                ? estado?.HistorialDesde ?? clock.GetUtcNow().AddDays(-configuration.HistorialVentasDias)
                 : estado.UltimoUpdatedAt.AddMinutes(-10);
             if (estado is null)
             {
                 detalle.Notas.Add("Carga inicial del historial de ventas.");
+            }
+
+            if (backfill)
+            {
+                detalle.Notas.Add("Recarga única del historial para completar completed_at.");
             }
 
             var ventas = await tiendanube.GetOrdersUpdatedSinceAsync(desde, ct);
@@ -63,7 +69,8 @@ public sealed class VentasSyncStep(
             await store.SetEstadoAsync(new VentasSyncEstado
             {
                 UltimoUpdatedAt = ultimo,
-                HistorialDesde = estado?.HistorialDesde ?? desde
+                HistorialDesde = estado?.HistorialDesde ?? desde,
+                CompletedAtBackfillDone = true
             }, ct);
         }
         catch (Exception error) when (error is not OperationCanceledException)

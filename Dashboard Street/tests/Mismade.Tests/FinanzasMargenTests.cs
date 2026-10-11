@@ -264,6 +264,34 @@ public sealed class FinanzasMargenTests
         Assert.False(await sinConfig.TieneDatosMetaStreetAsync(desde, hasta));
     }
 
+    [Fact]
+    public async Task CompletedAtDeterminaDiaMesYVentanaDePendientes()
+    {
+        await using var f = await Fixture.CrearAsync("2026-11-08T12:00:00Z");
+        await using (var db = f.Factory.CreateDbContext())
+        {
+            var transferencia = Venta(20, "2026-10-11T12:00:00Z", 39395.18m, "Personalizado");
+            transferencia.CompletedAt = DateTimeOffset.Parse("2026-10-11T02:00:00Z");
+            var pagoNube = Venta(21, "2026-11-08T12:00:00Z", 200_000m, "Pago Nube");
+            pagoNube.CompletedAt = DateTimeOffset.Parse("2026-10-31T23:00:00-03:00");
+            var enVentana = Venta(22, "2026-11-08T12:00:00Z", 200_000m, "Pago Nube");
+            enVentana.CompletedAt = DateTimeOffset.Parse("2026-11-01T03:00:00Z");
+            db.Ventas.AddRange(transferencia, pagoNube, enVentana);
+            await db.SaveChangesAsync();
+        }
+
+        var ayer = await f.Servicio.ConsultarAsync(new DateOnly(2026, 10, 10), new DateOnly(2026, 10, 11));
+        Assert.Equal(39395.18m, ayer.IngresosTiendanube);
+        Assert.Equal(0, (await f.Servicio.ConsultarAsync(new DateOnly(2026, 10, 11), new DateOnly(2026, 10, 12))).Pedidos);
+        await f.Servicio.CrearPendientesAsync();
+        Assert.Equal(22, Assert.Single(await f.Servicio.PendientesAsync()).OrderNumber);
+        await f.Servicio.CerrarMesesAsync();
+        await using var verificacion = f.Factory.CreateDbContext();
+        var octubre = await verificacion.MonthlyHistories.SingleAsync(m => m.Mes == "2026-10");
+        Assert.Equal(2, octubre.PedidosCount);
+        Assert.Equal(239395.18m, octubre.Facturado);
+    }
+
     public sealed class Clock(string ahora) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => DateTimeOffset.Parse(ahora);

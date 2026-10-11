@@ -93,6 +93,29 @@ public sealed class TiendanubeClientTests
         }
     }
 
+    [Theory]
+    [InlineData("{\"date\":\"2026-10-11 02:00:00.000000\",\"timezone_type\":3,\"timezone\":\"UTC\"}", "2026-10-11T02:00:00Z")]
+    [InlineData("{\"date\":\"2026-10-10 23:00:00.000000\",\"timezone_type\":3,\"timezone\":\"America/Argentina/Buenos_Aires\"}", "2026-10-11T02:00:00Z")]
+    [InlineData("\"2026-10-10T23:00:00-03:00\"", "2026-10-11T02:00:00Z")]
+    [InlineData("null", null)]
+    public async Task CompletedAtSoportaObjetoStringYNull(string completed, string? esperado)
+    {
+        var calls = 0;
+        using var http = new HttpClient(new FakeHttpHandler((_, _) => Task.FromResult(Json(++calls == 1 ? $$"""
+            [{"id":1,"number":1,"created_at":"2026-10-10T12:00:00Z","updated_at":"2026-10-11T12:00:00Z",
+            "completed_at":{{completed}},"paid_at":"2026-10-11T12:00:00Z","cancelled_at":null,
+            "status":"closed","payment_status":"paid","total":"39395.18","subtotal":"39395.18",
+            "discount":0,"shipping_cost_customer":0,"shipping_cost_owner":0,"gateway":"Personalizado",
+            "shipping_option":null,"currency":"ARS","customer":null,"products":[]}]
+            """ : "[]"))));
+        var venta = Assert.Single(await Client(http).GetOrdersUpdatedSinceAsync(DateTimeOffset.Parse("2026-10-01T00:00:00Z"), default));
+        Assert.Equal(esperado is null ? null : (DateTimeOffset?)DateTimeOffset.Parse(esperado), venta.CompletedAt);
+        if (venta.CompletedAt is { } fecha)
+        {
+            Assert.Equal(DateTimeOffset.Parse(esperado!), fecha.ToUniversalTime());
+        }
+    }
+
     [Fact]
     public async Task VariantsPaginateAndAllowNullStock()
     {

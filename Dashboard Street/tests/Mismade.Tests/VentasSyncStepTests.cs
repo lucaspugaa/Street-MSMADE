@@ -29,7 +29,7 @@ public sealed class VentasSyncStepTests
     [Fact]
     public async Task IncrementalSolapaDiezMinutosYNoRetrocede()
     {
-        var store = new Store { Estado = new() { UltimoUpdatedAt = Ahora, HistorialDesde = Ahora.AddDays(-400) } };
+        var store = new Store { Estado = new() { UltimoUpdatedAt = Ahora, HistorialDesde = Ahora.AddDays(-400), CompletedAtBackfillDone = true } };
         var client = new Client { Ventas = [Orden(1, Ahora.AddMinutes(-5))] };
         var detalle = new SyncDetalle();
         await Step(store, client).RunAsync(detalle, default);
@@ -50,6 +50,7 @@ public sealed class VentasSyncStepTests
         Assert.NotNull(detalle.ErrorVentas);
         Assert.Equal(Ahora, store.Estado!.UltimoUpdatedAt);
         Assert.Equal(0, store.EstadosGuardados);
+        Assert.False(store.Estado.CompletedAtBackfillDone);
     }
 
     [Fact]
@@ -76,6 +77,24 @@ public sealed class VentasSyncStepTests
         var store = new Store();
         await Step(store, new Client()).RunAsync(new(), default);
         Assert.Equal(Ahora.AddDays(-400), store.Estado!.UltimoUpdatedAt);
+    }
+
+    [Fact]
+    public async Task BackfillDesdeHistorialUnaSolaVezYDespuesIncremental()
+    {
+        var inicio = Ahora.AddDays(-400);
+        var store = new Store { Estado = new() { UltimoUpdatedAt = Ahora, HistorialDesde = inicio } };
+        var client = new Client { Ventas = [Orden(1, Ahora) with { CompletedAt = Ahora.AddHours(-1) }] };
+        var detalle = new SyncDetalle();
+        await Step(store, client).RunAsync(detalle, default);
+        Assert.Equal(inicio, client.Desde);
+        Assert.True(store.Estado!.CompletedAtBackfillDone);
+        Assert.Equal(Ahora, store.Estado.UltimoUpdatedAt);
+        Assert.Contains(detalle.Notas, n => n.Contains("Recarga única"));
+
+        await Step(store, client).RunAsync(new(), default);
+        Assert.Equal(Ahora.AddMinutes(-10), client.Desde);
+        Assert.Equal(inicio, store.Estado.HistorialDesde);
     }
 
     private static VentasSyncStep Step(Store store, Client client, int dias = 400) =>

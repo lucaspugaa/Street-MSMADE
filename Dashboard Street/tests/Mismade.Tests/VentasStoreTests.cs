@@ -71,7 +71,7 @@ public sealed class VentasStoreTests
     }
 
     [Fact]
-    public async Task FacturacionFiltraPagosCancelacionesYUsaCreatedAtEnHoraArgentina()
+    public async Task FacturacionFiltraPagosCancelacionesYUsaFechaEfectivaEnHoraArgentina()
     {
         using var connection = new SqliteConnection("Data Source=:memory:");
         await connection.OpenAsync();
@@ -94,7 +94,7 @@ public sealed class VentasStoreTests
             "2026-01-01T03:00:00Z"  // Primer instante del año.
         };
         var ordenes = fechas.Select((fecha, i) => VentasSyncStepTests.Orden(i + 1, DateTimeOffset.Parse(fecha))
-            with { PaidAt = DateTimeOffset.Parse("2027-01-01T12:00:00Z") }).ToList();
+            with { PaidAt = null }).ToList();
         var hoy = DateTimeOffset.Parse("2026-10-10T12:00:00Z");
         ordenes.AddRange([
             VentasSyncStepTests.Orden(10, hoy) with { PaymentStatus = "pending" },
@@ -131,6 +131,31 @@ public sealed class VentasStoreTests
         Assert.Equal(new FacturacionPeriodo(100, 1), resumen.Anio);
     }
 
+    [Fact]
+    public async Task CompletedAtSeActualizaSinDuplicarVentaYLaFechaGanaSobreElPago()
+    {
+        using var connection = new SqliteConnection("Data Source=:memory:");
+        await connection.OpenAsync();
+        var factory = new Factory(connection);
+        await using var db = factory.CreateDbContext();
+        await db.Database.EnsureCreatedAsync();
+        var store = new VentasStore(factory);
+        var orden = VentasSyncStepTests.Orden(1, DateTimeOffset.Parse("2026-10-11T12:00:00Z"));
+        await store.UpsertAsync([orden], default);
+        var completada = orden with { CompletedAt = DateTimeOffset.Parse("2026-10-10T23:00:00-03:00"), Total = 39395.18m };
+        await store.UpsertAsync([completada], default);
+        await store.UpsertAsync([completada], default);
+        var venta = Assert.Single(await db.Ventas.AsNoTracking().ToListAsync());
+        Assert.Equal(DateTimeOffset.Parse("2026-10-11T02:00:00Z"), venta.CompletedAt);
+        Assert.Equal(1, (await store.FacturacionAsync(DateTimeOffset.Parse("2026-10-10T03:00:00Z"),
+            DateTimeOffset.Parse("2026-10-11T03:00:00Z"), default)).Pedidos);
+        Assert.Equal(0, (await store.FacturacionAsync(DateTimeOffset.Parse("2026-10-11T03:00:00Z"),
+            DateTimeOffset.Parse("2026-10-12T03:00:00Z"), default)).Pedidos);
+        await store.SetEstadoAsync(new() { UltimoUpdatedAt = orden.UpdatedAtTiendanube, CompletedAtBackfillDone = true }, default);
+        await store.SetEstadoAsync(new() { UltimoUpdatedAt = orden.UpdatedAtTiendanube }, default);
+        Assert.True((await store.GetEstadoAsync(default))!.CompletedAtBackfillDone);
+    }
+
     private sealed class Reloj(DateTimeOffset ahora) : TimeProvider
     {
         public override DateTimeOffset GetUtcNow() => ahora;
@@ -149,6 +174,8 @@ public sealed class VentasStoreTests
         Assert.Equal(DeleteBehavior.Cascade, db.Model.FindEntityType(typeof(VentaItem))!.GetForeignKeys().Single().DeleteBehavior);
         var sql = db.Ventas.Where(FinanzasConsulta.EnPeriodo(VentasSyncStepTests.Ahora, VentasSyncStepTests.Ahora.AddDays(1)))
             .GroupBy(x => 1).Select(g => new FacturacionPeriodo(g.Sum(x => x.Total), g.Count())).ToQueryString();
+        Assert.Contains("CompletedAt", sql);
+        Assert.Contains("PaidAt", sql);
         Assert.Contains("CreatedAt", sql);
         Assert.Contains("sum", sql, StringComparison.OrdinalIgnoreCase);
     }

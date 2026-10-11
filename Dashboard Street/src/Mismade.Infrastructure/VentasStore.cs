@@ -42,6 +42,7 @@ public sealed class VentasStore(IDbContextFactory<MismadeDbContext> factory) : I
             venta.Number = orden.Number;
             venta.CreatedAt = orden.CreatedAt.ToUniversalTime();
             venta.UpdatedAtTiendanube = orden.UpdatedAtTiendanube.ToUniversalTime();
+            venta.CompletedAt = orden.CompletedAt?.ToUniversalTime();
             venta.PaidAt = orden.PaidAt?.ToUniversalTime();
             venta.CancelledAt = orden.CancelledAt?.ToUniversalTime();
             venta.Status = orden.Status;
@@ -92,6 +93,7 @@ public sealed class VentasStore(IDbContextFactory<MismadeDbContext> factory) : I
         }
 
         actual.HistorialDesde ??= estado.HistorialDesde?.ToUniversalTime();
+        actual.CompletedAtBackfillDone |= estado.CompletedAtBackfillDone;
         await db.SaveChangesAsync(ct);
     }
 

@@ -107,7 +107,7 @@
                     {
                         <tr>
                             <td>@fila.Fecha.ToString("dd/MM/yyyy")</td>
-                            <td>@fila.Detalle</td><td class="num">@(fila.Monto?.ToString("C0"))</td><td>@fila.Nota</td>
+                            <td>@fila.Detalle</td><td class="num">@(fila.Monto is { } montoFila ? Moneda.Formatear(montoFila) : "")</td><td>@fila.Nota</td>
                             <td>
                                 @if (fila.PuedeBorrar)
                                 {

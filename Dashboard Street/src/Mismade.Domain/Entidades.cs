@@ -275,6 +275,7 @@ public class Venta : Entidad
     public long TiendanubeOrderId { get; set; }
     public long Number { get; set; }
     public DateTimeOffset UpdatedAtTiendanube { get; set; }
+    public DateTimeOffset? CompletedAt { get; set; }
     public DateTimeOffset? PaidAt { get; set; }
     public DateTimeOffset? CancelledAt { get; set; }
     public string Status { get; set; } = "";
@@ -307,6 +308,7 @@ public class VentaItem : Entidad
 
 public class VentasSyncEstado : Entidad
 {
+    public bool CompletedAtBackfillDone { get; set; }
     public string Clave { get; set; } = "ventas";
     public DateTimeOffset UltimoUpdatedAt { get; set; }
     public DateTimeOffset? HistorialDesde { get; set; }
