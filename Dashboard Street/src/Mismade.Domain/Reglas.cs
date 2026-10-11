@@ -35,6 +35,8 @@ public static class ComisionMedioPago
         return tasa is null ? new ComisionPago(0m, false) : new ComisionPago(total * tasa.Value, true);
     }
 
+    public static bool EsPagoNube(string? provider) => Normalizar(provider) is "pagonube" or "nuvempago";
+
     private static string Normalizar(string? texto) => new((texto ?? "")
         .Normalize(NormalizationForm.FormD)
         .Where(c => char.IsLetterOrDigit(c) && CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
