@@ -17,6 +17,10 @@ public class ComisionMedioPagoTests
     [InlineData("pago_nube", 54.80)]
     [InlineData("GoCuotas", 120.10)]
     [InlineData("Personalizado", 10.00)]
+    [InlineData("mercado-pago", 51.00)]
+    [InlineData("pago-nube", 54.80)]
+    [InlineData("gocuotas", 120.10)]
+    [InlineData("offline", 10.00)]
     public void AplicaTasasBase(string provider, decimal esperado)
         => Assert.Equal(new ComisionPago(esperado, true), ComisionMedioPago.Calcular(provider, 1_000m, new DateOnly(2026, 10, 2)));
 

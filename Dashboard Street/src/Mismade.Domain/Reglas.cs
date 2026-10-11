@@ -13,7 +13,8 @@ public static class ComisionMedioPago
 
     /// <summary>
     /// Acepta tanto el nombre que muestra Tiendanube ("Mercado Pago", "Pago Nube", "GOcuotas", "Personalizado")
-    /// como su identificador ("mercadopago", "pago_nube"): se comparan sin espacios, guiones ni mayúsculas.
+    /// como su identificador ("mercado-pago", "pago-nube", "gocuotas", "offline"): se comparan sin espacios,
+    /// guiones ni mayúsculas.
     /// </summary>
     public static ComisionPago Calcular(
         string? provider, decimal total, DateOnly fecha,
@@ -27,8 +28,9 @@ public static class ComisionMedioPago
             "pagonube" or "nuvempago" when total > umbral && statusCuotas == EstadoPagoNube.Cuotas => 0.2303m,
             "pagonube" or "nuvempago" => 0.0548m,
             "gocuotas" => 0.1201m,
-            // Transferencia: el 10% de descuento ya viene en el total, solo se resta el 1% de CPT.
-            "transferencia" or "personalizado" => 0.01m,
+            // "Personalizado" (transferencia), que Tiendanube guarda como gateway "offline": el 10% de
+            // descuento ya viene en el total, solo se resta el 1% de CPT.
+            "transferencia" or "personalizado" or "offline" => 0.01m,
             _ => null
         };
 
