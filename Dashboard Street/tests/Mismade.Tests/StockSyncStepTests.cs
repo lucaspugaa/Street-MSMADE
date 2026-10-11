@@ -6,6 +6,9 @@ namespace Mismade.Tests;
 
 public sealed class StockSyncStepTests
 {
+    private static readonly IStockConfiguration Enviar = new FakeConfiguracion(true);
+    private static readonly IStockConfiguration Sombra = new FakeConfiguracion(false);
+
     private static FamiliaStock Remeras(int stock = 30, long watermark = 1000, bool tieneWatermark = true,
         Dictionary<string, int>? enviado = null) => new("remeras", new EstadoSync(
         new Dictionary<string, int> { ["crema_oversize_s"] = stock, ["negro_oversize_xl"] = 5 },
@@ -32,7 +35,7 @@ public sealed class StockSyncStepTests
     public async Task SinTiendanubeConectadaNoFallaYDejaNota()
     {
         var store = new FakeStore(Remeras());
-        var step = new StockSyncStep(store, new FakeTiendanube(), new FakeCredenciales(conectada: false));
+        var step = new StockSyncStep(store, new FakeTiendanube(), new FakeCredenciales(conectada: false), Enviar);
         var detalle = new SyncDetalle();
 
         Assert.Null(await step.RunAsync(detalle, CancellationToken.None));
@@ -47,7 +50,7 @@ public sealed class StockSyncStepTests
         var tn = new FakeTiendanube(ultimo: 5432) { Pedidos = [Pedido(5000, (101, 10))] };
         var detalle = new SyncDetalle();
 
-        await new StockSyncStep(store, tn, new FakeCredenciales()).RunAsync(detalle, CancellationToken.None);
+        await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None);
 
         Assert.Equal(("remeras", 5432L), Assert.Single(store.Inicializados));
         Assert.Equal(0, store.Aplicados);
@@ -62,7 +65,7 @@ public sealed class StockSyncStepTests
         var tn = new FakeTiendanube { Pedidos = [Pedido(1001, (101, 2))] };
         var detalle = new SyncDetalle();
 
-        Assert.Null(await new StockSyncStep(store, tn, new FakeCredenciales()).RunAsync(detalle, CancellationToken.None));
+        Assert.Null(await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None));
 
         Assert.Equal(1, store.Aplicados);
         var envio = Assert.Single(tn.Envios);
@@ -80,7 +83,7 @@ public sealed class StockSyncStepTests
         var tn = new FakeTiendanube { FallarVariante = 102 };
         var detalle = new SyncDetalle();
 
-        var error = await new StockSyncStep(store, tn, new FakeCredenciales()).RunAsync(detalle, CancellationToken.None);
+        var error = await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None);
 
         Assert.NotNull(error);
         Assert.Equal(["negro_oversize_xl"], detalle.PoolsFallidos);
@@ -95,7 +98,7 @@ public sealed class StockSyncStepTests
         var tn = new FakeTiendanube { Pedidos = [Pedido(995, (501, 1)), Pedido(1001, (501, 1), (101, 1))] };
         var detalle = new SyncDetalle();
 
-        await new StockSyncStep(store, tn, new FakeCredenciales()).RunAsync(detalle, CancellationToken.None);
+        await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None);
 
         Assert.Equal([990L], tn.Desdes);
         // El buzo descuenta los dos pedidos; las remeras solo el 1001 (el 995 ya lo tenían).
@@ -110,7 +113,7 @@ public sealed class StockSyncStepTests
         var tn = new FakeTiendanube { Pedidos = [Pedido(1001, (102, 8))] };
         var detalle = new SyncDetalle();
 
-        await new StockSyncStep(store, tn, new FakeCredenciales()).RunAsync(detalle, CancellationToken.None);
+        await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None);
 
         var alerta = Assert.Single(detalle.Alertas);
         Assert.Equal(new AlertaDetalle("negro_oversize_xl", "Sobreventa", 3), alerta);
@@ -131,6 +134,26 @@ public sealed class StockSyncStepTests
     }
 
     // ---------- fakes ----------
+
+    [Fact]
+    public async Task ModoSombraGuardaStockYWatermarkPeroNoEnviaNiMarca()
+    {
+        var store = new FakeStore(Remeras());
+        var tn = new FakeTiendanube { Pedidos = [Pedido(1001, (101, 2))] };
+        var detalle = new SyncDetalle();
+
+        Assert.Null(await new StockSyncStep(store, tn, new FakeCredenciales(), Sombra).RunAsync(detalle, CancellationToken.None));
+
+        Assert.Equal(1, store.Aplicados);
+        Assert.Empty(tn.Envios);
+        Assert.Empty(store.Marcados);
+        Assert.Empty(detalle.PoolsEnviados);
+        Assert.True(detalle.ModoSombra);
+        Assert.Equal(["crema_oversize_s"], detalle.PoolsSimulados);
+        Assert.Contains(detalle.Notas, n => n.StartsWith("Modo sombra: 1 combinación", StringComparison.Ordinal));
+    }
+
+    private sealed record FakeConfiguracion(bool EnviarATiendanube) : IStockConfiguration;
 
     private sealed class FakeStore(params FamiliaStock[] familias) : IStockSyncStore
     {

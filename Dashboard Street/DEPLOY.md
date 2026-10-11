@@ -43,6 +43,11 @@ El token se guarda cifrado en PostgreSQL junto con las claves de Data Protection
 La cookie OAuth es HttpOnly, Secure, SameSite=Lax y vence a los diez minutos; usá HTTPS.
 La actualización batch de stock está prevista para un único depósito; múltiples depósitos necesitan IDs de ubicación.
 
+### Stock: modo sombra
+Por defecto el job **no escribe stock en Tiendanube** (modo sombra): descuenta los pedidos en la base, avanza el watermark y muestra en Inicio cuántas combinaciones habría enviado. Sirve para correr en paralelo con el dashboard anterior, que sigue siendo el dueño del stock de la tienda.
+
+Para que Render pase a ser el dueño: apagá la tarea programada del dashboard anterior, reimportá el export más reciente y cargá `Stock__EnviarATiendanube=true` en Render > Environment. En la corrida siguiente se envía la diferencia contra el último stock enviado.
+
 ### Conexión de Meta Ads (Street y Kumo)
 1. En Meta for Developers, creá o seleccioná una app con Marketing API y vinculala al portfolio empresarial que administra las cuentas de Street y Kumo.
 2. En **Configuración del negocio > Usuarios > Usuarios del sistema**, creá un usuario del sistema.
