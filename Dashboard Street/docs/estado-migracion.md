@@ -43,7 +43,7 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Deploy Render + Neon + login | Funcionando |
 | Conexión Tiendanube (OAuth) | Conectada a Street 1640 |
 | Ventas de Tiendanube en la base | Funcionando; Finanzas muestra facturación bruta de hoy, mes y año |
-| Sync de stock de remeras (pedidos → pool → Tiendanube) | Hecho, **sin desacople**; corre en modo sombra |
+| Sync de stock de remeras (pedidos → pool → Tiendanube) | Hecho, **con desacople** (11/10); corre en modo sombra |
 | Pool manual Buzo Negro XXL Regular | Hecho, corre en modo sombra |
 | Modo sombra | Desplegado (PR #9) y verificado en pantalla |
 | Importador del export del artifact (`tools/Mismade.Importer`) | Hecho; Tarea 1 completa: múltiples exports, colecciones faltantes, bloqueo de modo sombra y reemplazo transaccional |
@@ -102,7 +102,12 @@ y conteos contra los archivos. Migración `DesacoplesYVariantesPrendas` generada
 - **Criterio de aceptación:** prueba sin `--confirmar` con export 1 + export 2 juntos; conteos iguales a
   los archivos; test de que aborta si el último run no está en modo sombra.
 
-### Tarea 2 — Desacople de remeras en el algoritmo (`Domain/StockSync.cs`)
+### Tarea 2 — Desacople de remeras en el algoritmo (`Domain/StockSync.cs`) — HECHA 11/10
+Implementada en `StockSync.Desacoplar`, persistida en `StockDesacople` y probada en `StockDesacopleTests`.
+Dos decisiones explícitas: (1) un pool desacoplado cuyo último enviado no es 0 se corrige enviando 0 (el
+artifact supone que ya está en 0; es el caso del incidente); (2) una carga que supera `stock_at_decouple`
+pero deja el pool en 1 a 3 lo mantiene desacoplado con el nuevo valor (lectura secuencial del artifact).
+Neon se realineó con el artifact el 11/10 (`--reemplazar` con export-mismade-3, watermark #1789).
 Reglas exactas (sección 3.7 de reglas-artifact.md):
 - Si un pool **no** está desacoplado y después de descontar queda en 1, 2 o 3: crear desacople con
   `stock_at_decouple` = ese stock, `auto_created = true`, y **publicar 0**.

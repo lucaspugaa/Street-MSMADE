@@ -77,6 +77,21 @@ public sealed class StockSyncStepTests
     }
 
     [Fact]
+    public async Task DesacopleEnviaCeroMarcaCeroYDejaNota()
+    {
+        var familia = Remeras(stock: 4);
+        var store = new FakeStore(familia with { Estado = familia.Estado with { Desacoples = new Dictionary<string, int>() } });
+        var tn = new FakeTiendanube { Pedidos = [Pedido(1001, (101, 1))] };
+        var detalle = new SyncDetalle();
+
+        await new StockSyncStep(store, tn, new FakeCredenciales(), Enviar).RunAsync(detalle, CancellationToken.None);
+
+        Assert.All(Assert.Single(tn.Envios), v => Assert.Equal(0, v.Stock));
+        Assert.Equal(("crema_oversize_s", 0), Assert.Single(store.Marcados));
+        Assert.Contains(detalle.Notas, n => n.Contains("desacoplado con 3"));
+    }
+
+    [Fact]
     public async Task EnvioFallidoNoMarcaEsePoolPeroSigueConLosDemas()
     {
         var store = new FakeStore(Remeras(enviado: []));

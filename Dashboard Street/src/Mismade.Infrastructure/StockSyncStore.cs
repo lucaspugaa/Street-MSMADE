@@ -134,7 +134,45 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
             watermark.UpdatedAt = ahora;
         }
 
+        await AplicarDesacoplesAsync(db, plan.CambiosDesacople, ahora, ct);
         return plan;
+    }
+
+    private static async Task AplicarDesacoplesAsync(MismadeDbContext db, IReadOnlyList<CambioDesacople> cambios,
+        DateTimeOffset ahora, CancellationToken ct)
+    {
+        if (cambios.Count == 0)
+        {
+            return;
+        }
+
+        var claves = cambios.Select(c => c.PoolKey).ToList();
+        var existentes = await db.StockDesacoples.Where(d => claves.Contains(d.PoolKey)).ToDictionaryAsync(d => d.PoolKey, ct);
+        foreach (var cambio in cambios)
+        {
+            existentes.TryGetValue(cambio.PoolKey, out var fila);
+            if (cambio.Tipo == TipoCambioDesacople.Reactivado)
+            {
+                if (fila is not null)
+                {
+                    db.StockDesacoples.Remove(fila);
+                }
+            }
+            else if (fila is null)
+            {
+                db.StockDesacoples.Add(new StockDesacople
+                {
+                    PoolKey = cambio.PoolKey, StockAtDecouple = cambio.StockReal, AutoCreated = true,
+                    Reason = $"auto: stock bajo (≤{StockSync.UmbralDesacople} unidades), baja preventiva en Tiendanube",
+                    CreatedAt = ahora, UpdatedAt = ahora
+                });
+            }
+            else
+            {
+                fila.StockAtDecouple = cambio.StockReal;
+                fila.UpdatedAt = ahora;
+            }
+        }
     }
 
     private static async Task<EstadoSync> EstadoRemerasAsync(MismadeDbContext db, List<StockRemera> remeras,
@@ -149,7 +187,8 @@ public sealed class StockSyncStore(IDbContextFactory<MismadeDbContext> factory) 
                 .ToList(),
             await ExcluidasAsync(db, ct),
             await UltimoEnviadoAsync(db, ct),
-            watermark);
+            watermark,
+            await db.StockDesacoples.AsNoTracking().ToDictionaryAsync(d => d.PoolKey, d => d.StockAtDecouple, ct));
     }
 
     // ---------- pools manuales ----------

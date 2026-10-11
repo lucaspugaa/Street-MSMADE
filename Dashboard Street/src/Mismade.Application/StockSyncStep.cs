@@ -106,6 +106,9 @@ public sealed class StockSyncStep(
             var plan = await store.AplicarAsync(familia.Clave, estado => StockSync.Planificar(estado, pedidos), ct);
             detalle.LineasSinPool += plan.LineasSinPool;
             detalle.Alertas.AddRange(plan.Alertas.Select(a => new AlertaDetalle(a.PoolKey, a.Tipo.ToString(), a.Faltante)));
+            detalle.Notas.AddRange(plan.CambiosDesacople.Select(c => c.Tipo == TipoCambioDesacople.Desacoplado
+                ? $"{PoolKeys.Legible(c.PoolKey)}: desacoplado con {c.StockReal} unidad(es) reales; en Tiendanube queda en 0."
+                : $"{PoolKeys.Legible(c.PoolKey)}: reactivado por carga de mercadería, se publica {c.StockReal}."));
 
             foreach (var pool in plan.PoolsAEnviar)
             {
@@ -122,7 +125,7 @@ public sealed class StockSyncStep(
                 try
                 {
                     await tiendanube.UpdateStockAsync(envios, ct);
-                    await store.MarcarEnviadoAsync(pool, plan.StockNuevo[pool], ct);
+                    await store.MarcarEnviadoAsync(pool, plan.Publicado[pool], ct);
                     detalle.PoolsEnviados.Add(pool);
                 }
                 catch (Exception error) when (error is not OperationCanceledException)
