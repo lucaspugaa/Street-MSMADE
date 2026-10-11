@@ -1,3 +1,5 @@
+import { imageDataURL as dataURL } from './image-format.js';
+
 const $ = id => document.getElementById(id);
 const numericFields = [
   ['ancho', 'Ancho (px)', 32, 4096, 1],
@@ -86,22 +88,6 @@ function selectImages(files) {
   updateButtons();
 }
 
-function dataURL(file) {
-  return new Promise((resolve, reject) => {
-    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
-      reject(new Error('Elegí una imagen PNG, JPEG o WebP.'));
-      return;
-    }
-    if (file.size > 18 * 1024 * 1024) {
-      reject(new Error('La imagen es demasiado grande. El pedido completo tiene un límite de 25 MB.'));
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(new Error('No se pudo leer el archivo. Volvé a elegirlo.'));
-    reader.readAsDataURL(file);
-  });
-}
 
 function readOptions() {
   const options = {};
