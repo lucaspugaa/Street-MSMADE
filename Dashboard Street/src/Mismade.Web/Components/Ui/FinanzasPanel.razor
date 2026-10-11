@@ -1,6 +1,7 @@
 @inject FinanzasConsulta Consulta
 @inject MargenConsulta Margenes
 @inject IFinanzasMargenService Servicio
+@inject IFinanzasHistorialConsulta Historial
 
 <PageTitle>Finanzas · MISMADE</PageTitle>
 <header class="page-head">
@@ -60,6 +61,56 @@
     }
 </div>
 
+@if (historial is { } datos)
+{
+    var anual = datos.Anual;
+    <section class="card">
+        <div class="card-head"><h2>Resultado anual 2026 (Street)</h2><span class="muted">Acumulado: meses cerrados + mes parcial</span></div>
+        <dl class="facts">
+            <div><dt>Pedidos</dt><dd class="num">@anual.Pedidos</dd></div>
+            <div><dt>Facturado</dt><dd class="num">@Dinero(anual.Facturado)</dd></div>
+            <div><dt>Comisión</dt><dd class="num">@Dinero(anual.Comision)</dd></div>
+            <div><dt>Envío absorbido</dt><dd class="num">@Dinero(anual.Envio)</dd></div>
+            <div><dt>Costo de mercadería</dt><dd class="num">@Dinero(anual.Costo)</dd></div>
+            <div><dt>Ads Street</dt><dd class="num">@Dinero(anual.AdsStreet)</dd></div>
+            <div><dt>Ads Kumo (aparte)</dt><dd class="num">@Dinero(anual.AdsKumo)</dd></div>
+            <div><dt>Margen</dt><dd class="num">@Dinero(anual.Margen)</dd></div>
+        </dl>
+    </section>
+    <section class="card">
+        <div class="card-head"><h2>Historial mensual (Street)</h2></div>
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Mes</th><th>Pedidos</th><th>Facturado</th><th>Margen</th><th>% margen / facturado</th></tr></thead>
+                <tbody>
+                    @foreach (var mes in datos.Meses)
+                    {
+                        <tr class="@(mes.MargenReal < 0 ? "anomaly" : null)">
+                            <th scope="row">@mes.Mes
+                                @if (!string.IsNullOrWhiteSpace(mes.Nota))
+                                {
+                                    <small class="muted fin-nota">@mes.Nota</small>
+                                }
+                            </th>
+                            <td class="num">@mes.PedidosCount</td>
+                            <td class="num">@Dinero(mes.Facturado)</td>
+                            <td class="num">@Dinero(mes.MargenReal)</td>
+                            <td class="num">@Porcentaje(mes.MargenReal, mes.Facturado)</td>
+                        </tr>
+                    }
+                    <tr class="@(datos.Parcial.Margen.Margen < 0 ? "anomaly" : null)">
+                        <th scope="row">@datos.Parcial.Desde.ToString("yyyy-MM") (parcial, 1 al @datos.Parcial.Hasta.AddDays(-1).ToString("dd/MM"))</th>
+                        <td class="num">@datos.Parcial.Margen.Pedidos</td>
+                        <td class="num">@Dinero(datos.Parcial.Margen.Ingresos)</td>
+                        <td class="num">@Dinero(datos.Parcial.Margen.Margen)</td>
+                        <td class="num">@Porcentaje(datos.Parcial.Margen.Margen, datos.Parcial.Margen.Ingresos)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+}
+
 <section class="card">
     <div class="card-head"><h2>Confirmación pendiente — Pago Nube</h2><span class="muted">@pendientes.Count pendientes</span></div>
     @if (pendientes.Count == 0)
@@ -115,16 +166,21 @@
     private IReadOnlyList<PeriodoFinanzas> periodos = [];
     private IReadOnlyList<PagoNubeCuota> pendientes = [];
     private FinanzasResumen? resumen;
+    private HistorialFinanzas? historial;
     private bool ocupado;
     private string? error;
     private string? mensaje;
     private static string Dinero(decimal valor) => Moneda.Formatear(valor, 2);
+
+    private static string Porcentaje(decimal margen, decimal facturado) =>
+        facturado == 0 ? "—" : (margen / facturado).ToString("P1", Cultura);
 
     protected override Task OnInitializedAsync() => CargarAsync();
 
     private async Task CargarAsync()
     {
         periodos = await Margenes.ConsultarAsync();
+        historial = await Historial.ConsultarAsync(2026, periodos[^1]);
         pendientes = await Servicio.PendientesAsync();
         resumen = await Consulta.ConsultarAsync(CancellationToken.None);
     }

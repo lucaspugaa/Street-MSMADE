@@ -51,7 +51,9 @@ escriba en la tienda sin replicar antes todas las reglas del artifact.
 | Reglas puras de comisión, envío absorbido y costo de prenda (`Domain/Reglas.cs`) | Escritas con tests, **no conectadas** al job |
 | Meta Ads (sync de insights) | Código hecho; **faltan el token y los IDs en Render** |
 | Página Stock | Muestra remeras, buzos, pantalones y conjuntos desde Neon; semáforos propios |
-| Páginas Campañas y Clientes | Solo texto fijo, sin datos |
+| Página Campañas | Gasto, ROAS y compras por cuenta |
+| Página Clientes | Ranking top 50 por compras; pendiente definir franquicias |
+| Finanzas: historial y anual | Meses importados + mes parcial; anual 2026 con Kumo aparte |
 | Página Movimientos y efectos de cargas manuales | Hecho (Tarea 4, 11/10); registro y reversa transaccionales con protección de importados |
 | Margen real, confirmación Pago Nube y cierre mensual | Cableado hecho (Tarea 5, 11/10); falta validar cifras contra el artifact |
 
@@ -178,7 +180,9 @@ No se modificaron `Reglas.cs` ni el sync de Tiendanube; sin deploy.
 - Página Campañas con gasto, ROAS y compras de ayer, hoy y 7 días, **Street y Kumo siempre separados**.
 
 ### Tarea 7 — Clientes / ranking
-Ranking de franquicias y clientes por compras desde las ventas guardadas.
+- **Hecha salvo franquicias:** ranking top 50 desde ventas pagadas no canceladas/reembolsadas, agrupado por ID o email, con períodos mes / últimos 90 días / año / todo y fechas de finalización en ART. Se consulta al abrir o cambiar el filtro, fuera del sync.
+- **Pendiente:** definir qué clientes son franquicias; la página muestra la nota sin inventar criterios.
+- Finanzas muestra historial mensual cronológico (notas y márgenes negativos) y resultado anual 2026: solo meses cerrados del año + parcial hasta ayer; Ads Kumo separado del margen. Sin recalcular meses importados.
 
 ## 6. Cutover (el día del cambio)
 

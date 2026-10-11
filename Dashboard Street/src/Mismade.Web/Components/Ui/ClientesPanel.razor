@@ -1,0 +1,73 @@
+@inject IClientesConsulta Consulta
+
+<PageTitle>Clientes · MISMADE</PageTitle>
+<header class="page-head">
+    <span class="eyebrow">Ranking</span>
+    <h1>Clientes</h1>
+    <p>Los 50 clientes con mayor total comprado en pedidos pagos.</p>
+</header>
+<p class="note">Ranking de franquicias: falta definir qué clientes son franquicias</p>
+<section class="card">
+    <div class="card-head">
+        <h2>Ranking por compras</h2>
+        <label class="field">Período
+            <select @bind="periodo" @bind:after="CargarAsync" disabled="@cargando">
+                <option value="@PeriodoClientes.EsteMes">Este mes</option>
+                <option value="@PeriodoClientes.Ultimos90Dias">Últimos 90 días</option>
+                <option value="@PeriodoClientes.EsteAnio">Este año</option>
+                <option value="@PeriodoClientes.Todo">Todo</option>
+            </select>
+        </label>
+    </div>
+    <p class="muted">Pedidos sin ID de cliente ni email no se incluyen. Los últimos 90 días incluyen hoy.</p>
+    @if (cargando)
+    {
+        <p role="status">Cargando ranking…</p>
+    }
+    else if (clientes.Count == 0)
+    {
+        <p class="muted">No hay clientes con compras en este período.</p>
+    }
+    else
+    {
+        <div class="table-wrap">
+            <table>
+                <thead><tr><th>Nombre</th><th>Email</th><th>Pedidos</th><th>Total comprado</th><th>Ticket promedio</th><th>Última compra</th></tr></thead>
+                <tbody>
+                    @foreach (var cliente in clientes)
+                    {
+                        <tr>
+                            <th scope="row">@(cliente.Nombre ?? "Sin nombre")</th>
+                            <td>@(cliente.Email ?? "—")</td>
+                            <td class="num">@cliente.Pedidos</td>
+                            <td class="num">@Moneda.Formatear(cliente.Total, 2)</td>
+                            <td class="num">@Moneda.Formatear(cliente.TicketPromedio, 2)</td>
+                            <td>@cliente.UltimaCompra.ToString("dd/MM/yyyy")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
+</section>
+
+@code {
+    private PeriodoClientes periodo = PeriodoClientes.EsteMes;
+    private IReadOnlyList<ClienteRanking> clientes = [];
+    private bool cargando;
+
+    protected override Task OnInitializedAsync() => CargarAsync();
+
+    private async Task CargarAsync()
+    {
+        cargando = true;
+        try
+        {
+            clientes = await Consulta.ConsultarAsync(periodo);
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+}
