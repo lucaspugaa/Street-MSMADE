@@ -1,6 +1,7 @@
 // Recorta la prenda de un mockup con fondo liso y la compone sobre un fondo nuevo.
 // Copia del núcleo de Tienda Street/scripts/mocks/generar.mjs (npm run mocks:generar).
 import sharp from 'sharp';
+import { colorDistances, refineEdges } from './matting.mjs';
 // Ojo: en sharp, erode() agranda las zonas blancas de una máscara y dilate() las achica
 // (la morfología de libvips toma el negro como figura). Acá: erode = agrandar, dilate = achicar.
 import { readFile } from 'node:fs/promises';
@@ -190,10 +191,8 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
     }
   } else {
     const background = backgroundModel(data, width, height);
-    const distance = i => Math.max(
-      Math.abs(data[i * 4] - background[i * 3]),
-      Math.abs(data[i * 4 + 1] - background[i * 3 + 1]),
-      Math.abs(data[i * 4 + 2] - background[i * 3 + 2]));
+    const distances = colorDistances(data, background, total);
+    const distance = i => distances[i];
     // Cada lado de la foto tiene que ser mayormente fondo liso; si no, es una foto o un collage.
     const near = i => distance(i) <= Math.max(tolerancia * 2, 20);
     const sides = [
@@ -449,6 +448,11 @@ export async function cutout(bytes, { recorte, tolerancia, recortar_borde, relle
         data[i * 4] = data[i * 4 + 1] = data[i * 4 + 2] = 0;
       }
     }
+  }
+
+  if (transparentBorder <= border.length / 2) {
+    await refineEdges(original, data, alpha, backgroundModel(original, width, height),
+      width, height, tolerancia, sombra_original, suavizar_contorno);
   }
 
   const single = buffer => sharp(Buffer.from(buffer), { raw: { width, height, channels: 1 } });
