@@ -12,8 +12,20 @@ public class ComisionMedioPagoTests
     [InlineData("transferencia", 10.00)]
     [InlineData("personalizado", 10.00)]
     [InlineData(" MERCADOPAGO ", 51.00)]
+    [InlineData("Mercado Pago", 51.00)]
+    [InlineData("Pago Nube", 54.80)]
+    [InlineData("pago_nube", 54.80)]
+    [InlineData("GoCuotas", 120.10)]
+    [InlineData("Personalizado", 10.00)]
     public void AplicaTasasBase(string provider, decimal esperado)
-        => Assert.Equal(esperado, ComisionMedioPago.Calcular(provider, 1_000m, new DateOnly(2026, 10, 2)));
+        => Assert.Equal(new ComisionPago(esperado, true), ComisionMedioPago.Calcular(provider, 1_000m, new DateOnly(2026, 10, 2)));
+
+    [Theory]
+    [InlineData("Efectivo")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void MedioDesconocidoNoRestaYQuedaMarcado(string? provider)
+        => Assert.Equal(new ComisionPago(0m, false), ComisionMedioPago.Calcular(provider, 1_000m, new DateOnly(2026, 10, 2)));
 
     [Theory]
     [InlineData("2026-10-01", 99999, 0.0548)]
@@ -26,7 +38,7 @@ public class ComisionMedioPagoTests
     [InlineData("2026-10-03", 170001, 0.2303)]
     public void RespetaFechasYUmbralesEstrictos(string fecha, decimal total, decimal tasa)
         => Assert.Equal(total * tasa,
-            ComisionMedioPago.Calcular("PagoNube", total, DateOnly.Parse(fecha), EstadoPagoNube.Cuotas));
+            ComisionMedioPago.Calcular("PagoNube", total, DateOnly.Parse(fecha), EstadoPagoNube.Cuotas).Monto);
 
     [Theory]
     [InlineData(null)]
@@ -34,7 +46,7 @@ public class ComisionMedioPagoTests
     [InlineData(EstadoPagoNube.Simple)]
     public void SinConfirmacionCuotasUsaTasaBase(EstadoPagoNube? status)
         => Assert.Equal(10_960m,
-            ComisionMedioPago.Calcular("PagoNube", 200_000m, new DateOnly(2026, 10, 2), status));
+            ComisionMedioPago.Calcular("PagoNube", 200_000m, new DateOnly(2026, 10, 2), status).Monto);
 
     [Fact]
     public void PermiteProveedorDeUmbralHistorico()
@@ -46,8 +58,8 @@ public class ComisionMedioPagoTests
             return 500m;
         }
 
-        Assert.Equal(27.4m, ComisionMedioPago.Calcular("PagoNube", 500m, fecha, EstadoPagoNube.Cuotas, Proveedor));
-        Assert.Equal(115.3803m, ComisionMedioPago.Calcular("PagoNube", 501m, fecha, EstadoPagoNube.Cuotas, Proveedor));
+        Assert.Equal(27.4m, ComisionMedioPago.Calcular("PagoNube", 500m, fecha, EstadoPagoNube.Cuotas, Proveedor).Monto);
+        Assert.Equal(115.3803m, ComisionMedioPago.Calcular("PagoNube", 501m, fecha, EstadoPagoNube.Cuotas, Proveedor).Monto);
     }
 
     [Theory]
@@ -58,7 +70,7 @@ public class ComisionMedioPagoTests
 
     [Fact]
     public void TotalCeroNoGeneraComision()
-        => Assert.Equal(0m, ComisionMedioPago.Calcular("PagoNube", 0, new DateOnly(2026, 10, 2)));
+        => Assert.Equal(0m, ComisionMedioPago.Calcular("PagoNube", 0, new DateOnly(2026, 10, 2)).Monto);
 }
 
 public class EnvioAbsorbidoTests
@@ -66,16 +78,16 @@ public class EnvioAbsorbidoTests
     [Theory]
     [InlineData("2026-08-14", 999999, false)]
     [InlineData("2026-08-15", 59999, false)]
-    [InlineData("2026-08-15", 60000, false)]
+    [InlineData("2026-08-15", 60000, true)]
     [InlineData("2026-08-15", 60001, true)]
-    [InlineData("2026-10-01", 60000, false)]
+    [InlineData("2026-10-01", 60000, true)]
     [InlineData("2026-10-01", 60001, true)]
     [InlineData("2026-10-02", 60001, false)]
     [InlineData("2026-10-02", 94999, false)]
-    [InlineData("2026-10-02", 95000, false)]
+    [InlineData("2026-10-02", 95000, true)]
     [InlineData("2026-10-02", 95001, true)]
     [InlineData("2026-10-03", 95001, true)]
-    public void RespetaFechasYUmbralesEstrictos(string fecha, decimal total, bool esperado)
+    public void RespetaFechasYUmbralInclusivo(string fecha, decimal total, bool esperado)
         => Assert.Equal(esperado, EnvioAbsorbido.Aplica(DateOnly.Parse(fecha), total, "360003123", null));
 
     [Theory]
@@ -104,6 +116,9 @@ public class CostoPrendaTests
     [InlineData("Remera", "Gris Prelavado", "Regular", 9000)]
     [InlineData("Remera", "Gris Prelavado", "Oversize", 10000)]
     [InlineData("Remera", "GRIS PRELAVADO", "REGULAR", 9000)]
+    [InlineData("Remera", "Gris", "Oversize", 10000)]
+    [InlineData("Remera", "Gris", "Regular", 9000)]
+    [InlineData("Remera", "Negro", null, 8000)]
     [InlineData("Buzo", null, null, 25000)]
     [InlineData("Pantalón", null, null, 20000)]
     [InlineData("Pantalon", null, null, 20000)]
@@ -114,4 +129,24 @@ public class CostoPrendaTests
     [Fact]
     public void RechazaPrendaDesconocida()
         => Assert.Throws<ArgumentException>(() => CostoPrenda.Calcular("Desconocida"));
+}
+
+public class CostoMercaderiaTiendanubeTests
+{
+    [Theory]
+    [InlineData("Remera BTS - 2.0 Black", 10000)]
+    [InlineData("Buzo Argentina", 24500)]
+    [InlineData("Hoodie Básico", 24500)]
+    [InlineData("Jogging Baggy Básico", 20000)]
+    [InlineData("Pantalón Cargo", 20000)]
+    [InlineData("Remera Baby Tee Cherry", 6500)]
+    [InlineData("Conjunto Oversize Básico Gris", 44500)]
+    public void UsaElCostoCombinadoPorCategoria(string nombre, decimal esperado)
+        => Assert.Equal(esperado, CostoMercaderiaTiendanube.PorProducto(nombre));
+
+    [Theory]
+    [InlineData("Gorra")]
+    [InlineData(null)]
+    public void ProductoSinCategoriaDevuelveNull(string? nombre)
+        => Assert.Null(CostoMercaderiaTiendanube.PorProducto(nombre));
 }
