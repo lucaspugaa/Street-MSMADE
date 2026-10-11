@@ -74,7 +74,11 @@ public sealed class FinanzasMargenService(
         await using var db = await factory.CreateDbContextAsync(ct);
         await using var tx = await db.Database.BeginTransactionAsync(ct);
         var existentes = (await db.PagoNubeCuotas.Select(p => p.OrderNumber).ToListAsync(ct)).ToHashSet();
-        var ventas = await Pagadas(db).AsNoTracking().ToListAsync(ct);
+        // Como el artifact: solo últimos 7 días y mes en curso, para no pedir confirmación de pedidos viejos.
+        var hoy = FechaArgentina.Dia(clock.GetUtcNow());
+        var desde = new[] { new DateOnly(hoy.Year, hoy.Month, 1), hoy.AddDays(-7) }.Min();
+        var inicio = FechaArgentina.InicioUtc(desde);
+        var ventas = await Pagadas(db).AsNoTracking().Where(v => (v.PaidAt ?? v.CreatedAt) >= inicio).ToListAsync(ct);
         foreach (var venta in ventas)
         {
             var fecha = FechaArgentina.Dia(venta.PaidAt ?? venta.CreatedAt);

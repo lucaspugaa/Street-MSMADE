@@ -87,6 +87,25 @@ public sealed class FinanzasMargenTests
     }
 
     [Fact]
+    public async Task PendingSoloMiraMesEnCursoYUltimosSieteDias()
+    {
+        // Hoy 11/10: entra desde el 1/10; el 1/10 a la madrugada UTC todavía es 30/9 en Argentina.
+        await using var f = await Fixture.CrearAsync();
+        await using (var db = f.Factory.CreateDbContext())
+        {
+            db.Ventas.AddRange(
+                Venta(10, "2026-08-20T15:00:00Z", 300_000m, "pago-nube"),
+                Venta(11, "2026-10-01T02:00:00Z", 300_000m, "pago-nube"),
+                Venta(12, "2026-10-01T03:00:00Z", 300_000m, "pago-nube"));
+            await db.SaveChangesAsync();
+        }
+
+        await f.Servicio.CrearPendientesAsync();
+
+        Assert.Equal([12L], (await f.Servicio.PendientesAsync()).Select(p => p.OrderNumber));
+    }
+
+    [Fact]
     public async Task PendingRespetaUmbralSegunFechaPagoArtYNoDuplicaNiPisaConfirmados()
     {
         await using var f = await Fixture.CrearAsync();
